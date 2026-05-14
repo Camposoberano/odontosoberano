@@ -16,7 +16,7 @@ const Index = () => {
                   </svg>
                 </div>
                 <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                  <span className="gradient-hero bg-clip-text text-transparent">Odonto Soberano</span>
+                  <span className="gradient-hero bg-clip-text text-transparent">Odonto PRO</span>
                 </h1>
                 <p className="text-xl lg:text-2xl text-muted-foreground">
                   Sistema Completo de Gestão Odontológica
@@ -36,29 +36,21 @@ const Index = () => {
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </a>
-                <a 
-                  href="https://docs.lovable.dev/integrations/supabase/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
+                <a
+                  href="/auth"
                   className="inline-flex items-center justify-center gap-2 border border-border px-8 py-3 rounded-lg font-medium hover:bg-muted/50 transition-colors text-center"
                 >
-                  Integração Supabase
+                  Fazer Login
                 </a>
               </div>
 
-              <div className="bg-card/50 border border-border rounded-lg p-4 backdrop-blur-sm">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Funcionalidades Backend:</strong> Para implementar autenticação, banco de dados e APIs, 
-                  conecte ao Supabase usando nossa integração nativa.
-                </p>
-              </div>
             </div>
             
             <div className="relative">
               <div className="absolute -inset-4 gradient-hero opacity-20 rounded-2xl blur-xl"></div>
               <img
                 src={heroImage}
-                alt="Odonto Soberano Sistema de Gestão"
+                alt="Odonto PRO Sistema de Gestão"
                 className="relative w-full h-auto rounded-2xl shadow-strong border border-border"
               />
             </div>

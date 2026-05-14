@@ -226,7 +226,7 @@ export function AppSidebar() {
           </div>
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-lg font-bold font-heading text-foreground truncate">Campo Soberano</h2>
+              <h2 className="text-base sm:text-lg font-bold font-heading text-foreground truncate">Odonto Soberano</h2>
               <p className="text-xs text-muted-foreground truncate">Sistema de Gestão</p>
             </div>
           )}

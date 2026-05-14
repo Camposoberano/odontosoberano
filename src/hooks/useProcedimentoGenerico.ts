@@ -423,7 +423,7 @@ export function useAllProcedimentos() {
       if (!user) return [];
 
       const { data, error } = await (supabase
-        .from('v_todos_procedimentos_full' as any)
+        .from('v_todos_procedimentos_full_exp' as any)
         .select('*')
         .order('ordem_servico', { ascending: false }) as any);
 

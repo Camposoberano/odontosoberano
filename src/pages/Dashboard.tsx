@@ -282,18 +282,20 @@ export default function Dashboard() {
 
   const statsCards = [
     {
+      title: "Pacientes Ativos",
+      value: stats?.totalPacientes?.toString() || '0',
+      change: "Cadastrados e ativos",
+      icon: Users,
+      color: "text-violet-600", bgColor: "bg-violet-50", borderColor: "border-violet-100",
+      route: "/patients",
+    },
+    {
       title: "Agendamentos Hoje",
       value: stats?.agendamentosHoje?.total?.toString() || '0',
       change: `${stats?.agendamentosHoje?.confirmados || 0} confirmados, ${stats?.agendamentosHoje?.pendentes || 0} pendentes`,
       icon: Calendar,
-      color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-100"
-    },
-    {
-      title: "OS em Andamento",
-      value: (todosProcedimentos?.filter(p => p.status_geral !== 'Concluído').length || 0).toString(),
-      change: "Pendente ou em execução",
-      icon: Activity,
-      color: "text-indigo-600", bgColor: "bg-indigo-50", borderColor: "border-indigo-100"
+      color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-100",
+      route: "/appointments",
     },
     {
       title: "OS Atrasadas",
@@ -303,14 +305,16 @@ export default function Dashboard() {
       }).length || 0).toString(),
       change: "Ação necessária",
       icon: AlertTriangle,
-      color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-100"
+      color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-100",
+      route: "/procedimentos",
     },
     {
       title: "Faturamento Mensal",
       value: new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(stats?.faturamentoMensal || 0),
       change: `Previsto: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(stats?.faturamentoPrevisto || 0)}`,
       icon: TrendingUp,
-      color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-100"
+      color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-100",
+      route: "/financeiro/contas-receber",
     },
   ];
 
@@ -369,7 +373,11 @@ export default function Dashboard() {
             ))
           ) : (
             statsCards.map((stat) => (
-              <Card key={stat.title} className={`medical-card border-2 ${stat.borderColor}`}>
+              <Card
+                key={stat.title}
+                className={`medical-card border-2 ${stat.borderColor} cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all`}
+                onClick={() => navigate(stat.route)}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-bold text-gray-600">{stat.title}</CardTitle>
                   <div className={`p-2 rounded-lg ${stat.bgColor}`}><stat.icon className={`h-4 w-4 ${stat.color}`} /></div>

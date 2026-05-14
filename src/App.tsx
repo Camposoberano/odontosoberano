@@ -61,6 +61,7 @@ const NotFound = React.lazy(() => import("./pages/NotFound"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 60 * 24, // 24 hours
     },
   },
@@ -79,7 +80,14 @@ const AnimatedRoutes = () => {
   
   return (
     <AnimatePresence mode="wait">
-      <React.Suspense fallback={<div className="flex h-screen w-full items-center justify-center">Carregando...</div>}>
+      <React.Suspense fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <span className="text-sm text-muted-foreground">Carregando...</span>
+          </div>
+        </div>
+      }>
         <Routes location={location} key={location.pathname}>
         <Route path="/auth" element={<AnimatedRoute><Auth /></AnimatedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

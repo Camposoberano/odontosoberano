@@ -76,7 +76,7 @@ export default function Auth() {
     } else {
       toast({
         title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao Campo Soberano",
+        description: "Bem-vindo ao Odonto Soberano",
       });
     }
     
@@ -136,7 +136,7 @@ export default function Auth() {
               <Stethoscope className="w-6 h-6 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">OdontoPro</h1>
+          <h1 className="text-3xl font-bold text-foreground">Odonto Soberano</h1>
           <p className="text-muted-foreground mt-2">Sistema de Gestão Odontológica</p>
         </div>
 

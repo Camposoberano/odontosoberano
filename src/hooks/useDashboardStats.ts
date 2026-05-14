@@ -7,7 +7,7 @@ export const useDashboardStats = () => {
   const { user } = useAuth();
 
   // Total de Pacientes
-  const { data: totalPacientes = 0 } = useQuery({
+  const { data: totalPacientes = 0, isLoading: loadingPacientes } = useQuery({
     queryKey: ["dashboard-total-pacientes", user?.id],
     queryFn: async () => {
       if (!user?.id) return 0;
@@ -25,7 +25,7 @@ export const useDashboardStats = () => {
   });
 
   // Agendamentos de hoje
-  const { data: agendamentosHoje } = useQuery({
+  const { data: agendamentosHoje, isLoading: loadingAgendamentos } = useQuery({
     queryKey: ["dashboard-agendamentos-hoje", user?.id],
     queryFn: async () => {
       if (!user?.id) return { total: 0, confirmados: 0, pendentes: 0 };
@@ -56,7 +56,7 @@ export const useDashboardStats = () => {
   });
 
   // Faturamento mensal (contas recebidas este mês)
-  const { data: faturamentoMensal = 0 } = useQuery({
+  const { data: faturamentoMensal = 0, isLoading: loadingFaturamento } = useQuery({
     queryKey: ["dashboard-faturamento-mensal", user?.id],
     queryFn: async () => {
       if (!user?.id) return 0;
@@ -111,7 +111,7 @@ export const useDashboardStats = () => {
       if (!user?.id) return { emAndamento: 0, atrasadas: 0 };
 
       const { data, error } = await (supabase
-        .from('v_todos_procedimentos_full' as any)
+        .from('v_todos_procedimentos_full_exp' as any)
         .select('status_geral, data_entrega')
         .eq('user_id', user.id)
         .in('status_geral', ['Pendente', 'Em andamento']) as any);
@@ -260,6 +260,6 @@ export const useDashboardStats = () => {
     },
     proximosAgendamentos,
     estoqueBaixo,
-    isLoading: !user?.id,
+    isLoading: !user?.id || loadingPacientes || loadingAgendamentos || loadingFaturamento,
   };
 };
