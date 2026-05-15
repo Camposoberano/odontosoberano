@@ -37,6 +37,7 @@ import {
   Search,
   FolderOpen,
   LayoutDashboard,
+  FileText,
 } from "lucide-react";
 
 
@@ -287,6 +288,16 @@ export function AppSidebar() {
                   <NavLink to="/analises/producao" end className={getNavClass}>
                     <BarChart3 className="w-5 h-5 text-primary" />
                     {!isCollapsed && <span className="font-semibold text-primary">Painel de Produção</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Orçamentos */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className={menuButtonClass}>
+                  <NavLink to="/orcamentos" className={getNavClass}>
+                    <FileText className="w-5 h-5 text-teal-500" />
+                    {!isCollapsed && <span className="text-teal-600 font-medium">Orçamentos</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

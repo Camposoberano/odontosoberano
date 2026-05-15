@@ -56,6 +56,9 @@ const GenericProcedimentoListPage = React.lazy(() => import("@/pages/procediment
 const GenericProcedimentoDetail = React.lazy(() => import("@/pages/procedimentos/GenericProcedimentoDetail"));
 const GenericNovoProcedimento = React.lazy(() => import("@/pages/procedimentos/GenericNovoProcedimento"));
 const PainelProducao = React.lazy(() => import("@/pages/analises/PainelProducao"));
+const ListaOrcamentos = React.lazy(() => import("@/pages/orcamentos/ListaOrcamentos"));
+const NovoOrcamento = React.lazy(() => import("@/pages/orcamentos/NovoOrcamento"));
+const OrcamentoDetalhe = React.lazy(() => import("@/pages/orcamentos/OrcamentoDetalhe"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -130,6 +133,12 @@ const AnimatedRoutes = () => {
             <Route path="/relatorios/comissao" element={<ProtectedRoute><AnimatedRoute><RelatorioComissao /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/analises/producao" element={<ProtectedRoute><AnimatedRoute><PainelProducao /></AnimatedRoute></ProtectedRoute>} />
             
+            {/* Orçamentos Routes */}
+            <Route path="/orcamentos" element={<ProtectedRoute><AnimatedRoute><ListaOrcamentos /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/orcamentos/novo" element={<ProtectedRoute><AnimatedRoute><NovoOrcamento /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/orcamentos/:id" element={<ProtectedRoute><AnimatedRoute><OrcamentoDetalhe /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/orcamentos/:id/editar" element={<ProtectedRoute><AnimatedRoute><NovoOrcamento /></AnimatedRoute></ProtectedRoute>} />
+
             {/* Pagamentos Routes */}
             <Route path="/pagamentos/efetuar-pagamento" element={<ProtectedRoute><AnimatedRoute><EfetuarPagamento /></AnimatedRoute></ProtectedRoute>} />
             
