@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, FileText, Eye, Edit, Trash2, Copy } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,7 +46,7 @@ const STATUS_CONFIG: Record<
 
 export default function ListaOrcamentos() {
   const navigate = useNavigate();
-  const { orcamentos, isLoading, deletar } = useOrcamentos();
+  const { orcamentos, isLoading, deletar, duplicar } = useOrcamentos();
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
 
@@ -185,6 +186,18 @@ export default function ListaOrcamentos() {
                             onClick={() => navigate(`/orcamentos/${o.id}/editar`)}
                           >
                             <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            title="Duplicar"
+                            onClick={async () => {
+                              const novo = await duplicar.mutateAsync(o.id);
+                              navigate(`/orcamentos/${novo.id}/editar`);
+                            }}
+                          >
+                            <Copy className="w-3.5 h-3.5" />
                           </Button>
                           <Button
                             size="icon"

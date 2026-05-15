@@ -37,7 +37,6 @@ import {
   Search,
   FolderOpen,
   LayoutDashboard,
-  FileText,
 } from "lucide-react";
 
 
