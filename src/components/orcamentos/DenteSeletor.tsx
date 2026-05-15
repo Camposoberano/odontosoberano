@@ -37,14 +37,14 @@ interface DenteSeletorProps {
 export function DenteSeletor({ value, onChange, className }: DenteSeletorProps) {
   return (
     <Select
-      value={value ?? ""}
-      onValueChange={(v) => onChange(v === "" ? undefined : v)}
+      value={value ?? "_none"}
+      onValueChange={(v) => onChange(v === "_none" ? undefined : v)}
     >
       <SelectTrigger className={className ?? "h-8 w-24 text-xs"}>
         <SelectValue placeholder="Dente" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">—</SelectItem>
+        <SelectItem value="_none">—</SelectItem>
         {QUADRANTES.map((q) => (
           <SelectGroup key={q.label}>
             <SelectLabel className="text-xs">{q.label}</SelectLabel>
