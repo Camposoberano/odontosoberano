@@ -14,12 +14,23 @@ export interface Paciente {
   endereco?: string | null;
   rua?: string | null;
   numero?: string | null;
+  complemento?: string | null;
   bairro?: string | null;
   cidade?: string | null;
+  estado?: string | null;
   observacao_endereco?: string | null;
   cpf?: string | null;
   cep?: string | null;
   ultima_consulta?: string | null;
+  // novos campos
+  apelido?: string | null;
+  area_tratamento?: string | null;
+  genero?: string | null;
+  profissao?: string | null;
+  como_conheceu?: string | null;
+  nome_responsavel?: string | null;
+  cpf_responsavel?: string | null;
+  telefone_responsavel?: string | null;
   created_at?: string;
   updated_at?: string;
 }
