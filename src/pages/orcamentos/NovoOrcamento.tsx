@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Trash2, Save, Send, ChevronLeft } from "lucide-react";
+import { DenteSeletor } from "@/components/orcamentos/DenteSeletor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ interface ItemLocal {
   preco_unitario: number;
   preco_total: number;
   observacao?: string;
+  dente_numero?: string | null;
 }
 
 function calcularTotais(
@@ -186,6 +188,7 @@ export default function NovoOrcamento() {
             preco_unitario: i.preco_unitario,
             preco_total: i.preco_total,
             observacao: i.observacao ?? null,
+            dente_numero: i.dente_numero ?? null,
           }))
         );
         if (error) throw error;
@@ -293,8 +296,9 @@ export default function NovoOrcamento() {
                   <div className="space-y-2">
                     {/* Header da tabela */}
                     <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground px-1">
-                      <div className="col-span-5">Procedimento</div>
-                      <div className="col-span-2 text-center">Qtd</div>
+                      <div className="col-span-4">Procedimento</div>
+                      <div className="col-span-2 text-center">Dente</div>
+                      <div className="col-span-1 text-center">Qtd</div>
                       <div className="col-span-2 text-right">Valor Unit. (R$)</div>
                       <div className="col-span-2 text-right">Total</div>
                       <div className="col-span-1" />
@@ -302,14 +306,20 @@ export default function NovoOrcamento() {
                     <Separator />
                     {itens.map((item, idx) => (
                       <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-5">
+                        <div className="col-span-4">
                           <Input
                             value={item.nome_procedimento}
                             onChange={(e) => atualizarItem(idx, "nome_procedimento", e.target.value)}
                             className="h-8 text-sm"
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-2 flex justify-center">
+                          <DenteSeletor
+                            value={item.dente_numero}
+                            onChange={(v) => atualizarItem(idx, "dente_numero", v ?? "")}
+                          />
+                        </div>
+                        <div className="col-span-1">
                           <Input
                             type="number"
                             min={1}

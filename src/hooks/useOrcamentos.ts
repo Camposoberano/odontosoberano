@@ -18,6 +18,7 @@ export interface OrcamentoItem {
   preco_unitario: number;
   preco_total: number;
   observacao: string | null;
+  dente_numero: string | null;
 }
 
 export interface Orcamento {
@@ -67,6 +68,7 @@ export interface NovoItemInput {
   preco_unitario: number;
   preco_total: number;
   observacao?: string;
+  dente_numero?: string | null;
 }
 
 const QUERY_KEY = "orcamentos";
@@ -217,6 +219,53 @@ export function useOrcamentos() {
     },
   });
 
+  const duplicar = useMutation({
+    mutationFn: async (id: string): Promise<Orcamento> => {
+      // Buscar orçamento original com itens
+      const { data: original, error: fetchErr } = await supabase
+        .from("orcamentos")
+        .select("*, orcamento_itens(*)")
+        .eq("id", id)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      // Criar novo orçamento como rascunho
+      const { paciente_id, dentista_id, desconto_tipo, desconto_valor,
+              forma_pagamento, parcelas, total_bruto, total_liquido,
+              observacoes, validade_dias } = original as Orcamento;
+
+      const { data: novo, error: createErr } = await supabase
+        .from("orcamentos")
+        .insert({ paciente_id, dentista_id, desconto_tipo, desconto_valor,
+                  forma_pagamento, parcelas, total_bruto, total_liquido,
+                  observacoes, validade_dias, status: "rascunho" })
+        .select()
+        .single();
+      if (createErr) throw createErr;
+
+      // Copiar itens
+      const itens = ((original as unknown as { orcamento_itens: OrcamentoItem[] }).orcamento_itens ?? []);
+      if (itens.length > 0) {
+        const { error: itemsErr } = await supabase.from("orcamento_itens").insert(
+          itens.map(({ nome_procedimento, quantidade, preco_unitario, preco_total, observacao, procedimento_id }) => ({
+            orcamento_id: (novo as Orcamento).id,
+            procedimento_id, nome_procedimento, quantidade, preco_unitario, preco_total, observacao,
+          }))
+        );
+        if (itemsErr) throw itemsErr;
+      }
+
+      return novo as Orcamento;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast({ title: "Orçamento duplicado como rascunho" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao duplicar", description: err.message, variant: "destructive" });
+    },
+  });
+
   const atualizarItem = useMutation({
     mutationFn: async ({
       id,
@@ -244,6 +293,7 @@ export function useOrcamentos() {
     adicionarItem,
     removerItem,
     atualizarItem,
+    duplicar,
   };
 }
 

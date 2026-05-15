@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ChevronLeft,
@@ -7,11 +7,12 @@ import {
   MessageCircle,
   CheckCircle,
   XCircle,
-  Printer,
+  Download,
   ExternalLink,
+  Copy,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -31,6 +32,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrcamentoPDFTemplate } from "@/components/orcamentos/OrcamentoPDFTemplate";
 import { useOrcamento, useOrcamentos, StatusOrcamento } from "@/hooks/useOrcamentos";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const STATUS_CONFIG: Record<
   StatusOrcamento,
@@ -50,86 +54,232 @@ export default function OrcamentoDetalhe() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const pdfRef = useRef<HTMLDivElement>(null);
-  const { mudarStatus, atualizar } = useOrcamentos();
+  const { mudarStatus, atualizar, duplicar } = useOrcamentos();
   const { data: orcamento, isLoading } = useOrcamento(id);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [gerandoPDF, setGerandoPDF] = useState(false);
 
-  const handleImprimir = () => {
-    window.print();
+  const handleDownloadPDF = async () => {
+    if (!orcamento || !pdfRef.current) return;
+    setGerandoPDF(true);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+
+      const el = pdfRef.current;
+      el.style.display = "block";
+      el.style.position = "fixed";
+      el.style.top = "-9999px";
+      el.style.left = "0";
+      el.style.width = "800px";
+      el.style.background = "#fff";
+
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#fff" });
+
+      el.style.display = "none";
+      el.style.position = "";
+      el.style.top = "";
+      el.style.left = "";
+      el.style.width = "";
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save(`orcamento-${orcamento.numero_orcamento}.pdf`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao gerar PDF";
+      toast({ title: "Erro ao gerar PDF", description: msg, variant: "destructive" });
+    } finally {
+      setGerandoPDF(false);
+    }
   };
 
   const handleWhatsApp = () => {
     if (!orcamento?.paciente?.telefone) {
-      alert("Paciente sem telefone cadastrado.");
+      toast({ title: "Paciente sem telefone cadastrado", variant: "destructive" });
       return;
     }
     const tel = orcamento.paciente.telefone.replace(/\D/g, "");
-    const total = orcamento.total_liquido.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+    const total = orcamento.total_liquido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     const msg = encodeURIComponent(
       `Olá ${orcamento.paciente.nome}! 👋\n\n` +
-        `Segue o orçamento #${orcamento.numero_orcamento} da nossa clínica.\n\n` +
-        `💰 Total: ${total}\n` +
-        `💳 Pagamento: ${orcamento.forma_pagamento ?? "A combinar"}\n\n` +
-        `Para mais detalhes ou para aprovar o orçamento, entre em contato conosco. 😊`
+      `Segue o orçamento #${orcamento.numero_orcamento}.\n\n` +
+      `💰 Total: ${total}\n` +
+      `💳 Pagamento: ${orcamento.forma_pagamento ?? "A combinar"}\n\n` +
+      `Para dúvidas ou aprovação, entre em contato. 😊`
     );
     window.open(`https://wa.me/55${tel}?text=${msg}`, "_blank");
     mudarStatus.mutate({ id: orcamento.id, status: "enviado" });
   };
 
-  const handleDocuSeal = async () => {
+  const handleEmail = () => {
     if (!orcamento) return;
-    if (!DOCUSEAL_API_KEY || !DOCUSEAL_TEMPLATE_ID) {
-      alert(
-        "Configure VITE_DOCUSEAL_API_KEY e VITE_DOCUSEAL_TEMPLATE_ID no arquivo .env para usar esta funcionalidade."
-      );
+    const email = orcamento.paciente?.email ?? "";
+    const total = orcamento.total_liquido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const itens = (orcamento.orcamento_itens ?? [])
+      .map((i) => `- ${i.nome_procedimento} (${i.quantidade}x): ${i.preco_total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`)
+      .join("\n");
+
+    const subject = encodeURIComponent(`Orçamento #${orcamento.numero_orcamento} — ${orcamento.paciente?.nome ?? ""}`);
+    const body = encodeURIComponent(
+      `Olá ${orcamento.paciente?.nome ?? ""}!\n\n` +
+      `Segue o resumo do seu orçamento #${orcamento.numero_orcamento}:\n\n` +
+      `${itens}\n\n` +
+      `Total: ${total}\n` +
+      `Pagamento: ${orcamento.forma_pagamento ?? "A combinar"}` +
+      (orcamento.parcelas > 1 ? ` em ${orcamento.parcelas}x` : "") + "\n\n" +
+      `Validade: ${orcamento.validade_dias} dias a partir da emissão.\n\n` +
+      `Qualquer dúvida estamos à disposição!`
+    );
+
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
+    mudarStatus.mutate({ id: orcamento.id, status: "enviado" });
+  };
+
+  const handleAprovar = async () => {
+    if (!orcamento || !user) return;
+    await mudarStatus.mutateAsync({ id: orcamento.id, status: "aprovado" });
+
+    const parcelas = orcamento.parcelas ?? 1;
+    const hoje = new Date();
+
+    // ── Criar contas_receber (1 por parcela) ──────────────────────────────
+    const entradasFinanceiras = Array.from({ length: parcelas }, (_, i) => {
+      const vencimento = new Date(hoje);
+      vencimento.setDate(hoje.getDate() + i * 30);
+
+      const valorParcela =
+        i < parcelas - 1
+          ? Math.round((orcamento.total_liquido / parcelas) * 100) / 100
+          : Math.round(
+              (orcamento.total_liquido -
+                Math.round((orcamento.total_liquido / parcelas) * 100) / 100 * (parcelas - 1)) * 100
+            ) / 100;
+
+      return {
+        user_id: user.id,
+        paciente_id: orcamento.paciente_id,
+        descricao:
+          parcelas > 1
+            ? `Parcela ${i + 1}/${parcelas} — Orçamento #${orcamento.numero_orcamento} — ${orcamento.paciente?.nome ?? ""}`
+            : `Orçamento #${orcamento.numero_orcamento} — ${orcamento.paciente?.nome ?? ""}`,
+        categoria: "Tratamento Odontológico",
+        valor: valorParcela,
+        data_vencimento: vencimento.toISOString().split("T")[0],
+        status: "Pendente",
+        forma_pagamento: orcamento.forma_pagamento ?? undefined,
+        observacoes: `Gerado ao aprovar orçamento #${orcamento.numero_orcamento}`,
+        orcamento_id: orcamento.id,
+      };
+    });
+
+    const { error: finErr } = await supabase.from("contas_receber").insert(entradasFinanceiras);
+
+    if (finErr) {
+      toast({ title: "Aprovado, mas erro no financeiro", description: finErr.message, variant: "destructive" });
       return;
     }
 
+    // ── Atualizar odontograma do paciente ─────────────────────────────────
+    const itensComDente = (orcamento.orcamento_itens ?? []).filter((i) => i.dente_numero);
+
+    if (itensComDente.length > 0 && orcamento.paciente_id) {
+      try {
+        // Buscar odontograma existente
+        const { data: odonto } = await supabase
+          .from("odontograma")
+          .select("id, dados_dentes")
+          .eq("paciente_id", orcamento.paciente_id)
+          .maybeSingle();
+
+        const dadosAtuais: Record<string, { numero: number; procedimentos: string[]; observacoes?: string }> =
+          (odonto?.dados_dentes as Record<string, { numero: number; procedimentos: string[] }>) ?? {};
+
+        for (const item of itensComDente) {
+          const num = item.dente_numero!;
+          const dente = dadosAtuais[num] ?? { numero: Number(num), procedimentos: [] };
+          if (!dente.procedimentos.includes(item.nome_procedimento)) {
+            dente.procedimentos.push(item.nome_procedimento);
+          }
+          dadosAtuais[num] = dente;
+        }
+
+        if (odonto) {
+          await supabase
+            .from("odontograma")
+            .update({ dados_dentes: dadosAtuais })
+            .eq("id", odonto.id);
+        } else {
+          await supabase.from("odontograma").insert({
+            user_id: user.id,
+            paciente_id: orcamento.paciente_id,
+            dados_dentes: dadosAtuais,
+          });
+        }
+
+        toast({
+          title: "Orçamento aprovado!",
+          description: `${parcelas} conta(s) a receber criada(s) · Odontograma atualizado (${itensComDente.length} dente(s))`,
+        });
+      } catch {
+        toast({
+          title: "Orçamento aprovado!",
+          description: `${parcelas} conta(s) a receber criada(s) · Erro ao atualizar odontograma`,
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Orçamento aprovado!",
+        description: `${parcelas} conta(s) a receber criada(s)`,
+      });
+    }
+  };
+
+  const handleDuplicar = async () => {
+    if (!orcamento) return;
+    const novo = await duplicar.mutateAsync(orcamento.id);
+    navigate(`/orcamentos/${novo.id}/editar`);
+  };
+
+  const handleDocuSeal = async () => {
+    if (!orcamento) return;
+    if (!DOCUSEAL_API_KEY || !DOCUSEAL_TEMPLATE_ID) {
+      toast({ title: "DocuSeal não configurado", description: "Adicione VITE_DOCUSEAL_API_KEY e VITE_DOCUSEAL_TEMPLATE_ID no .env", variant: "destructive" });
+      return;
+    }
     try {
       const res = await fetch("https://api.docuseal.com/submissions", {
         method: "POST",
-        headers: {
-          "X-Auth-Token": DOCUSEAL_API_KEY,
-          "Content-Type": "application/json",
-        },
+        headers: { "X-Auth-Token": DOCUSEAL_API_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
           template_id: Number(DOCUSEAL_TEMPLATE_ID),
           send_email: true,
-          submitters: [
-            {
-              role: "Paciente",
-              email: orcamento.paciente?.email ?? "",
-              name: orcamento.paciente?.nome ?? "",
-              fields: [
-                { name: "Paciente", default_value: orcamento.paciente?.nome ?? "" },
-                {
-                  name: "Total",
-                  default_value: orcamento.total_liquido.toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }),
-                },
-              ],
-            },
-          ],
+          submitters: [{
+            role: "Paciente",
+            email: orcamento.paciente?.email ?? "",
+            name: orcamento.paciente?.nome ?? "",
+            fields: [
+              { name: "Paciente", default_value: orcamento.paciente?.nome ?? "" },
+              { name: "Total", default_value: orcamento.total_liquido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) },
+            ],
+          }],
         }),
       });
-
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
       const submissionId = json.id ?? json.submission_id;
       if (submissionId) {
-        await atualizar.mutateAsync({
-          id: orcamento.id,
-          docuseal_submission_id: String(submissionId),
-        });
+        await atualizar.mutateAsync({ id: orcamento.id, docuseal_submission_id: String(submissionId) });
       }
-      alert("Contrato enviado para o paciente assinar! Verifique o e-mail cadastrado.");
+      toast({ title: "Contrato enviado!", description: "Paciente receberá o link por e-mail." });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Erro ao enviar para DocuSeal";
-      alert(`Erro: ${msg}`);
+      const msg = e instanceof Error ? e.message : "Erro";
+      toast({ title: "Erro ao enviar para DocuSeal", description: msg, variant: "destructive" });
     }
   };
 
@@ -150,9 +300,7 @@ export default function OrcamentoDetalhe() {
       <DashboardLayout>
         <div className="text-center py-16">
           <p className="text-muted-foreground">Orçamento não encontrado.</p>
-          <Button variant="link" onClick={() => navigate("/orcamentos")}>
-            Voltar para lista
-          </Button>
+          <Button variant="link" onClick={() => navigate("/orcamentos")}>Voltar para lista</Button>
         </div>
       </DashboardLayout>
     );
@@ -163,7 +311,7 @@ export default function OrcamentoDetalhe() {
 
   return (
     <DashboardLayout>
-      {/* Área visível na tela */}
+      {/* Tela normal */}
       <div className="print:hidden space-y-6 max-w-4xl">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -174,9 +322,7 @@ export default function OrcamentoDetalhe() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold">Orçamento #{orcamento.numero_orcamento}</h1>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${cfg.color} ${cfg.bgColor}`}
-                >
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${cfg.color} ${cfg.bgColor}`}>
                   {cfg.label}
                 </span>
               </div>
@@ -185,21 +331,28 @@ export default function OrcamentoDetalhe() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/orcamentos/${orcamento.id}/editar`)}
-            className="gap-2"
-          >
-            <Edit className="w-4 h-4" />
-            Editar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDuplicar} className="gap-1.5">
+              <Copy className="w-3.5 h-3.5" />
+              Duplicar
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/orcamentos/${orcamento.id}/editar`)} className="gap-1.5">
+              <Edit className="w-3.5 h-3.5" />
+              Editar
+            </Button>
+          </div>
         </div>
 
         {/* Ações */}
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleImprimir} className="gap-2">
-            <Printer className="w-4 h-4" />
-            Imprimir / PDF
+          <Button
+            variant="outline"
+            onClick={handleDownloadPDF}
+            disabled={gerandoPDF}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {gerandoPDF ? "Gerando..." : "Baixar PDF"}
           </Button>
           <Button
             variant="outline"
@@ -207,7 +360,15 @@ export default function OrcamentoDetalhe() {
             className="gap-2 text-green-600 border-green-300 hover:bg-green-50"
           >
             <MessageCircle className="w-4 h-4" />
-            Enviar WhatsApp
+            WhatsApp
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleEmail}
+            className="gap-2 text-sky-600 border-sky-300 hover:bg-sky-50"
+          >
+            <Mail className="w-4 h-4" />
+            E-mail
           </Button>
           <Button
             variant="outline"
@@ -215,15 +376,12 @@ export default function OrcamentoDetalhe() {
             className="gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
           >
             <ExternalLink className="w-4 h-4" />
-            Contrato DocuSeal
+            DocuSeal
           </Button>
           {orcamento.status !== "aprovado" && orcamento.status !== "contrato_assinado" && (
-            <Button
-              onClick={() => mudarStatus.mutate({ id: orcamento.id, status: "aprovado" })}
-              className="gap-2 bg-green-600 hover:bg-green-700"
-            >
+            <Button onClick={handleAprovar} className="gap-2 bg-green-600 hover:bg-green-700">
               <CheckCircle className="w-4 h-4" />
-              Marcar Aprovado
+              Aprovar (+ Conta a Receber)
             </Button>
           )}
           {orcamento.status !== "recusado" && (
@@ -233,7 +391,7 @@ export default function OrcamentoDetalhe() {
               className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
             >
               <XCircle className="w-4 h-4" />
-              Marcar Recusado
+              Recusar
             </Button>
           )}
         </div>
@@ -244,9 +402,8 @@ export default function OrcamentoDetalhe() {
             <CardContent className="pt-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Paciente</p>
               <p className="font-semibold">{orcamento.paciente?.nome ?? "—"}</p>
-              {orcamento.paciente?.telefone && (
-                <p className="text-sm text-muted-foreground">{orcamento.paciente.telefone}</p>
-              )}
+              {orcamento.paciente?.telefone && <p className="text-sm text-muted-foreground">{orcamento.paciente.telefone}</p>}
+              {orcamento.paciente?.email && <p className="text-sm text-muted-foreground">{orcamento.paciente.email}</p>}
             </CardContent>
           </Card>
           <Card>
@@ -270,6 +427,7 @@ export default function OrcamentoDetalhe() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Procedimento</TableHead>
+                  <TableHead className="w-20 text-center">Dente</TableHead>
                   <TableHead className="w-16 text-center">Qtd</TableHead>
                   <TableHead className="w-32 text-right">Valor Unit.</TableHead>
                   <TableHead className="w-32 text-right">Total</TableHead>
@@ -279,6 +437,15 @@ export default function OrcamentoDetalhe() {
                 {itens.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.nome_procedimento}</TableCell>
+                    <TableCell className="text-center">
+                      {item.dente_numero ? (
+                        <span className="inline-block bg-primary/10 text-primary text-xs font-mono font-semibold px-1.5 py-0.5 rounded">
+                          {item.dente_numero}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center">{item.quantidade}</TableCell>
                     <TableCell className="text-right">
                       {item.preco_unitario.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
@@ -318,10 +485,7 @@ export default function OrcamentoDetalhe() {
                 {orcamento.forma_pagamento && (
                   <div className="flex justify-between text-xs text-muted-foreground pt-1">
                     <span>Pagamento</span>
-                    <span>
-                      {orcamento.forma_pagamento}
-                      {orcamento.parcelas > 1 ? ` em ${orcamento.parcelas}x` : ""}
-                    </span>
+                    <span>{orcamento.forma_pagamento}{orcamento.parcelas > 1 ? ` em ${orcamento.parcelas}x` : ""}</span>
                   </div>
                 )}
               </div>
@@ -329,11 +493,19 @@ export default function OrcamentoDetalhe() {
           </CardContent>
         </Card>
 
-        {/* Timeline de Status */}
+        {/* Observações */}
+        {orcamento.observacoes && (
+          <Card>
+            <CardContent className="pt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Observações</p>
+              <p className="text-sm">{orcamento.observacoes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Timeline */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Histórico</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Histórico</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <div className="w-2 h-2 rounded-full bg-gray-400" />
@@ -361,8 +533,8 @@ export default function OrcamentoDetalhe() {
         </Card>
       </div>
 
-      {/* Template PDF — visível só na impressão */}
-      <div className="hidden print:block" ref={pdfRef}>
+      {/* Template PDF — renderizado fora da tela para html2canvas */}
+      <div ref={pdfRef} style={{ display: "none" }}>
         <OrcamentoPDFTemplate orcamento={orcamento} />
       </div>
     </DashboardLayout>
