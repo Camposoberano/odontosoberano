@@ -76,7 +76,7 @@ export default function Auth() {
     } else {
       toast({
         title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao Odonto Soberano",
+        description: "Bem-vindo ao Instituto Belém",
       });
     }
     
@@ -128,23 +128,26 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background: "linear-gradient(135deg, #010101 0%, #1a1a1a 60%, #2a2a2a 100%)"}}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
-              <Stethoscope className="w-6 h-6 text-primary-foreground" />
-            </div>
+          <div className="flex items-center justify-center mb-6">
+            <img
+              src="/orto/logo-ib.jpg"
+              alt="Instituto Belém"
+              className="w-32 h-32 rounded-2xl object-cover shadow-2xl"
+              style={{boxShadow: "0 0 40px rgba(248,204,114,0.3)"}}
+            />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Odonto Soberano</h1>
-          <p className="text-muted-foreground mt-2">Sistema de Gestão Odontológica</p>
+          <h1 className="text-3xl font-bold" style={{color: "#f8cc72"}}>Instituto Belém</h1>
+          <p className="mt-2 text-sm tracking-widest uppercase" style={{color: "rgba(248,204,114,0.6)"}}>Odontologia Especializada</p>
         </div>
 
-        <Card className="medical-card">
+        <Card className="border-0 shadow-2xl" style={{background: "#1a1a1a", borderTop: "2px solid #f8cc72"}}>
           <CardHeader className="text-center">
-            <CardTitle>Acesse sua conta</CardTitle>
-            <CardDescription>
-              Entre com suas credenciais ou crie uma nova conta
+            <CardTitle style={{color: "#f8cc72"}}>Acesse sua conta</CardTitle>
+            <CardDescription style={{color: "rgba(248,204,114,0.6)"}}>
+              Entre com suas credenciais
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -193,7 +196,8 @@ export default function Auth() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full font-bold tracking-wide"
+                    style={{background: "#f8cc72", color: "#010101"}}
                     disabled={loading}
                   >
                     {loading ? 'Entrando...' : 'Entrar'}

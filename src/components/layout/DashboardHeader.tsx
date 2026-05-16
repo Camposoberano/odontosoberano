@@ -69,21 +69,19 @@ export function DashboardHeader() {
     setSearchOpen(false);
   };
     return (
-      <header className="h-12 sm:h-14 md:h-16 border-b border-border/50 glass sticky top-0 z-10 transition-all duration-200">
+      <header className="h-[50px] bg-[#f8cc72] sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between h-full px-3 sm:px-4 md:px-6">
           <div className="flex items-center gap-2 sm:gap-4">
-            <SidebarTrigger className="hover-scale hidden md:flex" />
-            <Button
-              variant="ghost"
-              size="sm"
+            <SidebarTrigger className="hover-scale hidden md:flex text-[#010101] hover:bg-black/10" />
+            <img
+              src="/orto/logo-ib.jpg"
+              alt="Instituto Belém"
+              className="w-8 h-8 rounded-md object-cover cursor-pointer shadow-sm"
               onClick={() => navigate("/")}
-              className="gap-2 hover-scale hidden md:flex"
-            >
-              <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">Menu Principal</span>
-            </Button>
+            />
+            <span className="hidden md:block font-semibold text-[#010101] text-sm">Instituto Belém</span>
             {/* Título mobile */}
-            <span className="md:hidden font-bold text-base text-foreground">Odonto PRO</span>
+            <span className="md:hidden font-bold text-base text-[#010101]">Instituto Belém</span>
             <div className="hidden md:flex items-center gap-2 max-w-md w-full">
               <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                 <PopoverTrigger asChild>
@@ -220,8 +218,8 @@ export function DashboardHeader() {
             {/* Notificações */}
             <Popover open={notifOpen} onOpenChange={setNotifOpen}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative hover:bg-muted/50 transition-colors">
-                  <Bell className="w-5 h-5 text-gray-600" />
+                <Button variant="ghost" size="icon" className="relative hover:bg-black/10 transition-colors">
+                  <Bell className="w-5 h-5 text-[#010101]" />
                   {notificacoes.length > 0 && (
                     <span className="absolute top-1 right-1 flex h-4 w-4 shrink-0 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow ring-2 ring-white">
                       {notificacoes.length}
@@ -282,7 +280,7 @@ export function DashboardHeader() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-white/10">
                   <Avatar className="h-8 w-8">
                     {profile?.foto_perfil_base64 ? (
                       <AvatarImage src={profile.foto_perfil_base64} alt="Foto de perfil" />

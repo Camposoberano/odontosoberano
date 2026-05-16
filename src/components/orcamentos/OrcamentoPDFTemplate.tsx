@@ -9,7 +9,7 @@ interface OrcamentoPDFTemplateProps {
 }
 
 export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTemplateProps>(
-  ({ orcamento, clinicaNome = "Odonto PRO", clinicaEndereco, clinicaTelefone }, ref) => {
+  ({ orcamento, clinicaNome = "Instituto Belém", clinicaEndereco, clinicaTelefone }, ref) => {
     const dataValidade = orcamento.created_at
       ? new Date(
           new Date(orcamento.created_at).getTime() +

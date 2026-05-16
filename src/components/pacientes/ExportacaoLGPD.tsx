@@ -56,7 +56,7 @@ export function ExportacaoLGPD({ paciente }: ExportacaoLGPDProps) {
         },
         meta: {
           gerado_em: new Date().toISOString(),
-          sistema: 'Odonto PRO - Exportador Titular de Dados',
+          sistema: 'Instituto Belém - Exportador Titular de Dados',
           lei_referencia: 'Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018)'
         }
       };
@@ -66,7 +66,7 @@ export function ExportacaoLGPD({ paciente }: ExportacaoLGPDProps) {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Relatório de Dados do Paciente - Odonto PRO</title>
+          <title>Relatório de Dados do Paciente - Instituto Belém</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 40px; color: #333; line-height: 1.6; }
             h1 { color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
@@ -111,7 +111,7 @@ export function ExportacaoLGPD({ paciente }: ExportacaoLGPDProps) {
           </div>
 
           <div class="footer">
-            <p>Gerado por Odonto PRO Software. Emitido em ${new Date(dataToExport.meta.gerado_em).toLocaleString('pt-BR')}</p>
+            <p>Gerado por Instituto Belém Software. Emitido em ${new Date(dataToExport.meta.gerado_em).toLocaleString('pt-BR')}</p>
           </div>
           <script>
             window.onload = () => window.print();

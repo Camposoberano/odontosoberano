@@ -180,7 +180,7 @@ export function TwoFactorSettings() {
                 <div className="bg-slate-50 border rounded-lg p-6 space-y-6 max-w-sm mx-auto">
                    <div className="text-center">
                        <h3 className="font-bold text-lg text-slate-800">Escaneie o QR Code</h3>
-                       <p className="text-sm text-slate-500 mt-1">Abra seu App Autenticador (Google Auth, Authy) e adicione a Odonto PRO escaneando a imagem abaixo.</p>
+                       <p className="text-sm text-slate-500 mt-1">Abra seu App Autenticador (Google Auth, Authy) e adicione o Instituto Belém escaneando a imagem abaixo.</p>
                    </div>
                    
                    <div className="bg-white p-4 rounded-lg flex justify-center w-full mx-auto" dangerouslySetInnerHTML={{ __html: qrCodeData }} />

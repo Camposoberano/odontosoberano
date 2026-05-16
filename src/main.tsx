@@ -12,7 +12,7 @@ const updateSW = registerSW({
     }
   },
   onOfflineReady() {
-    console.log('Odonto PRO está pronto para funcionar offline.');
+    console.log('Instituto Belém está pronto para funcionar offline.');
   },
 });
 

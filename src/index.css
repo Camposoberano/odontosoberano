@@ -2,65 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dental Clinic Management System Design System */
-/* All colors are HSL for perfect theming */
+/* Instituto Belém Design System */
+/* Referência: Simples Dental — Azul #2196F3 + Verde #50AE54 */
 
 @layer base {
   :root {
-    /* Ortovital Brand Colors */
-    --background: 0 0% 98%;
-    --foreground: 0 0% 37%; /* Cinza #5E5E5E */
+    /* Instituto Belém — fundo cinza suave */
+    --background: 0 0% 92%; /* #EBEBEB */
+    --foreground: 0 0% 13%; /* rgba(0,0,0,0.87) */
 
-    /* Cards and surfaces */
+    /* Cards e superfícies — branco */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 37%;
+    --card-foreground: 0 0% 13%;
 
-    /* Popover components */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 37%;
+    --popover-foreground: 0 0% 13%;
 
-    /* Ortovital Orange Primary #F47F3C */
-    --primary: 20 89% 60%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 20 89% 54%;
+    /* Dourado Instituto Belém #f8cc72 — topbar, botões, ativo */
+    --primary: 43 91% 71%;
+    --primary-foreground: 0 0% 1%; /* #010101 preto */
+    --primary-hover: 43 91% 62%;
 
-    /* Ortovital Gray Secondary #5E5E5E */
-    --secondary: 0 0% 37%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-hover: 0 0% 31%;
+    /* Preto Instituto Belém #010101 — secondary */
+    --secondary: 0 0% 1%;
+    --secondary-foreground: 43 91% 71%;
+    --secondary-hover: 0 0% 10%;
 
-    /* Muted elements */
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 47%;
+    --muted-foreground: 0 0% 41%;
 
-    /* Accent colors */
-    --accent: 20 100% 97%; /* Laranja clarinho */
-    --accent-foreground: 0 0% 37%;
+    /* Accent — dourado claríssimo para sidebar ativo */
+    --accent: 43 100% 95%;
+    --accent-foreground: 0 0% 1%;
 
-    /* Status colors */
-    --success: 158 64% 52%;
-    --success-foreground: 0 0% 98%;
+    /* Status */
+    --success: 123 37% 50%;
+    --success-foreground: 0 0% 100%;
     --warning: 48 96% 53%;
-    --warning-foreground: 0 0% 37%;
+    --warning-foreground: 0 0% 13%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs */
     --border: 0 0% 91%;
     --input: 0 0% 91%;
-    --ring: 20 89% 60%;
+    --ring: 207 89% 57%;
 
-    /* Sidebar - Ortovital Theme */
+    /* Sidebar — branco, ativo dourado */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 37%;
-    --sidebar-primary: 20 89% 60%; /* Laranja Ortovital */
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 20 100% 97%;
-    --sidebar-accent-foreground: 0 0% 37%;
+    --sidebar-foreground: 0 0% 41%;
+    --sidebar-primary: 43 91% 71%;
+    --sidebar-primary-foreground: 0 0% 1%;
+    --sidebar-accent: 43 100% 95%;
+    --sidebar-accent-foreground: 0 0% 1%;
     --sidebar-border: 0 0% 91%;
-    --sidebar-ring: 20 89% 60%;
+    --sidebar-ring: 43 91% 71%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
   }
 
   .dark {
@@ -158,20 +155,20 @@
     @apply transition-transform duration-100 ease-in-out active:scale-[0.98];
   }
 
-  /* Orange Premium Theme Utilities */
-  .orange-premium-gradient {
-    background: linear-gradient(135deg, #F47F3C 0%, #FF9D66 100%);
+  /* Instituto Belém — Dourado & Preto */
+  .gold-gradient {
+    background: linear-gradient(135deg, #f8cc72 0%, #f5b942 100%);
   }
 
-  .btn-orange-premium {
-    @apply orange-premium-gradient text-white font-black uppercase tracking-widest 
-           rounded-2xl shadow-lg border-2 border-white/20 transition-all duration-300
-           hover:shadow-[0_8px_30px_rgb(244,127,60,0.4)] hover:scale-105 active:scale-95
-           flex items-center justify-center gap-2 px-6 py-4;
+  .btn-action-gold {
+    @apply bg-[#f8cc72] hover:bg-[#f5b942] text-[#010101] font-semibold
+           rounded-lg shadow transition-all duration-200
+           hover:shadow-md active:scale-95
+           flex items-center justify-center gap-2 px-4 py-2;
   }
 
-  .orange-glow {
-    box-shadow: 0 0 20px rgba(244, 127, 60, 0.3);
+  .gold-glow {
+    box-shadow: 0 0 20px rgba(248, 204, 114, 0.4);
   }
 
   .glass-premium {

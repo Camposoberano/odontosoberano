@@ -222,13 +222,15 @@ export function AppSidebar() {
     <Sidebar className={isCollapsed ? "w-14 glass border-r border-border/50" : "w-64 glass border-r border-border/50"} collapsible="icon">
       <SidebarHeader className="border-b border-border/50 p-2 h-14 sm:h-16 flex items-center">
         <div className="flex items-center gap-3 w-full hover-scale cursor-pointer" onClick={() => navigate("/")}>
-          <div className="w-6 h-6 sm:w-8 sm:h-8 gradient-hero rounded-lg flex items-center justify-center flex-shrink-0 shadow-medical">
-            <Stethoscope className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-          </div>
+          <img
+            src="/orto/logo-ib.jpg"
+            alt="Instituto Belém"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover flex-shrink-0 shadow-md"
+          />
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
               <h2 className="text-base sm:text-lg font-bold font-heading text-foreground truncate">Instituto Belém</h2>
-              <p className="text-xs text-muted-foreground truncate">Sistema de Gestão</p>
+              <p className="text-xs text-muted-foreground truncate">Odontologia Especializada</p>
             </div>
           )}
         </div>
