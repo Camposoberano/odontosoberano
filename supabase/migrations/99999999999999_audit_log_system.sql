@@ -184,9 +184,11 @@ BEGIN
   END IF;
 
   -- Registrar auditoria
+  -- NOTA: TG_TABLE_NAME é tipo `name` em PL/pgSQL; cast explícito necessário pois
+  -- PostgreSQL não faz coerção implícita de `name` para `varchar` na resolução de função.
   PERFORM public.log_audit(
     v_action,
-    TG_TABLE_NAME,
+    TG_TABLE_NAME::VARCHAR,
     v_record_id,
     v_old_data,
     v_new_data

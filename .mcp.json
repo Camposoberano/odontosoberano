@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "n8n": {
+      "type": "http",
+      "url": "https://n8n.jornaldocampo.online/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5N2IxNDVmMi03NjVkLTQwYWUtODNhOS1jMjZiMGFiNWQ3ODgiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6ImM3M2Y4YTlmLTUyMmUtNGJkNC1iMWMxLWUwZDM5ZWNmZTYyZiIsImlhdCI6MTc2NTMwOTYyNn0.WkQdkWCLgkATUlJDV0xmEGPa8jwF555HqVVZb1BOi08"
+      }
+    },
+    "supabase-institutobelem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase",
+        "--supabase-url",
+        "http://supabasekong-fqy9q0izcz6njphhpeoxgepz.187.127.28.228.sslip.io",
+        "--service-role-key",
+        "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3ODk1Mzc0MCwiZXhwIjo0OTM0NjI3MzQwLCJyb2xlIjoic2VydmljZV9yb2xlIn0.A_qxjhvNBYROjpT8Pwu7lOxGyZtN-ByU18n-WZRxjG4"
+      ]
+    }
+  }
+}
