@@ -92,27 +92,6 @@ export function CatalogoProcedimentoForm({ open, onOpenChange, onSubmit, procedi
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="codigo_tuss">Código TUSS</Label>
-              <Input
-                id="codigo_tuss"
-                value={form.codigo_tuss ?? ""}
-                onChange={(e) => setForm(f => ({ ...f, codigo_tuss: e.target.value }))}
-                placeholder="Ex: 81000135"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="codigo_vrpo">Código VRPO</Label>
-              <Input
-                id="codigo_vrpo"
-                value={form.codigo_vrpo ?? ""}
-                onChange={(e) => setForm(f => ({ ...f, codigo_vrpo: e.target.value }))}
-                placeholder="Ex: 010101"
-              />
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="preco">Preço Sugerido (R$)</Label>
             <Input

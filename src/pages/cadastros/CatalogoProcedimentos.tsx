@@ -28,9 +28,7 @@ export function CatalogoProcedimentos() {
       const matchCat = categoria === TODAS || p.categoria === categoria;
       const matchSearch =
         !term ||
-        p.nome.toLowerCase().includes(term) ||
-        (p.codigo_tuss ?? "").toLowerCase().includes(term) ||
-        (p.codigo_vrpo ?? "").toLowerCase().includes(term);
+        p.nome.toLowerCase().includes(term);
       return matchCat && matchSearch;
     });
   }, [todos, search, categoria]);
@@ -63,7 +61,6 @@ export function CatalogoProcedimentos() {
       className: "hidden sm:table-cell",
       render: (v: string) => <Badge variant="outline" className="text-xs">{v}</Badge>,
     },
-    { key: "codigo_tuss" as const, header: "TUSS", className: "hidden md:table-cell text-muted-foreground text-sm" },
     {
       key: "preco_sugerido" as const,
       header: "Preço",
@@ -97,7 +94,6 @@ export function CatalogoProcedimentos() {
         />
       </div>
       <div className="flex gap-4 text-sm text-muted-foreground">
-        {p.codigo_tuss && <span>TUSS: {p.codigo_tuss}</span>}
         <span className="font-mono">{fmt(p.preco_sugerido)}</span>
       </div>
     </div>
@@ -166,7 +162,7 @@ export function CatalogoProcedimentos() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder="Buscar por nome ou código TUSS..."
+                  placeholder="Buscar por nome..."
                   className="pl-10"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}

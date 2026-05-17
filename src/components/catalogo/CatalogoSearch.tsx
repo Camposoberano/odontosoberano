@@ -110,8 +110,6 @@ export function CatalogoSearch({ selectedId, onSelect, className }: CatalogoSear
                         <span className="font-extrabold text-base text-slate-800">{item.nome}</span>
                         <span className="text-[11px] font-black text-primary/60 uppercase tracking-tighter">
                           {item.categoria}
-                          {item.codigo_tuss ? ` • TUSS: ${item.codigo_tuss}` : ""}
-                          {item.codigo_vrpo ? ` • VRPO: ${item.codigo_vrpo}` : ""}
                         </span>
                       </div>
                     </div>
