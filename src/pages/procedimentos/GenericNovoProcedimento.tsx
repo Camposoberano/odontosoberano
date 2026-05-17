@@ -14,7 +14,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FormularioProcedimentoLayout } from '@/components/procedimentos/FormularioProcedimentoLayout';
-import { ClipboardList } from 'lucide-react';
+import { CatalogoSearch } from '@/components/catalogo/CatalogoSearch';
+import { ProcedimentoCatalogo } from '@/hooks/useProcedimentosCatalogo';
+import { ClipboardList, BookOpen } from 'lucide-react';
 import { addDays } from 'date-fns';
 
 export default function GenericNovoProcedimento() {
@@ -39,7 +41,19 @@ export default function GenericNovoProcedimento() {
     dente: '',
     marca_dente: '',
     observacoes: '',
+    procedimento_catalogo_id: '',
   });
+
+  const handleCatalogoSelect = (item: ProcedimentoCatalogo | null) => {
+    setFormData(prev => ({
+      ...prev,
+      procedimento_catalogo_id: item?.id ?? '',
+      // Pré-preenche valor_lab com preço sugerido apenas se ainda não preenchido
+      valor_lab: !prev.valor_lab && item?.preco_sugerido
+        ? String(item.preco_sugerido)
+        : prev.valor_lab,
+    }));
+  };
 
   // Geração automática de número inicial baseada no tipo para o input manual
   useEffect(() => {
@@ -91,6 +105,17 @@ export default function GenericNovoProcedimento() {
       tipoProcedimento={tipo}
       hideTechnicalSections={true}
     >
+      <div className="space-y-3">
+        <Label className="text-sm uppercase tracking-widest opacity-60 font-black flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-primary" /> Procedimento — Catálogo TUSS
+          <span className="text-xs normal-case opacity-50 font-normal">(opcional)</span>
+        </Label>
+        <CatalogoSearch
+          selectedId={formData.procedimento_catalogo_id || undefined}
+          onSelect={handleCatalogoSelect}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-black">
         <div className="space-y-3">
           <Label className="text-sm uppercase tracking-widest opacity-60">Arcada</Label>
