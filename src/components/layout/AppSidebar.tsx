@@ -71,6 +71,7 @@ const cadastroItems = [
   { title: "Laboratório", url: "/cadastros/laboratorio", icon: FlaskConical },
   { title: "Convênio / Planos", url: "/cadastros/convenios", icon: Shield },
   { title: "Tabela de Preços", url: "/cadastros/honorarios", icon: Calculator },
+  { title: "Catálogo de Procedimentos", url: "/cadastros/catalogo", icon: BookOpen },
 ];
 
 const financeiroItems = [
@@ -108,13 +109,17 @@ const procediventoProtocoloItems = [
 const procediventoFixaItems = [
   { title: "Fixa Provisória", url: "/procedimentos/fixa", icon: ClipboardList },
   { title: "Fixa de Cerâmica", url: "/procedimentos/fixa-ceramica", icon: ClipboardList },
+  { title: "Cerâmica Ortovital", url: "/procedimentos/ceramica", icon: ClipboardList },
   { title: "Fixa Impressa", url: "/procedimentos/fixa-impressa", icon: ClipboardList },
+  { title: "Resina Impressa", url: "/procedimentos/resina-impressa", icon: ClipboardList },
   { title: "Adesiva", url: "/procedimentos/adesiva", icon: ClipboardList },
+  { title: "Provisório/Adesiva", url: "/procedimentos/provisorio", icon: ClipboardList },
   { title: "Restauração Indireta", url: "/procedimentos/restauracao-indireta", icon: ClipboardList },
 ];
 
 const procediventoEsteticaItems = [
   { title: "Placa de Bruxismo", url: "/procedimentos/bruxismo", icon: Shield },
+  { title: "Placa (Nova)", url: "/procedimentos/placa", icon: Shield },
   { title: "Clareamento", url: "/procedimentos/clareamento", icon: TrendingUp },
 ];
 
@@ -171,8 +176,8 @@ export function AppSidebar() {
   
   const [isRemovivelOpen, setIsRemovivelOpen] = useState(currentPath.includes("/procedimentos/ppr") || currentPath.includes("/procedimentos/pt") || currentPath.includes("/procedimentos/pm"));
   const [isProtocoloOpen, setIsProtocoloOpen] = useState(currentPath.includes("/procedimentos/protocolo"));
-  const [isFixaOpen, setIsFixaOpen] = useState(currentPath.includes("/procedimentos/fixa") || currentPath.includes("/procedimentos/adesiva") || currentPath.includes("/procedimentos/restauracao"));
-  const [isEsteticaOpen, setIsEsteticaOpen] = useState(currentPath.includes("/procedimentos/bruxismo") || currentPath.includes("/procedimentos/clareamento"));
+  const [isFixaOpen, setIsFixaOpen] = useState(currentPath.includes("/procedimentos/fixa") || currentPath.includes("/procedimentos/adesiva") || currentPath.includes("/procedimentos/restauracao") || currentPath.includes("/procedimentos/ceramica") || currentPath.includes("/procedimentos/resina-impressa") || currentPath.includes("/procedimentos/provisorio"));
+  const [isEsteticaOpen, setIsEsteticaOpen] = useState(currentPath.includes("/procedimentos/bruxismo") || currentPath.includes("/procedimentos/clareamento") || currentPath.includes("/procedimentos/placa"));
   const [isLabExternoOpen, setIsLabExternoOpen] = useState(currentPath.includes("/procedimentos/lab-externo") || currentPath.includes("/procedimentos/coroa-implante") || currentPath.includes("/procedimentos/fixa-zirconia"));
 
   const { signOut } = useAuth();

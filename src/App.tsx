@@ -30,6 +30,7 @@ const ControleEstoque = React.lazy(() => import("@/pages/cadastros/ControleEstoq
 const Laboratorio = React.lazy(() => import("@/pages/cadastros/Laboratorio").then(m => ({ default: m.Laboratorio })));
 const Convenios = React.lazy(() => import("@/pages/cadastros/Convenios").then(m => ({ default: m.Convenios })));
 const TabelaHonorarios = React.lazy(() => import("@/pages/cadastros/TabelaHonorarios").then(m => ({ default: m.TabelaHonorarios })));
+const CatalogoProcedimentos = React.lazy(() => import("@/pages/cadastros/CatalogoProcedimentos").then(m => ({ default: m.CatalogoProcedimentos })));
 const ContasPagar = React.lazy(() => import("@/pages/financeiro/ContasPagar"));
 const ContasReceber = React.lazy(() => import("@/pages/financeiro/ContasReceber"));
 const FluxoCaixa = React.lazy(() => import("@/pages/financeiro/FluxoCaixa"));
@@ -111,6 +112,7 @@ const AnimatedRoutes = () => {
             <Route path="/cadastros/laboratorio" element={<ProtectedRoute><AnimatedRoute><Laboratorio /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/convenios" element={<ProtectedRoute><AnimatedRoute><Convenios /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/honorarios" element={<ProtectedRoute><AnimatedRoute><TabelaHonorarios /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/cadastros/catalogo" element={<ProtectedRoute><AnimatedRoute><CatalogoProcedimentos /></AnimatedRoute></ProtectedRoute>} />
 
             {/* Procedimentos - Roteamento Genérico para os 15 Tipos */}
             <Route path="/procedimentos" element={<ProtectedRoute><TodosProcedimentos /></ProtectedRoute>} />
