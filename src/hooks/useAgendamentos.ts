@@ -59,7 +59,7 @@ export const useAgendamentos = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const pacienteIds = [...new Set(data.map(a => a.paciente_id))];
+        const pacienteIds = [...new Set(data.map(a => a.paciente_id).filter(Boolean))];
         const dentistaIds = [...new Set(data.map(a => a.dentista_id).filter(Boolean))];
         const proteticoIds = [...new Set(data.map(a => a.protetico_id).filter(Boolean))];
         const convenioIds = [...new Set(data.map(a => a.convenio_id).filter(Boolean))];
