@@ -48,6 +48,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrdemServico, useOrdensServico, STATUS_OS_CONFIG, type StatusOS } from "@/hooks/useOrdensServico";
 import { useProteticos } from "@/hooks/useProteticos";
+import { calcularPrazoOS, EXPIRACAO_CONFIG } from "@/utils/orcamentoUtils";
+import { AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -185,6 +187,19 @@ export default function OrdemServicoDetalhe() {
             )}
           </div>
         </div>
+
+        {/* Prazo alert */}
+        {(() => {
+          const exp = calcularPrazoOS(os.prazo, os.status);
+          if (!exp || exp.status === "ok") return null;
+          const cfgExp = EXPIRACAO_CONFIG[exp.status];
+          return (
+            <div className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium ${cfgExp.alertClass}`}>
+              <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${cfgExp.iconClass}`} />
+              <span>Prazo: {cfgExp.label(exp.diasRestantes)}</span>
+            </div>
+          );
+        })()}
 
         <Separator />
 

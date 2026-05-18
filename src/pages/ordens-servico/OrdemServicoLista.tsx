@@ -40,6 +40,7 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrdensServico, STATUS_OS_CONFIG, type StatusOS } from "@/hooks/useOrdensServico";
+import { calcularPrazoOS, EXPIRACAO_CONFIG } from "@/utils/orcamentoUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -67,6 +68,10 @@ export default function OrdemServicoLista() {
     pendentes: ordensServico.filter((o) => o.status === "pendente").length,
     em_andamento: ordensServico.filter((o) => o.status === "em_andamento").length,
     concluidas: ordensServico.filter((o) => o.status === "concluido" || o.status === "entregue").length,
+    prazo_critico: ordensServico.filter((o) => {
+      const exp = calcularPrazoOS(o.prazo, o.status);
+      return exp && (exp.status === "critico" || exp.status === "expirado");
+    }).length,
   };
 
   const handleDeletar = () => {
@@ -89,12 +94,13 @@ export default function OrdemServicoLista() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { label: "Total", value: totais.total, color: "text-foreground" },
             { label: "Pendentes", value: totais.pendentes, color: "text-yellow-600" },
             { label: "Em Andamento", value: totais.em_andamento, color: "text-blue-600" },
             { label: "Concluídas", value: totais.concluidas, color: "text-green-600" },
+            { label: "Prazo crítico", value: totais.prazo_critico, color: "text-red-600" },
           ].map((kpi) => (
             <div key={kpi.label} className="rounded-lg border bg-card p-4">
               <p className="text-xs text-muted-foreground">{kpi.label}</p>
@@ -171,9 +177,21 @@ export default function OrdemServicoLista() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {os.prazo
-                          ? format(new Date(os.prazo + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })
-                          : "—"}
+                        {(() => {
+                          if (!os.prazo) return "—";
+                          const exp = calcularPrazoOS(os.prazo, os.status);
+                          const dateStr = format(new Date(os.prazo + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR });
+                          if (!exp || exp.status === "ok") return dateStr;
+                          const cfg2 = EXPIRACAO_CONFIG[exp.status];
+                          return (
+                            <span className="flex flex-col gap-0.5">
+                              <span>{dateStr}</span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${cfg2.badgeClass}`}>
+                                {cfg2.label(exp.diasRestantes)}
+                              </span>
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         {os.orcamento

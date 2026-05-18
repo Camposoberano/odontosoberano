@@ -57,3 +57,24 @@ export const EXPIRACAO_CONFIG = {
     iconClass: "text-green-500",
   },
 } satisfies Record<ExpiracaoStatus, { label: (d: number) => string; badgeClass: string; alertClass: string; iconClass: string }>;
+
+const OS_STATUSES_FECHADOS = ["concluido", "entregue", "cancelado"];
+
+export function calcularPrazoOS(
+  prazo: string | null,
+  osStatus: string
+): ExpiracaoInfo | null {
+  if (!prazo || OS_STATUSES_FECHADOS.includes(osStatus)) return null;
+
+  const dataExpiracao = new Date(prazo + "T00:00:00");
+  const hoje = startOfDay(new Date());
+  const diasRestantes = differenceInDays(startOfDay(dataExpiracao), hoje);
+
+  let status: ExpiracaoStatus;
+  if (diasRestantes < 0) status = "expirado";
+  else if (diasRestantes <= 1) status = "critico";
+  else if (diasRestantes <= 3) status = "expirando";
+  else status = "ok";
+
+  return { dataExpiracao, diasRestantes, status };
+}
