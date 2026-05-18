@@ -38,6 +38,7 @@ const ControleCheques = React.lazy(() => import("@/pages/financeiro/ControleCheq
 const GanhoDentista = React.lazy(() => import("@/pages/relatorios/GanhoDentista"));
 const RelatorioFinanceiro = React.lazy(() => import("@/pages/relatorios/RelatorioFinanceiro"));
 const RelatorioComissao = React.lazy(() => import("@/pages/relatorios/RelatorioComissao"));
+const RelatorioOrcamentos = React.lazy(() => import("@/pages/relatorios/RelatorioOrcamentos"));
 const EfetuarPagamento = React.lazy(() => import("@/pages/pagamentos/EfetuarPagamento").then(m => ({ default: m.EfetuarPagamento })));
 const ManuaisCodigos = React.lazy(() => import("@/pages/utilitarios/ManuaisCodigos"));
 const ContatosUteis = React.lazy(() => import("@/pages/utilitarios/ContatosUteis"));
@@ -59,6 +60,8 @@ const PainelProducao = React.lazy(() => import("@/pages/analises/PainelProducao"
 const ListaOrcamentos = React.lazy(() => import("@/pages/orcamentos/ListaOrcamentos"));
 const NovoOrcamento = React.lazy(() => import("@/pages/orcamentos/NovoOrcamento"));
 const OrcamentoDetalhe = React.lazy(() => import("@/pages/orcamentos/OrcamentoDetalhe"));
+const OrdemServicoLista = React.lazy(() => import("@/pages/ordens-servico/OrdemServicoLista"));
+const OrdemServicoDetalhe = React.lazy(() => import("@/pages/ordens-servico/OrdemServicoDetalhe"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -131,6 +134,7 @@ const AnimatedRoutes = () => {
             <Route path="/relatorios/ganho-dentista" element={<ProtectedRoute><AnimatedRoute><GanhoDentista /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/relatorios/financeiro" element={<ProtectedRoute><AnimatedRoute><RelatorioFinanceiro /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/relatorios/comissao" element={<ProtectedRoute><AnimatedRoute><RelatorioComissao /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/orcamentos" element={<ProtectedRoute><AnimatedRoute><RelatorioOrcamentos /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/analises/producao" element={<ProtectedRoute><AnimatedRoute><PainelProducao /></AnimatedRoute></ProtectedRoute>} />
             
             {/* Orçamentos Routes */}
@@ -138,6 +142,10 @@ const AnimatedRoutes = () => {
             <Route path="/orcamentos/novo" element={<ProtectedRoute><AnimatedRoute><NovoOrcamento /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/orcamentos/:id" element={<ProtectedRoute><AnimatedRoute><OrcamentoDetalhe /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/orcamentos/:id/editar" element={<ProtectedRoute><AnimatedRoute><NovoOrcamento /></AnimatedRoute></ProtectedRoute>} />
+
+            {/* Ordens de Serviço Routes */}
+            <Route path="/ordens-servico" element={<ProtectedRoute><AnimatedRoute><OrdemServicoLista /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/ordens-servico/:id" element={<ProtectedRoute><AnimatedRoute><OrdemServicoDetalhe /></AnimatedRoute></ProtectedRoute>} />
 
             {/* Pagamentos Routes */}
             <Route path="/pagamentos/efetuar-pagamento" element={<ProtectedRoute><AnimatedRoute><EfetuarPagamento /></AnimatedRoute></ProtectedRoute>} />

@@ -21,9 +21,14 @@ export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentCl
   }
 
   const getAppointmentsForDayAndTime = (day: Date, time: string) => {
+    const [slotHour, slotMin] = time.split(":").map(Number);
+    const slotStart = slotHour * 60 + slotMin;
+    const slotEnd = slotStart + 30;
     return appointments.filter(apt => {
-        const aptDate = new Date(apt.data_agendamento);
-        return format(aptDate, "yyyy-MM-dd") === format(day, "yyyy-MM-dd") && format(aptDate, "HH:mm") === time;
+      const aptDate = new Date(apt.data_agendamento);
+      if (format(aptDate, "yyyy-MM-dd") !== format(day, "yyyy-MM-dd")) return false;
+      const aptMin = aptDate.getHours() * 60 + aptDate.getMinutes();
+      return aptMin >= slotStart && aptMin < slotEnd;
     });
   };
 

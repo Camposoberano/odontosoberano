@@ -69,19 +69,21 @@ export function DashboardHeader() {
     setSearchOpen(false);
   };
     return (
-      <header className="h-14 sm:h-16 border-b border-border/50 glass sticky top-0 z-10 transition-all duration-200">
+      <header className="h-12 sm:h-14 md:h-16 border-b border-border/50 glass sticky top-0 z-10 transition-all duration-200">
         <div className="flex items-center justify-between h-full px-3 sm:px-4 md:px-6">
           <div className="flex items-center gap-2 sm:gap-4">
-            <SidebarTrigger className="hover-scale" />
+            <SidebarTrigger className="hover-scale hidden md:flex" />
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
-              className="gap-2 hover-scale"
+              className="gap-2 hover-scale hidden md:flex"
             >
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Menu Principal</span>
             </Button>
+            {/* Título mobile */}
+            <span className="md:hidden font-bold text-base text-foreground">Odonto PRO</span>
             <div className="hidden md:flex items-center gap-2 max-w-md w-full">
               <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                 <PopoverTrigger asChild>
@@ -153,7 +155,68 @@ export function DashboardHeader() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
+            {/* Busca mobile */}
+            <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden relative hover:bg-muted/50">
+                  <Search className="w-5 h-5 text-gray-600" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96 p-0 mx-4" align="end">
+                <div className="p-3 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <input
+                      autoFocus
+                      placeholder="Buscar pacientes, agendamentos..."
+                      className="w-full pl-9 pr-4 py-2 text-sm bg-muted/50 rounded-md border-0 outline-none focus:ring-1 focus:ring-primary"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setSearchOpen(true);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : results.length === 0 ? (
+                    <div className="p-4 text-sm text-muted-foreground text-center">
+                      {searchQuery.length >= 2 ? "Nenhum resultado" : "Digite ao menos 2 caracteres"}
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {results.map((result) => (
+                        <button
+                          key={result.id}
+                          onClick={() => handleResultClick(result)}
+                          className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-start gap-3 border-b border-border last:border-0"
+                        >
+                          <div className="mt-0.5">
+                            {result.type === "paciente" ? (
+                              <Users className="w-4 h-4 text-primary" />
+                            ) : (
+                              <Calendar className="w-4 h-4 text-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{result.title}</div>
+                            {result.subtitle && (
+                              <div className="text-xs text-muted-foreground truncate">{result.subtitle}</div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {/* Notificações */}
             <Popover open={notifOpen} onOpenChange={setNotifOpen}>
               <PopoverTrigger asChild>
@@ -206,7 +269,7 @@ export function DashboardHeader() {
                   )}
                 </div>
                 <div className="p-2 border-t text-center bg-muted/20">
-                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground w-full">
+                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground w-full" onClick={() => setNotifOpen(false)}>
                     Marcar todas como lidas
                   </Button>
                 </div>

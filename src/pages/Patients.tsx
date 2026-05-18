@@ -123,6 +123,7 @@ export default function Patients() {
   const filteredPatients = pacientes.filter(patient => {
     const searchLower = (searchTerm || '').toLowerCase();
     const matchesSearch = (patient.nome || '').toLowerCase().includes(searchLower) ||
+                         (patient.apelido || '').toLowerCase().includes(searchLower) ||
                          (patient.email || '').toLowerCase().includes(searchLower) ||
                          (patient.telefone || '').includes(searchTerm);
     
@@ -178,15 +179,18 @@ export default function Patients() {
 
   // Definir colunas da tabela
   const columns = [
-    { 
-      key: 'nome' as keyof Paciente, 
+    {
+      key: 'nome' as keyof Paciente,
       header: 'Nome',
       render: (value: any, paciente: Paciente) => (
         <div className="flex items-center space-x-3">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
             <User className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-medium">{paciente.nome}</span>
+          <div>
+            <p className="font-medium">{paciente.nome}{paciente.apelido ? <span className="text-muted-foreground font-normal"> ({paciente.apelido})</span> : null}</p>
+            {paciente.area_tratamento && <p className="text-xs text-muted-foreground">{paciente.area_tratamento}</p>}
+          </div>
         </div>
       )
     },
@@ -238,10 +242,13 @@ export default function Patients() {
             <User className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="font-semibold">{paciente.nome}</p>
-            <Badge className={paciente.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-              {paciente.status}
-            </Badge>
+            <p className="font-semibold">{paciente.nome}{paciente.apelido ? <span className="text-muted-foreground font-normal text-sm"> ({paciente.apelido})</span> : null}</p>
+            <div className="flex items-center gap-2 flex-wrap mt-0.5">
+              <Badge className={paciente.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                {paciente.status}
+              </Badge>
+              {paciente.area_tratamento && <span className="text-xs text-muted-foreground">{paciente.area_tratamento}</span>}
+            </div>
           </div>
         </div>
         {renderActions(paciente)}

@@ -207,7 +207,8 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
   
-  const getNavClass = (_: { isActive: boolean }) => "hover:bg-muted/50";
+  const getNavClass = ({ isActive }: { isActive: boolean }) =>
+    isActive ? "bg-primary/10 text-primary font-semibold" : "hover:bg-muted/50 text-sidebar-foreground";
 
   const getSubmenuNavClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-primary/10 text-primary font-medium ml-4" : "text-sidebar-foreground hover:bg-muted/50 ml-4";
@@ -297,6 +298,22 @@ export function AppSidebar() {
                   <NavLink to="/orcamentos" className={getNavClass}>
                     <FileText className="w-5 h-5 text-teal-500" />
                     {!isCollapsed && <span className="text-teal-600 font-medium">Orçamentos</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className={menuButtonClass}>
+                  <NavLink to="/relatorios/orcamentos" className={getNavClass}>
+                    <BarChart3 className="w-5 h-5 text-teal-400" />
+                    {!isCollapsed && <span className="text-teal-600 font-medium">Relatório Orçamentos</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className={menuButtonClass}>
+                  <NavLink to="/ordens-servico" className={getNavClass}>
+                    <ClipboardList className="w-5 h-5 text-orange-500" />
+                    {!isCollapsed && <span className="text-orange-600 font-medium">OS de Laboratório</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

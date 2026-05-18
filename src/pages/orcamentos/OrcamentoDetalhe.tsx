@@ -32,9 +32,14 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrcamentoPDFTemplate } from "@/components/orcamentos/OrcamentoPDFTemplate";
 import { useOrcamento, useOrcamentos, StatusOrcamento } from "@/hooks/useOrcamentos";
+import { useOrdensServico } from "@/hooks/useOrdensServico";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { calcularExpiracao, EXPIRACAO_CONFIG } from "@/utils/orcamentoUtils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { AlertTriangle } from "lucide-react";
 
 const STATUS_CONFIG: Record<
   StatusOrcamento,
@@ -55,6 +60,7 @@ export default function OrcamentoDetalhe() {
   const navigate = useNavigate();
   const pdfRef = useRef<HTMLDivElement>(null);
   const { mudarStatus, atualizar, duplicar } = useOrcamentos();
+  const { criarOSFromOrcamento } = useOrdensServico();
   const { data: orcamento, isLoading } = useOrcamento(id);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -184,8 +190,21 @@ export default function OrcamentoDetalhe() {
       return;
     }
 
+    // ── Criar OS de laboratório ───────────────────────────────────────────
+    let osNumero: number | null = null;
+    try {
+      const os = await criarOSFromOrcamento.mutateAsync({
+        orcamento,
+        itens: orcamento.orcamento_itens ?? [],
+      });
+      osNumero = os.numero_os;
+    } catch {
+      // não-bloqueante
+    }
+
     // ── Atualizar odontograma do paciente ─────────────────────────────────
     const itensComDente = (orcamento.orcamento_itens ?? []).filter((i) => i.dente_numero);
+    const osSuffix = osNumero ? ` · OS #${osNumero} criada` : "";
 
     if (itensComDente.length > 0 && orcamento.paciente_id) {
       try {
@@ -223,19 +242,19 @@ export default function OrcamentoDetalhe() {
 
         toast({
           title: "Orçamento aprovado!",
-          description: `${parcelas} conta(s) a receber criada(s) · Odontograma atualizado (${itensComDente.length} dente(s))`,
+          description: `${parcelas} conta(s) a receber criada(s) · Odontograma atualizado (${itensComDente.length} dente(s))${osSuffix}`,
         });
       } catch {
         toast({
           title: "Orçamento aprovado!",
-          description: `${parcelas} conta(s) a receber criada(s) · Erro ao atualizar odontograma`,
+          description: `${parcelas} conta(s) a receber criada(s) · Erro ao atualizar odontograma${osSuffix}`,
           variant: "destructive",
         });
       }
     } else {
       toast({
         title: "Orçamento aprovado!",
-        description: `${parcelas} conta(s) a receber criada(s)`,
+        description: `${parcelas} conta(s) a receber criada(s)${osSuffix}`,
       });
     }
   };
@@ -308,6 +327,7 @@ export default function OrcamentoDetalhe() {
 
   const cfg = STATUS_CONFIG[orcamento.status] ?? STATUS_CONFIG.rascunho;
   const itens = orcamento.orcamento_itens ?? [];
+  const expiracao = calcularExpiracao(orcamento.created_at, orcamento.validade_dias, orcamento.status);
 
   return (
     <DashboardLayout>
@@ -342,6 +362,22 @@ export default function OrcamentoDetalhe() {
             </Button>
           </div>
         </div>
+
+        {/* Banner de expiração */}
+        {expiracao && expiracao.status !== "ok" && (() => {
+          const c = EXPIRACAO_CONFIG[expiracao.status];
+          return (
+            <div className={`flex items-center gap-3 p-3 rounded-lg border ${c.alertClass}`}>
+              <AlertTriangle className={`w-5 h-5 shrink-0 ${c.iconClass}`} />
+              <div className="text-sm">
+                <span className="font-bold">{c.label(expiracao.diasRestantes)}</span>
+                {" — "}
+                vencimento em {format(expiracao.dataExpiracao, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}.
+                {expiracao.status === "expirado" && " Considere renovar ou atualizar o status."}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Ações */}
         <div className="flex flex-wrap gap-2">
