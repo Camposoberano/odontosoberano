@@ -64,7 +64,7 @@ export default function OrdemServicoDetalhe() {
   const navigate = useNavigate();
   const { data: os, isLoading } = useOrdemServico(id);
   const { mudarStatus, atualizar } = useOrdensServico();
-  const { proteticos } = useProteticos();
+  const { data: proteticos = [] } = useProteticos();
 
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({
