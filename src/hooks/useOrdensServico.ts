@@ -126,6 +126,32 @@ export function useOrdensServico() {
     },
   });
 
+  const atualizar = useMutation({
+    mutationFn: async ({
+      id,
+      ...campos
+    }: {
+      id: string;
+      protetico_id?: number | null;
+      prazo?: string | null;
+      cor_dente?: string | null;
+      observacoes?: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("ordens_servico")
+        .update({ ...campos, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast({ title: "OS atualizada" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao atualizar OS", description: err.message, variant: "destructive" });
+    },
+  });
+
   const mudarStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: StatusOS }) => {
       const { error } = await supabase
@@ -161,6 +187,7 @@ export function useOrdensServico() {
     ordensServico: lista.data ?? [],
     isLoading: lista.isLoading,
     criarOSFromOrcamento,
+    atualizar,
     mudarStatus,
     deletar,
   };

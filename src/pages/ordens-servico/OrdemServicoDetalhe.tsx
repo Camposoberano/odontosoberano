@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -7,9 +8,13 @@ import {
   Truck,
   Play,
   FileText,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -24,15 +29,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrdemServico, useOrdensServico, STATUS_OS_CONFIG, type StatusOS } from "@/hooks/useOrdensServico";
+import { useProteticos } from "@/hooks/useProteticos";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const PROXIMOS_STATUS: Partial<Record<StatusOS, { next: StatusOS; label: string; icon: React.ElementType }>> = {
-  pendente:    { next: "em_andamento", label: "Iniciar trabalho",    icon: Play },
+  pendente:    { next: "em_andamento", label: "Iniciar trabalho",     icon: Play },
   em_andamento:{ next: "concluido",    label: "Marcar como concluído", icon: CheckCircle2 },
   concluido:   { next: "entregue",     label: "Marcar como entregue", icon: Truck },
 };
@@ -41,7 +61,41 @@ export default function OrdemServicoDetalhe() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: os, isLoading } = useOrdemServico(id);
-  const { mudarStatus } = useOrdensServico();
+  const { mudarStatus, atualizar } = useOrdensServico();
+  const { proteticos } = useProteticos();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [form, setForm] = useState({
+    protetico_id: "" as string,
+    prazo: "",
+    cor_dente: "",
+    observacoes: "",
+  });
+
+  const abrirEdit = () => {
+    if (!os) return;
+    setForm({
+      protetico_id: os.protetico_id ? String(os.protetico_id) : "",
+      prazo: os.prazo ?? "",
+      cor_dente: os.cor_dente ?? "",
+      observacoes: os.observacoes ?? "",
+    });
+    setEditOpen(true);
+  };
+
+  const salvarEdit = () => {
+    if (!os) return;
+    atualizar.mutate(
+      {
+        id: os.id,
+        protetico_id: form.protetico_id ? Number(form.protetico_id) : null,
+        prazo: form.prazo || null,
+        cor_dente: form.cor_dente || null,
+        observacoes: form.observacoes || null,
+      },
+      { onSuccess: () => setEditOpen(false) }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -82,7 +136,7 @@ export default function OrdemServicoDetalhe() {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl">
-        {/* Header */}
+        {/* Back */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/ordens-servico")}>
             <ChevronLeft className="w-4 h-4 mr-1" />
@@ -90,6 +144,7 @@ export default function OrdemServicoDetalhe() {
           </Button>
         </div>
 
+        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <ClipboardList className="w-7 h-7 text-orange-500" />
@@ -113,6 +168,10 @@ export default function OrdemServicoDetalhe() {
                 </Link>
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={abrirEdit}>
+              <Pencil className="w-4 h-4 mr-1" />
+              Editar
+            </Button>
             {proximoStatus && (
               <Button
                 size="sm"
@@ -220,6 +279,77 @@ export default function OrdemServicoDetalhe() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar OS #{os.numero_os}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>Protético</Label>
+              <Select
+                value={form.protetico_id}
+                onValueChange={(v) => setForm((f) => ({ ...f, protetico_id: v === "_none" ? "" : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar protético..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Nenhum</SelectItem>
+                  {proteticos.filter((p) => p.ativo).map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Prazo</Label>
+              <Input
+                type="date"
+                value={form.prazo}
+                onChange={(e) => setForm((f) => ({ ...f, prazo: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Cor do dente</Label>
+              <Input
+                placeholder="Ex: A2, B1..."
+                value={form.cor_dente}
+                onChange={(e) => setForm((f) => ({ ...f, cor_dente: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Observações</Label>
+              <Textarea
+                rows={3}
+                value={form.observacoes}
+                onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={salvarEdit}
+              disabled={atualizar.isPending}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
