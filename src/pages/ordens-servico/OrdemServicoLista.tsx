@@ -40,6 +40,7 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrdensServico, STATUS_OS_CONFIG, type StatusOS } from "@/hooks/useOrdensServico";
+import { useProteticos } from "@/hooks/useProteticos";
 import { calcularPrazoOS, EXPIRACAO_CONFIG } from "@/utils/orcamentoUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -55,13 +56,14 @@ const STATUS_ICONS: Record<StatusOS, React.ElementType> = {
 export default function OrdemServicoLista() {
   const navigate = useNavigate();
   const { ordensServico, isLoading, deletar } = useOrdensServico();
+  const { data: proteticos = [] } = useProteticos();
   const [filtroStatus, setFiltroStatus] = useState<StatusOS | "todos">("todos");
+  const [filtroProtetico, setFiltroProtetico] = useState<string>("todos");
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
 
-  const filtradas =
-    filtroStatus === "todos"
-      ? ordensServico
-      : ordensServico.filter((os) => os.status === filtroStatus);
+  const filtradas = ordensServico
+    .filter((os) => filtroStatus === "todos" || os.status === filtroStatus)
+    .filter((os) => filtroProtetico === "todos" || String(os.protetico_id ?? "") === filtroProtetico);
 
   const totais = {
     total: ordensServico.length,
@@ -124,6 +126,17 @@ export default function OrdemServicoLista() {
                 <SelectItem key={s} value={s}>
                   {STATUS_OS_CONFIG[s].label}
                 </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filtroProtetico} onValueChange={setFiltroProtetico}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por protético" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os protéticos</SelectItem>
+              {proteticos.filter((p) => p.ativo).map((p) => (
+                <SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>
               ))}
             </SelectContent>
           </Select>
