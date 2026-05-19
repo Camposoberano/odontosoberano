@@ -304,9 +304,9 @@ export default function Appointments() {
               
               <TabsContent value="day" className="mt-0">
                  <motion.div variants={itemVariants}>
-                    <AgendaDayView 
+                    <AgendaDayView
                       selectedDate={selectedDate}
-                      appointments={filteredAgendamentos}
+                      appointments={selectedDayAppointments}
                       onAppointmentClick={handleShowDetail}
                       onAddClick={handleAddClick}
                     />
