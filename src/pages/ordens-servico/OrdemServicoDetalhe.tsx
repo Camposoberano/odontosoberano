@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -9,6 +9,7 @@ import {
   Play,
   FileText,
   Pencil,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OrdemServicoPDFTemplate } from "@/components/ordens-servico/OrdemServicoPDFTemplate";
+import { useToast } from "@/hooks/use-toast";
 import { useOrdemServico, useOrdensServico, STATUS_OS_CONFIG, type StatusOS } from "@/hooks/useOrdensServico";
 import { useProteticos } from "@/hooks/useProteticos";
 import { calcularPrazoOS, EXPIRACAO_CONFIG } from "@/utils/orcamentoUtils";
@@ -65,8 +68,11 @@ export default function OrdemServicoDetalhe() {
   const { data: os, isLoading } = useOrdemServico(id);
   const { mudarStatus, atualizar } = useOrdensServico();
   const { data: proteticos = [] } = useProteticos();
+  const { toast } = useToast();
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const [editOpen, setEditOpen] = useState(false);
+  const [gerandoPDF, setGerandoPDF] = useState(false);
   const [form, setForm] = useState({
     protetico_id: "" as string,
     prazo: "",
@@ -97,6 +103,44 @@ export default function OrdemServicoDetalhe() {
       },
       { onSuccess: () => setEditOpen(false) }
     );
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!os || !pdfRef.current) return;
+    setGerandoPDF(true);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+
+      const el = pdfRef.current;
+      el.style.display = "block";
+      el.style.position = "fixed";
+      el.style.top = "-9999px";
+      el.style.left = "0";
+      el.style.width = "800px";
+      el.style.background = "#fff";
+
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#fff" });
+
+      el.style.display = "none";
+      el.style.position = "";
+      el.style.top = "";
+      el.style.left = "";
+      el.style.width = "";
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save(`os-${os.numero_os}.pdf`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao gerar PDF";
+      toast({ title: "Erro ao gerar PDF", description: msg, variant: "destructive" });
+    } finally {
+      setGerandoPDF(false);
+    }
   };
 
   if (isLoading) {
@@ -173,6 +217,10 @@ export default function OrdemServicoDetalhe() {
             <Button variant="outline" size="sm" onClick={abrirEdit}>
               <Pencil className="w-4 h-4 mr-1" />
               Editar
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadPDF} disabled={gerandoPDF}>
+              <Printer className="w-4 h-4 mr-1" />
+              {gerandoPDF ? "Gerando..." : "Imprimir OS"}
             </Button>
             {proximoStatus && (
               <Button
@@ -293,6 +341,11 @@ export default function OrdemServicoDetalhe() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Hidden PDF template */}
+      <div ref={pdfRef} style={{ display: "none" }}>
+        <OrdemServicoPDFTemplate os={os} />
       </div>
 
       {/* Edit dialog */}
