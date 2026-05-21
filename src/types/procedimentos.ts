@@ -788,14 +788,14 @@ export interface ProcedimentoProtocolo {
   moldagem_executado_por?: string | null;
 
   // Etapa 1.1: Envio para Laboratório (Secretaria) [NOVA]
-  envio_laboratorio_status: StatusEtapa;
+  envio_laboratorio_status?: StatusEtapa;
   envio_laboratorio_data?: string | null;
   envio_laboratorio_executor_id?: string | null;
   envio_laboratorio_executado_em?: string | null;
   envio_laboratorio_executado_por?: string | null;
 
   // Etapa 1.2: Recebimento do Laboratório (Secretaria) [NOVA]
-  recebimento_laboratorio_status: StatusEtapa;
+  recebimento_laboratorio_status?: StatusEtapa;
   recebimento_laboratorio_data?: string | null;
   recebimento_laboratorio_executor_id?: string | null;
   recebimento_laboratorio_executado_em?: string | null;
@@ -993,26 +993,10 @@ export const ETAPAS_PROTOCOLO_PROVISORIO: EtapaProtocoloConfig[] = [
     temAgenda: false,
   },
   {
-    key: 'envio_laboratorio',
-    label: 'Envio Laboratorio',
-    responsavel: 'SECRETARIA',
-    ordem: 3,
-    cor: 'green',
-    temAgenda: false,
-  },
-  {
-    key: 'recebimento_laboratorio',
-    label: 'Recebimento Laboratorio',
-    responsavel: 'SECRETARIA',
-    ordem: 4,
-    cor: 'green',
-    temAgenda: false,
-  },
-  {
     key: 'plano_cera',
     label: 'Plano de Cera',
     responsavel: 'PROTETICO',
-    ordem: 5,
+    ordem: 3,
     cor: 'orange',
     temAgenda: true,
   },
@@ -1020,7 +1004,7 @@ export const ETAPAS_PROTOCOLO_PROVISORIO: EtapaProtocoloConfig[] = [
     key: 'prova_cera',
     label: 'Prova de Cera',
     responsavel: 'DENTISTA',
-    ordem: 6,
+    ordem: 4,
     cor: 'blue',
     temAgenda: true,
   },
@@ -1028,7 +1012,7 @@ export const ETAPAS_PROTOCOLO_PROVISORIO: EtapaProtocoloConfig[] = [
     key: 'montagem_dente',
     label: 'Montagem de Dentes',
     responsavel: 'PROTETICO',
-    ordem: 7,
+    ordem: 5,
     cor: 'orange',
     temAgenda: false,
   },
@@ -1036,7 +1020,7 @@ export const ETAPAS_PROTOCOLO_PROVISORIO: EtapaProtocoloConfig[] = [
     key: 'prova_dente',
     label: 'Prova de Dentes',
     responsavel: 'DENTISTA',
-    ordem: 8,
+    ordem: 6,
     cor: 'blue',
     temAgenda: true,
   },
@@ -1044,7 +1028,7 @@ export const ETAPAS_PROTOCOLO_PROVISORIO: EtapaProtocoloConfig[] = [
     key: 'acrilizacao_acabamento',
     label: 'Acrilização - Acabamento',
     responsavel: 'PROTETICO',
-    ordem: 9,
+    ordem: 7,
     cor: 'orange',
     temAgenda: false,
   },
@@ -1052,7 +1036,7 @@ export const ETAPAS_PROTOCOLO_PROVISORIO: EtapaProtocoloConfig[] = [
     key: 'entrega',
     label: 'Entrega',
     responsavel: 'DENTISTA',
-    ordem: 10,
+    ordem: 8,
     cor: 'blue',
     temAgenda: true,
   },
