@@ -77,9 +77,9 @@ export const TABELA_POR_TIPO: Record<string, string> = {
   'protocolo-definitivo': 'procedimentos_protocolo',
   'protocolo-provisorio': 'procedimentos_protocolo',
   'fixa': 'procedimentos_fixa',
-  'fixa-ceramica': 'procedimentos_ceramica',
-  'fixa-impressa': 'procedimentos_resina_impressa',
-  'adesiva': 'procedimentos_provisorio',
+  'fixa-ceramica': 'procedimentos_fixa_ceramica',
+  'fixa-impressa': 'procedimentos_fixa_impressa',
+  'adesiva': 'procedimentos_adesiva',
   'restauracao-indireta': 'procedimentos_restauracao_indireta',
   'bruxismo': 'procedimentos_bruxismo',
   'clareamento': 'procedimentos_clareamento',
@@ -345,6 +345,11 @@ export function useUpdateEtapaGenerica(tipoParam: string) {
         .eq('id', procedimentoId)
         .select()
         .single();
+
+      if (error) {
+        console.error('Erro ao atualizar etapa:', error);
+        throw error;
+      }
 
       // Histórico
       const etapaConfig = etapasConfig?.find((e) => e.key === etapaKey);
