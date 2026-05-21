@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Users, Shield, Edit2, Save, X } from 'lucide-react';
+import { Home, Users, Shield, Edit2, Save, X, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAllUserProfiles, useUpdateUserProfile } from '@/hooks/usePermissions';
@@ -34,6 +41,7 @@ import {
   ROLE_PERMISSIONS
 } from '@/types/permissions';
 import { ProtectedByRole } from '@/components/auth/ProtectedByRole';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -49,6 +57,65 @@ export default function GerenciarUsuarios() {
     role: UserRole;
     ativo: boolean;
   }>({ nome: '', role: 'SECRETARIA', ativo: true });
+
+  const [showNovoUsuario, setShowNovoUsuario] = useState(false);
+  const [criandoUsuario, setCriandoUsuario] = useState(false);
+  const [novoForm, setNovoForm] = useState({
+    nome: '',
+    email: '',
+    senha: '',
+    confirmarSenha: '',
+    role: 'SECRETARIA' as UserRole,
+  });
+
+  const handleCriarUsuario = async () => {
+    if (!novoForm.nome || !novoForm.email || !novoForm.senha) {
+      toast({ title: 'Campos obrigatórios', description: 'Preencha nome, email e senha.', variant: 'destructive' });
+      return;
+    }
+    if (novoForm.senha !== novoForm.confirmarSenha) {
+      toast({ title: 'Senhas diferentes', description: 'A senha e confirmação não batem.', variant: 'destructive' });
+      return;
+    }
+    if (novoForm.senha.length < 8) {
+      toast({ title: 'Senha fraca', description: 'Mínimo 8 caracteres.', variant: 'destructive' });
+      return;
+    }
+
+    setCriandoUsuario(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: novoForm.email,
+        password: novoForm.senha,
+        options: { data: { nome: novoForm.nome } },
+      });
+
+      if (error) throw error;
+      if (!data.user) throw new Error('Usuário não criado');
+
+      const { error: profileError } = await supabase.from('user_profiles').insert({
+        user_id: data.user.id,
+        email: novoForm.email,
+        nome: novoForm.nome,
+        role: novoForm.role,
+        ativo: true,
+      });
+
+      if (profileError) throw profileError;
+
+      queryClient.invalidateQueries({ queryKey: ['allUserProfiles'] });
+      toast({
+        title: 'Usuário criado!',
+        description: `${novoForm.nome} (${ROLE_LABELS[novoForm.role]}) — verifique o email para confirmar o acesso.`,
+      });
+      setShowNovoUsuario(false);
+      setNovoForm({ nome: '', email: '', senha: '', confirmarSenha: '', role: 'SECRETARIA' });
+    } catch (error: any) {
+      toast({ title: 'Erro ao criar usuário', description: error.message, variant: 'destructive' });
+    } finally {
+      setCriandoUsuario(false);
+    }
+  };
 
   const handleEdit = (profile: UserProfile) => {
     setEditingId(profile.id);
@@ -87,7 +154,7 @@ export default function GerenciarUsuarios() {
       <div className="p-6">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center justify-between gap-3 mb-6">
             <Button
               variant="outline"
               onClick={() => navigate('/')}
@@ -95,6 +162,10 @@ export default function GerenciarUsuarios() {
             >
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Voltar ao Menu</span>
+            </Button>
+            <Button onClick={() => setShowNovoUsuario(true)} className="gap-2">
+              <UserPlus className="w-4 h-4" />
+              Novo Usuário
             </Button>
           </div>
 
@@ -281,6 +352,77 @@ export default function GerenciarUsuarios() {
           </CardContent>
         </Card>
       </div>
+      {/* Dialog: Novo Usuário */}
+      <Dialog open={showNovoUsuario} onOpenChange={setShowNovoUsuario}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" />
+              Novo Usuário
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>Nome completo *</Label>
+              <Input
+                placeholder="Ex: Dr. João Silva"
+                value={novoForm.nome}
+                onChange={e => setNovoForm({ ...novoForm, nome: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Email *</Label>
+              <Input
+                type="email"
+                placeholder="joao@clinica.com"
+                value={novoForm.email}
+                onChange={e => setNovoForm({ ...novoForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Perfil / Função *</Label>
+              <Select value={novoForm.role} onValueChange={v => setNovoForm({ ...novoForm, role: v as UserRole })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(ROLE_LABELS) as UserRole[]).map(role => (
+                    <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Senha *</Label>
+              <Input
+                type="password"
+                placeholder="Mínimo 8 caracteres"
+                value={novoForm.senha}
+                onChange={e => setNovoForm({ ...novoForm, senha: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Confirmar senha *</Label>
+              <Input
+                type="password"
+                placeholder="Repita a senha"
+                value={novoForm.confirmarSenha}
+                onChange={e => setNovoForm({ ...novoForm, confirmarSenha: e.target.value })}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O usuário receberá um email para confirmar o acesso. Para desabilitar confirmação de email, acesse Supabase → Authentication → Email Settings.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNovoUsuario(false)} disabled={criandoUsuario}>Cancelar</Button>
+            <Button onClick={handleCriarUsuario} disabled={criandoUsuario} className="gap-2">
+              <UserPlus className="w-4 h-4" />
+              {criandoUsuario ? 'Criando...' : 'Criar Usuário'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ProtectedByRole>
   );
 }
