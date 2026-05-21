@@ -36,7 +36,7 @@ export function useNotificacoes() {
           pacientes (nome)
         `)
         .eq('user_id', user.id)
-        .eq('status', 'Faltou')
+        .eq('status', '7-Faltou')
         .gte('data_agendamento', quinzeDiasAtras.toISOString());
 
       if (faltas) {

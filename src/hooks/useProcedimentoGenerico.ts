@@ -348,6 +348,7 @@ export function useUpdateEtapaGenerica(tipoParam: string) {
 
       if (error) {
         console.error('Erro ao atualizar etapa:', error);
+        console.error('DETALHE DO ERRO:', error.code, error.message, error.details);
         throw error;
       }
 
