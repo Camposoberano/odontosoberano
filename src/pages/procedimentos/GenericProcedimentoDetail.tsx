@@ -44,12 +44,13 @@ export default function GenericProcedimentoDetail() {
   const { data: proc, isLoading } = useProcedimentoById(tipo as any, id!);
   const { mutate: updateEtapa, isPending: isUpdatingEtapa } = useUpdateEtapaGenerica(tipo as any);
   const { mutate: updateCampos } = useUpdateProcedimentoGenerico(tipo as any);
-  const { data: historico } = useHistoricoProcedimento(proc?.ordem_servico);
+  const { data: historico } = useHistoricoProcedimento(proc?.id);
 
   const [showMoldagemModal, setShowMoldagemModal] = useState(false);
   const [showProfissionalModal, setShowProfissionalModal] = useState(false);
   const [selectedEtapaKey, setSelectedEtapaKey] = useState<string | null>(null);
   const [selectedTipoExecutor, setSelectedTipoExecutor] = useState<TipoExecutor>('SECRETARIA');
+  const [selectedStatusAnterior, setSelectedStatusAnterior] = useState<StatusEtapa>('Pendente');
   const [pendingEtapaKey, setPendingEtapaKey] = useState<string | null>(null);
   const [isEditingTech, setIsEditingTech] = useState(false);
 
@@ -82,20 +83,17 @@ export default function GenericProcedimentoDetail() {
 
   const handleUpdateStatus = (etapaKey: string, currentStatus: StatusEtapa, responsavel: TipoExecutor) => {
     if (currentStatus === 'Finalizado' || currentStatus === 'Concluido') {
-      // Se já estiver finalizado, permite apenas voltar para pendente (opcional ou bloqueado)
       updateEtapa({
         procedimentoId: proc.id,
         etapaKey,
-        status: 'Pendente'
+        status: 'Pendente',
+        statusAnterior: currentStatus,
       });
       return;
     }
-    
-    // Simplificação solicitada: Moldagem agora usa seleção de profissional direta
-    // Dados técnicos são preenchidos no card fixo
-    
-    // Fluxo de Aprovação: Abrir modal de seleção de profissional
+
     setSelectedEtapaKey(etapaKey);
+    setSelectedStatusAnterior(currentStatus || 'Pendente');
     setSelectedTipoExecutor(responsavel);
     setShowProfissionalModal(true);
   };
@@ -109,7 +107,8 @@ export default function GenericProcedimentoDetail() {
       status: 'Finalizado',
       executorId: professional.id,
       executorNome: professional.nome,
-      tipoExecutor: selectedTipoExecutor
+      tipoExecutor: selectedTipoExecutor,
+      statusAnterior: selectedStatusAnterior,
     });
 
     setShowProfissionalModal(false);
@@ -423,26 +422,68 @@ export default function GenericProcedimentoDetail() {
 
         <TabsContent value="historico">
             <Card className="rounded-3xl border-2 shadow-xl p-8 bg-white">
-                 {historico && historico.length > 0 ? (
-                   <div className="space-y-4">
-                      {historico.map((h: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border group hover:border-primary/50 transition-all">
-                             <div className="flex items-center gap-4">
-                                 <div className="p-3 bg-white rounded-xl shadow-sm border group-hover:rotate-6 transition-transform"><History className="w-5 h-5 text-primary" /></div>
-                                 <div>
-                                     <p className="font-black text-slate-800">{h.etapa_label || 'Etapa'} <span className="text-xs text-slate-500 ml-2">({h.acao || 'Ação'})</span></p>
-                                     <p className="text-sm font-bold text-slate-500 italic">Por: {h.executor_nome || 'Sistema'}</p>
-                                 </div>
-                             </div>
-                             <div className="text-right">
-                                 <p className="text-sm font-black text-slate-800">{safeFormatDate(h.executado_em)}</p>
-                             </div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-primary/10 rounded-xl"><History className="w-5 h-5 text-primary" /></div>
+                <div>
+                  <h3 className="font-black text-lg text-slate-800">Auditoria de Etapas</h3>
+                  <p className="text-xs text-muted-foreground font-medium">Registro completo de todas as alterações neste procedimento</p>
+                </div>
+                {historico && historico.length > 0 && (
+                  <Badge className="ml-auto bg-primary/10 text-primary border-none font-black">{historico.length} registro{historico.length > 1 ? 's' : ''}</Badge>
+                )}
+              </div>
+              {historico && historico.length > 0 ? (
+                <div className="relative space-y-3 before:absolute before:left-[19px] before:top-4 before:h-[calc(100%-32px)] before:w-0.5 before:bg-muted/60">
+                  {historico.map((h: any, i: number) => {
+                    const corExecutor = h.executor_tipo === 'DENTISTA'
+                      ? 'bg-blue-100 border-blue-300 text-blue-800'
+                      : h.executor_tipo === 'PROTETICO'
+                      ? 'bg-orange-100 border-orange-300 text-orange-800'
+                      : 'bg-slate-100 border-slate-300 text-slate-700';
+                    const iconExecutor = h.executor_tipo === 'DENTISTA' ? '🦷' : h.executor_tipo === 'PROTETICO' ? '🔧' : '📋';
+                    const dataHora = h.created_at
+                      ? (() => { try { return format(new Date(h.created_at), "dd/MM/yy 'às' HH:mm", { locale: ptBR }); } catch { return '-'; } })()
+                      : safeFormatDate(h.executado_em);
+                    return (
+                      <div key={i} className="relative pl-12 group">
+                        <div className="absolute left-0 top-2 w-10 h-10 rounded-full bg-white border-2 border-primary/20 flex items-center justify-center text-lg shadow-sm">
+                          {iconExecutor}
                         </div>
-                      ))}
-                   </div>
-                 ) : (
-                   <div className="text-center py-20 italic text-muted-foreground text-xl font-bold">Nenhum histórico registrado ainda.</div>
-                 )}
+                        <div className="p-4 bg-slate-50 rounded-2xl border hover:border-primary/30 transition-all">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <p className="font-black text-slate-800 text-sm">{h.etapa_label || h.etapa || 'Etapa'}</p>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                {h.status_anterior && (
+                                  <>
+                                    <Badge variant="outline" className="text-[10px] font-bold border-slate-300 text-slate-500">{h.status_anterior}</Badge>
+                                    <span className="text-slate-400 text-xs">→</span>
+                                  </>
+                                )}
+                                <Badge className={`text-[10px] font-black border ${h.status_novo === 'Finalizado' || h.status_novo === 'Concluido' ? 'bg-green-600 text-white border-green-700' : h.status_novo === 'Em andamento' ? 'bg-amber-500 text-white border-amber-600' : 'bg-slate-200 text-slate-700 border-slate-300'}`}>
+                                  {h.status_novo || h.acao}
+                                </Badge>
+                              </div>
+                              {h.executor_nome && (
+                                <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full border text-[10px] font-black ${corExecutor}`}>
+                                  {h.executor_nome} {h.executor_tipo ? `· ${h.executor_tipo}` : ''}
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 whitespace-nowrap shrink-0">{dataHora}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-20 italic text-muted-foreground text-xl font-bold">
+                  <History className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                  Nenhuma auditoria registrada ainda.
+                  <p className="text-sm font-normal mt-2">As alterações de etapas aparecem aqui automaticamente.</p>
+                </div>
+              )}
             </Card>
         </TabsContent>
       </Tabs>

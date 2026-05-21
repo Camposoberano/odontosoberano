@@ -272,11 +272,11 @@ export function useCreateProcedimento(tipoParam: string) {
 export function useUpdateEtapaGenerica(tipoParam: string) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  
+
   const tipo = (tipoParam?.toLowerCase() || '') as string;
   const tabela = TABELA_POR_TIPO[tipo];
   const etapasConfig = ETAPAS_POR_TIPO[tipo];
-  
+
   return useMutation({
     mutationFn: async ({
       procedimentoId,
@@ -287,6 +287,7 @@ export function useUpdateEtapaGenerica(tipoParam: string) {
       executorNome,
       tipoExecutor,
       extraData,
+      statusAnterior,
     }: {
       procedimentoId: string;
       etapaKey: string;
@@ -296,6 +297,7 @@ export function useUpdateEtapaGenerica(tipoParam: string) {
       executorNome?: string;
       tipoExecutor?: TipoExecutor;
       extraData?: Record<string, any>;
+      statusAnterior?: StatusEtapa;
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
       if (!tabela) throw new Error(`Tabela não encontrada para o tipo: ${tipo}`);
@@ -355,7 +357,7 @@ export function useUpdateEtapaGenerica(tipoParam: string) {
       // Histórico
       const etapaConfig = etapasConfig?.find((e) => e.key === etapaKey);
       if (etapaConfig && result) {
-        await supabase.from('historico_procedimentos' as any).insert({
+        const { error: histError } = await supabase.from('historico_procedimentos' as any).insert({
           procedimento_tipo: tipo,
           procedimento_id: procedimentoId,
           ordem_servico: (result as any).ordem_servico,
@@ -363,12 +365,17 @@ export function useUpdateEtapaGenerica(tipoParam: string) {
           etapa: etapaKey,
           etapa_label: etapaConfig.label,
           acao: status === 'Finalizado' ? 'CONCLUIU' : 'ALTEROU_STATUS',
+          status_anterior: statusAnterior ?? null,
           status_novo: status,
           executor_tipo: tipoExecutor,
-          executor_id: typeof executorId === 'number' ? executorId : null,
+          executor_id: executorId != null ? String(executorId) : null,
           executor_nome: executorNome,
           responsavel_esperado: etapaConfig.responsavel,
+          user_id: user?.id ?? null,
         });
+        if (histError) {
+          console.error('[Auditoria] Erro ao inserir histórico:', histError);
+        }
       }
 
       return result;
@@ -447,23 +454,23 @@ export function useAllProcedimentos() {
   });
 }
 
-// Hook para buscar o histórico de um procedimento unificado por Ordem de Serviço
-export function useHistoricoProcedimento(ordemServico?: number | string) {
+// Hook para buscar o histórico de auditoria de um procedimento por ID
+export function useHistoricoProcedimento(procedimentoId?: string) {
   return useQuery({
-    queryKey: ['historico-procedimento', ordemServico],
+    queryKey: ['historico-procedimento', procedimentoId],
     queryFn: async () => {
-      if (!ordemServico) return [];
+      if (!procedimentoId) return [];
 
       const { data, error } = await supabase
         .from('historico_procedimentos' as any)
         .select('*')
-        .eq('ordem_servico', ordemServico.toString())
-        .order('executado_em', { ascending: false });
+        .eq('procedimento_id', procedimentoId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!ordemServico,
+    enabled: !!procedimentoId,
   });
 }
 
