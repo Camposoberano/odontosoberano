@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}/orto/`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -124,12 +124,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.error("Supabase signout soft-failed:", error);
       }
 
-      // Redirecionar para auth
-      window.location.href = '/auth';
+      window.location.href = '/orto/auth';
     } catch (error) {
-      // Mesmo com erro crítico, limpa e redireciona
       await del('REACT_QUERY_OFFLINE_CACHE');
-      window.location.href = '/auth';
+      window.location.href = '/orto/auth';
     }
   };
 
