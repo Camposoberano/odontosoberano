@@ -8,7 +8,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
-import { User, Mail, Calendar, Shield, Phone, Loader2 } from 'lucide-react';
+import { User, Mail, Calendar, Shield, Phone, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -36,12 +38,39 @@ export default function Profile() {
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset data to original values
     if (profile) {
       setFormData({
         nome_exibicao: profile.nome_exibicao || '',
         telefone: profile.telefone || '',
       });
+    }
+  };
+
+  const [senhaForm, setSenhaForm] = useState({ nova: '', confirmar: '' });
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [trocandoSenha, setTrocandoSenha] = useState(false);
+
+  const handleTrocarSenha = async () => {
+    if (!senhaForm.nova || !senhaForm.confirmar) {
+      toast({ title: 'Preencha os campos', variant: 'destructive' });
+      return;
+    }
+    if (senhaForm.nova !== senhaForm.confirmar) {
+      toast({ title: 'Senhas não coincidem', variant: 'destructive' });
+      return;
+    }
+    if (senhaForm.nova.length < 8) {
+      toast({ title: 'Senha muito curta', description: 'Mínimo 8 caracteres.', variant: 'destructive' });
+      return;
+    }
+    setTrocandoSenha(true);
+    const { error } = await supabase.auth.updateUser({ password: senhaForm.nova });
+    setTrocandoSenha(false);
+    if (error) {
+      toast({ title: 'Erro ao trocar senha', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Senha alterada!', description: 'Sua senha foi atualizada com sucesso.' });
+      setSenhaForm({ nova: '', confirmar: '' });
     }
   };
 
@@ -208,6 +237,46 @@ export default function Profile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Card: Alterar Senha */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Alterar Senha
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 max-w-md">
+            <div className="space-y-1">
+              <Label>Nova senha</Label>
+              <div className="relative">
+                <Input
+                  type={mostrarSenha ? 'text' : 'password'}
+                  placeholder="Mínimo 8 caracteres"
+                  value={senhaForm.nova}
+                  onChange={e => setSenhaForm({ ...senhaForm, nova: e.target.value })}
+                  className="pr-10"
+                />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setMostrarSenha(v => !v)}>
+                  {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Confirmar nova senha</Label>
+              <Input
+                type={mostrarSenha ? 'text' : 'password'}
+                placeholder="Repita a senha"
+                value={senhaForm.confirmar}
+                onChange={e => setSenhaForm({ ...senhaForm, confirmar: e.target.value })}
+              />
+            </div>
+            <Button onClick={handleTrocarSenha} disabled={trocandoSenha} className="gap-2">
+              {trocandoSenha ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+              {trocandoSenha ? 'Salvando...' : 'Salvar nova senha'}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

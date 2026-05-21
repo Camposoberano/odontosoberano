@@ -55,15 +55,37 @@ export default function Auth() {
       return;
     }
 
-    // Verificar rate limiting antes de tentar login
     if (!checkRateLimit()) {
-      return; // Bloqueado por muitas tentativas
+      return;
     }
 
     setLoading(true);
     setError('');
 
-    const { error } = await signIn(email, password);
+    // Aceita nome de acesso OU email
+    let emailParaLogin = email.trim();
+    if (!emailParaLogin.includes('@')) {
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('email')
+        .ilike('nome', emailParaLogin)
+        .eq('ativo', true)
+        .limit(2);
+
+      if (!profiles || profiles.length === 0) {
+        setError('Nome de acesso não encontrado. Use seu email.');
+        setLoading(false);
+        return;
+      }
+      if (profiles.length > 1) {
+        setError('Nome duplicado — use seu email para entrar.');
+        setLoading(false);
+        return;
+      }
+      emailParaLogin = profiles[0].email;
+    }
+
+    const { error } = await signIn(emailParaLogin, password);
     
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
@@ -170,11 +192,11 @@ export default function Auth() {
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+                    <Label htmlFor="signin-email">Email ou nome de acesso</Label>
                     <Input
                       id="signin-email"
-                      type="email"
-                      placeholder="seu@email.com"
+                      type="text"
+                      placeholder="seu@email.com ou nome"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
