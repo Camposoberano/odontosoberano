@@ -1,17 +1,14 @@
--- CORREÇÃO CLOUD — Rodar no SQL Editor do Supabase
--- https://supabase.com/dashboard/project/ebpuykdqoqkmshfwrchd/editor
+-- Migration 108: Fix procedimentos_ceramica colunas + RLS todas as tabelas
+-- APLICADA MANUALMENTE em 2026-05-22 via Supabase SQL Editor
+-- Origem: CORRECAO_CLOUD_SUPABASE.sql
 
--- ============================================================
--- 1. Garantir função can_access_procedimentos()
--- ============================================================
+-- 1. Função RLS compartilhada
 CREATE OR REPLACE FUNCTION public.can_access_procedimentos()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT auth.uid() IS NOT NULL;
 $$;
 
--- ============================================================
--- 2. RLS: can_access_procedimentos() em todas as tabelas
--- ============================================================
+-- 2. Políticas SELECT otimizadas em todas as tabelas procedimentos_*
 DROP POLICY IF EXISTS "optimized_select_procedimentos_fixa_ceramica" ON procedimentos_fixa_ceramica;
 CREATE POLICY "optimized_select_procedimentos_fixa_ceramica"
   ON procedimentos_fixa_ceramica FOR SELECT USING (can_access_procedimentos());
@@ -64,10 +61,7 @@ DROP POLICY IF EXISTS "optimized_select_procedimentos_placa" ON procedimentos_pl
 CREATE POLICY "optimized_select_procedimentos_placa"
   ON procedimentos_placa FOR SELECT USING (can_access_procedimentos());
 
--- ============================================================
--- 3. Corrigir procedimentos_ceramica (nome antigo, build antigo)
---    Adicionar colunas novas que o build antigo tenta inserir
--- ============================================================
+-- 3. procedimentos_ceramica — adicionar 43 colunas faltantes
 ALTER TABLE procedimentos_ceramica
   ADD COLUMN IF NOT EXISTS escaner_status text,
   ADD COLUMN IF NOT EXISTS escaner_data date,
@@ -142,14 +136,17 @@ ALTER TABLE procedimentos_ceramica
   ADD COLUMN IF NOT EXISTS moldagem_superior boolean,
   ADD COLUMN IF NOT EXISTS moldagem_inferior boolean;
 
--- RLS para procedimentos_ceramica (nome antigo)
+-- 4. RLS em procedimentos_ceramica
 ALTER TABLE procedimentos_ceramica ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "optimized_select_procedimentos_ceramica" ON procedimentos_ceramica;
 CREATE POLICY "optimized_select_procedimentos_ceramica"
   ON procedimentos_ceramica FOR SELECT USING (can_access_procedimentos());
+
 DROP POLICY IF EXISTS "optimized_insert_procedimentos_ceramica" ON procedimentos_ceramica;
 CREATE POLICY "optimized_insert_procedimentos_ceramica"
   ON procedimentos_ceramica FOR INSERT WITH CHECK (can_access_procedimentos());
+
 DROP POLICY IF EXISTS "optimized_update_procedimentos_ceramica" ON procedimentos_ceramica;
 CREATE POLICY "optimized_update_procedimentos_ceramica"
   ON procedimentos_ceramica FOR UPDATE USING (can_access_procedimentos());

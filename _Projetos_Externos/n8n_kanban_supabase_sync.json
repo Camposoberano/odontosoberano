@@ -1,0 +1,161 @@
+{
+  "_comentario": "Workflow: KanbanCW → Supabase Sync (agendamentos a cada 5min)",
+  "_versao": "1.0",
+  "_aplicado_em": "2026-05-22",
+  "_supabase_project": "ebpuykdqoqkmshfwrchd",
+  "_instancia_n8n": "dd87fe708fe0babfae3245a97f30f1ecd03d6b3a3ad6c7567c23e34baa6a697b",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/pacientes?on_conflict=whatsapp_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "user_id", "value": "d2f6002e-37d6-495f-b00c-2e79f97c13b4" },
+            { "name": "nome", "value": "={{ $json.patient_name }}" },
+            { "name": "telefone", "value": "={{ $json.patient_phone }}" },
+            { "name": "whatsapp_id", "value": "={{ $json.patient_phone }}" },
+            { "name": "origem", "value": "whatsapp" },
+            { "name": "status", "value": "Ativo" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8c10d5d5-f8b8-471f-a30a-6dc03e0b309e",
+      "name": "Upsert Paciente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2224, -224],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes" }] }
+      },
+      "id": "9b984e32-97f7-4ac3-9b9f-9dfaf3897456",
+      "name": "Schedule 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [1552, -160]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  a.id as kanban_id,\n  a.\"appointmentAt\",\n  a.\"endsAt\",\n  a.status,\n  a.notes,\n  a.price,\n  a.\"chatwootConversationId\",\n  a.\"serviceId\",\n  a.\"practitionerId\",\n  p.phone as patient_phone,\n  p.name as patient_name,\n  p.\"chatwootContactId\",\n  s.name as service_name\nFROM \"Appointment\" a\nLEFT JOIN \"Patient\" p ON p.id = a.\"patientId\"\nLEFT JOIN \"AppointmentService\" s ON s.id = a.\"serviceId\"\nWHERE a.\"appointmentAt\" >= NOW()\nORDER BY a.\"appointmentAt\" ASC\nLIMIT 50",
+        "options": {}
+      },
+      "id": "9b8514ea-1846-4421-8445-e16b0483b4fe",
+      "name": "Kanban: Buscar Agendamentos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1776, -160],
+      "credentials": {
+        "postgres": { "id": "qthzzfFIqyBOxUrY", "name": "Postgres kanban" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 1 },
+          "conditions": [{ "leftValue": "={{ $json.kanban_id }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }, "id": "8b4b9e2e-cc13-4f97-95dc-707cd3369c1c" }],
+          "combinator": "and"
+        },
+        "options": { "looseTypeValidation": true }
+      },
+      "id": "f5424cf1-27c2-48d4-b532-54e50695ced5",
+      "name": "Tem agendamentos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, -160]
+    },
+    {
+      "parameters": {
+        "url": "=https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/pacientes?telefone=ilike.*{{ $json.patient_phone.replace(/\\D/g,'').slice(-11) }}*&select=id&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c8cc9ca7-df48-4014-9bb3-f8b49da536eb",
+      "name": "Buscar Paciente no Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2448, -224],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": { "includeUnpaired": true }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [2000, 80],
+      "id": "9e2162bb-c321-4671-8c10-9455d4a97cfa",
+      "name": "Merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nlet pacienteId = item.id || null;\nconst statusMap = {\n  'scheduled': 'Agendado', 'confirmed': 'Confirmado', 'cancelled': 'Cancelado',\n  'completed': 'Concluído', 'no_show': 'Faltou', 'waiting': 'Aguardando',\n  'in_progress': 'Em Atendimento'\n};\nlet duracao = 30;\nif (item.appointmentAt && item.endsAt) {\n  const diff = new Date(item.endsAt) - new Date(item.appointmentAt);\n  if (!isNaN(diff)) duracao = Math.round(diff / 60000) || 30;\n}\nreturn {\n  user_id: 'ed10a453-6310-4d4d-ba43-0b8f2a0b3d0e',\n  paciente_id: pacienteId,\n  data_agendamento: item.appointmentAt || null,\n  duracao: duracao,\n  procedimento: item.service_name || 'Consulta',\n  status: statusMap[item.status] || 'Agendado',\n  tipo_atendimento: 'Consulta',\n  valor: item.price ? parseFloat(item.price) : null,\n  observacoes: item.notes || null,\n  confirmado: item.status === 'confirmed',\n  chatwoot_appointment_id: item.kanban_id ? String(item.kanban_id) : null\n};"
+      },
+      "id": "b4e7f2c2-b922-4ac2-aa30-ad7a1683eb98",
+      "name": "Montar Agendamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2224, 80]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/rpc/upsert_agendamento",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"dados\": $json } }}",
+        "options": {}
+      },
+      "id": "60454701-61c7-48e5-af18-5ea4f61334d7",
+      "name": "Supabase: Salvar Agendamento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2448, 80]
+    }
+  ],
+  "connections": {
+    "Upsert Paciente": { "main": [[{ "node": "Buscar Paciente no Supabase", "type": "main", "index": 0 }]] },
+    "Schedule 5min": { "main": [[{ "node": "Kanban: Buscar Agendamentos", "type": "main", "index": 0 }]] },
+    "Kanban: Buscar Agendamentos": { "main": [[{ "node": "Tem agendamentos?", "type": "main", "index": 0 }]] },
+    "Tem agendamentos?": {
+      "main": [[{ "node": "Upsert Paciente", "type": "main", "index": 0 }, { "node": "Merge", "type": "main", "index": 0 }]]
+    },
+    "Buscar Paciente no Supabase": { "main": [[{ "node": "Merge", "type": "main", "index": 1 }]] },
+    "Merge": { "main": [[{ "node": "Montar Agendamento", "type": "main", "index": 0 }]] },
+    "Montar Agendamento": { "main": [[{ "node": "Supabase: Salvar Agendamento", "type": "main", "index": 0 }]] }
+  }
+}

@@ -1,0 +1,299 @@
+{
+  "name": "Chatwoot → Supabase Sync (fixed)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatwoot-events",
+        "options": {}
+      },
+      "id": "56b8e023-fbc4-4813-9018-a6d0e5ad2228",
+      "name": "Webhook Chatwoot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-400, 784],
+      "webhookId": "chatwoot-events"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 },
+                "combinator": "and",
+                "conditions": [{ "leftValue": "={{ $json.body.event }}", "rightValue": "contact_created", "operator": { "type": "string", "operation": "equals" } }]
+              },
+              "renameOutput": true,
+              "outputKey": "contact_created"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 },
+                "combinator": "and",
+                "conditions": [{ "leftValue": "={{ $json.body.event }}", "rightValue": "contact_updated", "operator": { "type": "string", "operation": "equals" } }]
+              },
+              "renameOutput": true,
+              "outputKey": "contact_updated"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 },
+                "combinator": "and",
+                "conditions": [{ "leftValue": "={{ $json.body.event }}", "rightValue": "conversation_created", "operator": { "type": "string", "operation": "equals" } }]
+              },
+              "renameOutput": true,
+              "outputKey": "conversation_created"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 },
+                "combinator": "and",
+                "conditions": [{ "leftValue": "={{ $json.body.event }}", "rightValue": "message_created", "operator": { "type": "string", "operation": "equals" } }]
+              },
+              "renameOutput": true,
+              "outputKey": "message_created"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6d6ccb6c-3aa5-4e53-bc97-1a1c4b2b812f",
+      "name": "Switch Evento",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [-176, 752]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/pacientes?on_conflict=whatsapp_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $json.body.name }}\",\n  \"telefone\": \"{{ $json.body.phone_number }}\",\n  \"email\": \"{{ $json.body.email || '' }}\",\n  \"whatsapp_id\": \"{{ $json.body.phone_number }}\",\n  \"chatwoot_contact_id\": \"{{ $json.body.id.toString() }}\",\n  \"origem\": \"whatsapp\",\n  \"status\": \"Ativo\",\n  \"user_id\": \"ed10a453-6310-4d4d-ba43-0b8f2a0b3d0e\"\n}",
+        "options": {}
+      },
+      "id": "7da346fe-a41e-40bf-ace0-15fcb06b4ef7",
+      "name": "Supabase: Criar Paciente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [176, 544]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/pacientes?whatsapp_id=eq.{{ encodeURIComponent($json.body.phone_number) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $json.body.name }}\",\n  \"telefone\": \"{{ $json.body.phone_number }}\",\n  \"email\": \"{{ $json.body.email || '' }}\",\n  \"updated_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "a15340d0-a1eb-4fa4-abdd-7754ef986c20",
+      "name": "Supabase: Atualizar Paciente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [176, 704]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/pacientes?whatsapp_id=eq.{{ encodeURIComponent($json.body.meta.sender.phone_number) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatwoot_conversation_id\": \"{{ $json.body.id.toString() }}\",\n  \"updated_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "a7a9ea59-1fd7-4312-b9d2-939045e2493f",
+      "name": "Supabase: Salvar Conversa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [176, 848]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 },
+          "combinator": "and",
+          "conditions": [{ "leftValue": "={{ $json.body.message_type }}", "rightValue": "activity", "operator": { "type": "string", "operation": "notEquals" } }]
+        },
+        "options": {}
+      },
+      "id": "80db038a-0002-4caa-b751-767344694d0c",
+      "name": "Ignorar Activity",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-32, 992]
+    },
+    {
+      "parameters": {
+        "url": "=https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/pacientes?whatsapp_id=eq.{{ encodeURIComponent($json.body.conversation.meta.sender.phone_number) }}&select=id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "46ac5f40-fc93-45d1-b7b1-0eeb88362af0",
+      "name": "Buscar ID do Paciente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [176, 992],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 },
+          "combinator": "and",
+          "conditions": [{
+            "id": "478ca3a5-e875-4e9f-946d-1cb10bc7397b",
+            "leftValue": "={{ $json.length }}",
+            "rightValue": 0,
+            "operator": { "type": "number", "operation": "gt" }
+          }]
+        },
+        "options": {}
+      },
+      "id": "c62c9aac-6c64-4cbf-b698-3f2f0a60238a",
+      "name": "Paciente existe?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [320, 992]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIX Bug 1: branch TRUE — paciente existe, monta interação com cliente_id correto\nconst ignorar = $('Ignorar Activity').item.json;\nconst pacienteData = $('Buscar ID do Paciente').item.json;\nconst clienteId = Array.isArray(pacienteData) && pacienteData.length > 0\n  ? pacienteData[0].id\n  : (pacienteData?.id || null);\n\nreturn [{\n  json: {\n    cliente_id: clienteId,\n    tipo: 'mensagem',\n    canal: 'whatsapp',\n    direcao: ignorar.body.message_type === 'incoming' ? 'entrada' : 'saida',\n    conteudo: ignorar.body.content,\n    atendente_id: 'ed10a453-6310-4d4d-ba43-0b8f2a0b3d0e',\n    lida: false,\n    created_at: ignorar.body.created_at\n  }\n}];"
+      },
+      "id": "aa1b2c3d-4e5f-6789-abcd-ef0123456789",
+      "name": "Code: Montar Interacao Existente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [496, 896]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/pacientes?on_conflict=whatsapp_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $('Ignorar Activity').item.json.body.conversation.meta.sender.name }}\",\n  \"telefone\": \"{{ $('Ignorar Activity').item.json.body.conversation.meta.sender.phone_number }}\",\n  \"whatsapp_id\": \"{{ $('Ignorar Activity').item.json.body.conversation.meta.sender.phone_number }}\",\n  \"chatwoot_contact_id\": \"{{ $('Ignorar Activity').item.json.body.conversation.meta.sender.id.toString() }}\",\n  \"chatwoot_conversation_id\": \"{{ $('Ignorar Activity').item.json.body.conversation.id.toString() }}\",\n  \"origem\": \"whatsapp\",\n  \"status\": \"Ativo\",\n  \"user_id\": \"ed10a453-6310-4d4d-ba43-0b8f2a0b3d0e\",\n  \"updated_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "b2266a4a-c6a9-4190-8aa8-f7c6f3e8b2d5",
+      "name": "Criar Paciente via Mensagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [496, 1104]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIX Bug 1+2: branch FALSE — paciente recém-criado, pega id da resposta do POST\nconst ignorar = $('Ignorar Activity').item.json;\nconst pacienteCriado = Array.isArray($json) ? $json[0] : $json;\nconst clienteId = pacienteCriado?.id || null;\n\nreturn [{\n  json: {\n    cliente_id: clienteId,\n    tipo: 'mensagem',\n    canal: 'whatsapp',\n    direcao: ignorar.body.message_type === 'incoming' ? 'entrada' : 'saida',\n    conteudo: ignorar.body.content,\n    atendente_id: 'ed10a453-6310-4d4d-ba43-0b8f2a0b3d0e',\n    lida: false,\n    created_at: ignorar.body.created_at\n  }\n}];"
+      },
+      "id": "76761fb7-9510-43bb-b3a3-b5fc990d09a1",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 1104]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ebpuykdqoqkmshfwrchd.supabase.co/rest/v1/interacoes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Authorization", "value": "Bearer sb_secret_HDOdQPScisYM6LuVnic_Eg_wD2rWEx7" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "21d53745-495e-4004-a94e-32fc9f96d14c",
+      "name": "Supabase: Salvar Mensagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [800, 992]
+    }
+  ],
+  "connections": {
+    "Webhook Chatwoot": {
+      "main": [[{ "node": "Switch Evento", "type": "main", "index": 0 }]]
+    },
+    "Switch Evento": {
+      "main": [
+        [{ "node": "Supabase: Criar Paciente", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Atualizar Paciente", "type": "main", "index": 0 }],
+        [{ "node": "Supabase: Salvar Conversa", "type": "main", "index": 0 }],
+        [{ "node": "Ignorar Activity", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ignorar Activity": {
+      "main": [[{ "node": "Buscar ID do Paciente", "type": "main", "index": 0 }]]
+    },
+    "Buscar ID do Paciente": {
+      "main": [[{ "node": "Paciente existe?", "type": "main", "index": 0 }]]
+    },
+    "Paciente existe?": {
+      "main": [
+        [{ "node": "Code: Montar Interacao Existente", "type": "main", "index": 0 }],
+        [{ "node": "Criar Paciente via Mensagem", "type": "main", "index": 0 }]
+      ]
+    },
+    "Code: Montar Interacao Existente": {
+      "main": [[{ "node": "Supabase: Salvar Mensagem", "type": "main", "index": 0 }]]
+    },
+    "Criar Paciente via Mensagem": {
+      "main": [[{ "node": "Code in JavaScript", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript": {
+      "main": [[{ "node": "Supabase: Salvar Mensagem", "type": "main", "index": 0 }]]
+    }
+  },
+  "meta": {
+    "instanceId": "dd87fe708fe0babfae3245a97f30f1ecd03d6b3a3ad6c7567c23e34baa6a697b"
+  }
+}
