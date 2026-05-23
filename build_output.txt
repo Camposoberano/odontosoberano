@@ -1,0 +1,19 @@
+
+> odonto-soberano@1.0.0 build
+> vite build
+
+[36mvite v5.4.19 [32mbuilding for production...[36m[39m
+transforming...
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[32mÔ£ô[39m 301 modules transformed.
+x Build failed in 3.58s
+error during build:
+[vite-plugin-pwa:build] Could not load E:\Projetos_Novos\Odonto PRO\src/hooks/useProcedimentosProvisorio (imported by src/pages/procedimentos/NovoProvisorio.tsx): ENOENT: no such file or directory, open 'E:\Projetos_Novos\Odonto PRO\src\hooks\useProcedimentosProvisorio'
+    at async open (node:internal/fs/promises:639:25)
+    at async Object.readFile (node:internal/fs/promises:1243:14)
+    at async Object.load (file:///E:/Projetos_Novos/Odonto%20PRO/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:65341:25)
+    at async PluginDriver.hookFirstAndGetPlugin (file:///E:/Projetos_Novos/Odonto%20PRO/node_modules/rollup/dist/es/shared/node-entry.js:19819:28)
+    at async file:///E:/Projetos_Novos/Odonto%20PRO/node_modules/rollup/dist/es/shared/node-entry.js:19000:33
+    at async Queue.work (file:///E:/Projetos_Novos/Odonto%20PRO/node_modules/rollup/dist/es/shared/node-entry.js:20029:32)

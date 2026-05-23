@@ -1,0 +1,24 @@
+x Build failed in 4.26s
+error during build:
+[vite-plugin-pwa:build] Transform failed with 1 error:
+E:/Odonto PRO/src/components/pacientes/FichaClinica.tsx:440:6: ERROR: Unexpected closing "motion.div" tag does not match opening "div" tag
+file: E:/Odonto PRO/src/components/pacientes/FichaClinica.tsx:440:6
+
+Unexpected closing "motion.div" tag does not match opening "div" tag
+438|          </motion.div>
+439|        )}
+440|      </motion.div>
+   |        ^
+441|    );
+442|  }
+
+    at failureErrorWithLog (E:\Odonto PRO\node_modules\esbuild\lib\main.js:1472:15)
+    at E:\Odonto PRO\node_modules\esbuild\lib\main.js:755:50
+    at responseCallbacks.<computed> (E:\Odonto PRO\node_modules\esbuild\lib\main.js:622:9)
+    at handleIncomingPacket (E:\Odonto PRO\node_modules\esbuild\lib\main.js:677:12)
+    at Socket.readFromStdout (E:\Odonto PRO\node_modules\esbuild\lib\main.js:600:7)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

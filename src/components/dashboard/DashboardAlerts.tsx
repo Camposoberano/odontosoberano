@@ -1,12 +1,11 @@
 import React from 'react';
-import { AlertCircle, Package, Clock, Calendar, CheckCircle2 } from 'lucide-react';
+import { Package, Calendar, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardAlertsProps {
   stats: {
-    osAtrasadas: number;
     produtosFalta: number;
     agendamentosHoje: { total: number; pendentes: number };
   };
@@ -29,19 +28,6 @@ export function DashboardAlerts({ stats, isLoading }: DashboardAlertsProps) {
   if (isLoading) return null;
 
   const alerts: AlertItem[] = [];
-
-  // Alerta de OS Atrasadas
-  if (stats.osAtrasadas > 0) {
-    alerts.push({
-      id: 'os-atrasadas',
-      title: 'Atenção: Ordens de Serviço Atrasadas',
-      description: `Existem ${stats.osAtrasadas} ordens de serviço com data de entrega vencida.`,
-      icon: Clock,
-      variant: 'destructive',
-      action: () => navigate('/procedimentos'),
-      actionLabel: 'Ver Procedimentos'
-    });
-  }
 
   // Alerta de Estoque
   if (stats.produtosFalta > 0) {

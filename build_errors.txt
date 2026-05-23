@@ -1,0 +1,33 @@
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+x Build failed in 3.16s
+error during build:
+[vite-plugin-pwa:build] Transform failed with 2 errors:
+E:/Projetos_Novos/Odonto PRO/src/pages/procedimentos/ProcedimentoDetail.tsx:696:0: ERROR: The character "}" is not valid inside a JSX element
+E:/Projetos_Novos/Odonto PRO/src/pages/procedimentos/ProcedimentoDetail.tsx:697:0: ERROR: Unexpected end of file before a closing "div" tag
+file: E:/Projetos_Novos/Odonto PRO/src/pages/procedimentos/ProcedimentoDetail.tsx:696:0
+
+The character "}" is not valid inside a JSX element
+694|      </div>
+695|    );
+696|  }
+   |  ^
+697|  
+
+Unexpected end of file before a closing "div" tag
+695|    );
+696|  }
+697|  
+   |  ^
+
+    at failureErrorWithLog (E:\Projetos_Novos\Odonto PRO\node_modules\vite\node_modules\esbuild\lib\main.js:1472:15)
+    at E:\Projetos_Novos\Odonto PRO\node_modules\vite\node_modules\esbuild\lib\main.js:755:50
+    at responseCallbacks.<computed> (E:\Projetos_Novos\Odonto PRO\node_modules\vite\node_modules\esbuild\lib\main.js:622:9)
+    at handleIncomingPacket (E:\Projetos_Novos\Odonto PRO\node_modules\vite\node_modules\esbuild\lib\main.js:677:12)
+    at Socket.readFromStdout (E:\Projetos_Novos\Odonto PRO\node_modules\vite\node_modules\esbuild\lib\main.js:600:7)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

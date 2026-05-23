@@ -1,9 +1,9 @@
 @echo off
-title Instituto BelÃ©m - Inicializacao
+title Instituto Belém - Inicializacao
 color 03
 chcp 65001 >nul
 echo ===================================================
-echo         INSTITUTO BELÃ‰M - SISTEMA ON
+echo         INSTITUTO BELÉM - SISTEMA ON
 echo ===================================================
 echo.
 cd /d "%~dp0"
@@ -21,7 +21,7 @@ if not exist "node_modules\" (
     echo OK!
 ) else ( echo OK! )
 echo [3/4] Ligando servidor...
-start "Instituto BelÃ©m" /MIN cmd /c "npm run dev"
+start "Instituto Belém" /MIN cmd /c "npm run dev"
 echo [4/4] Aguardando (6s)...
 timeout /t 6 /nobreak >nul
 echo.

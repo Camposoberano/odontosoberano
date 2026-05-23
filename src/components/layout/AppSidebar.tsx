@@ -6,7 +6,6 @@ import {
   BarChart3,
   Home,
   Settings,
-  Stethoscope,
   CreditCard,
   Wrench,
   LogOut,
@@ -24,8 +23,6 @@ import {
   TrendingUp,
   Banknote,
   CheckSquare,
-  PieChart,
-  TrendingDown,
   CreditCard as CreditCardIcon,
   BookOpen,
   Phone,
@@ -33,9 +30,6 @@ import {
   Info,
   ShieldCheck,
   User,
-  ClipboardList,
-  Search,
-  FolderOpen,
   LayoutDashboard,
 } from "lucide-react";
 
@@ -62,7 +56,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const cadastroItems = [
   { title: "Dentistas", url: "/cadastros/dentistas", icon: UserCheck },
-  { title: "Protéticos", url: "/cadastros/proteticos", icon: Wrench },
   { title: "Pacientes", url: "/patients", icon: Users },
   { title: "Funcionários", url: "/cadastros/funcionarios", icon: Building },
   { title: "Fornecedores", url: "/cadastros/fornecedores", icon: Truck },
@@ -71,7 +64,6 @@ const cadastroItems = [
   { title: "Laboratório", url: "/cadastros/laboratorio", icon: FlaskConical },
   { title: "Convênio / Planos", url: "/cadastros/convenios", icon: Shield },
   { title: "Tabela de Preços", url: "/cadastros/honorarios", icon: Calculator },
-  { title: "Catálogo de Procedimentos", url: "/cadastros/catalogo", icon: BookOpen },
 ];
 
 const financeiroItems = [
@@ -94,40 +86,6 @@ const utilitariosItems = [
   { title: "Contatos Úteis", url: "/utilitarios/contatos-uteis", icon: Phone },
 ];
 
-
-const procediventoRemovivelItems = [
-  { title: "PPR", url: "/procedimentos/ppr", icon: ClipboardList },
-  { title: "Prótese Total (PT)", url: "/procedimentos/pt", icon: ClipboardList },
-  { title: "Prótese Móvel (PM)", url: "/procedimentos/pm", icon: ClipboardList },
-];
-
-const procediventoProtocoloItems = [
-  { title: "Protocolo Definitivo", url: "/procedimentos/protocolo-definitivo", icon: ClipboardList },
-  { title: "Protocolo Provisório", url: "/procedimentos/protocolo-provisorio", icon: ClipboardList },
-];
-
-const procediventoFixaItems = [
-  { title: "Fixa Provisória", url: "/procedimentos/fixa", icon: ClipboardList },
-  { title: "Fixa de Cerâmica", url: "/procedimentos/fixa-ceramica", icon: ClipboardList },
-  { title: "Cerâmica Ortovital", url: "/procedimentos/ceramica", icon: ClipboardList },
-  { title: "Fixa Impressa", url: "/procedimentos/fixa-impressa", icon: ClipboardList },
-  { title: "Resina Impressa", url: "/procedimentos/resina-impressa", icon: ClipboardList },
-  { title: "Adesiva", url: "/procedimentos/adesiva", icon: ClipboardList },
-  { title: "Provisório/Adesiva", url: "/procedimentos/provisorio", icon: ClipboardList },
-  { title: "Restauração Indireta", url: "/procedimentos/restauracao-indireta", icon: ClipboardList },
-];
-
-const procediventoEsteticaItems = [
-  { title: "Placa de Bruxismo", url: "/procedimentos/bruxismo", icon: Shield },
-  { title: "Placa (Nova)", url: "/procedimentos/placa", icon: Shield },
-  { title: "Clareamento", url: "/procedimentos/clareamento", icon: TrendingUp },
-];
-
-const procediventoLabExternoItems = [
-  { title: "Laboratório Externo", url: "/procedimentos/lab-externo", icon: FlaskConical },
-  { title: "Coroa sobre Implante", url: "/procedimentos/coroa-implante", icon: Wrench },
-  { title: "Fixa de Zircônia", url: "/procedimentos/fixa-zirconia", icon: Wrench },
-];
 
 const configuracoesItems = [
   { title: "Perfil", url: "/profile", icon: User },
@@ -170,16 +128,6 @@ export function AppSidebar() {
   const [isUtilitariosOpen, setIsUtilitariosOpen] = useState(utilitariosMatch);
   const [isConfiguracoesOpen, setIsConfiguracoesOpen] = useState(configuracoesMatch);
 
-  // Estados para Grupos de Procedimentos
-  const atendimentosMatch = currentPath.includes("/procedimentos") && !currentPath.includes("/procedimentos/consulta");
-  const [isAtendimentosOpen, setIsAtendimentosOpen] = useState(atendimentosMatch);
-  
-  const [isRemovivelOpen, setIsRemovivelOpen] = useState(currentPath.includes("/procedimentos/ppr") || currentPath.includes("/procedimentos/pt") || currentPath.includes("/procedimentos/pm"));
-  const [isProtocoloOpen, setIsProtocoloOpen] = useState(currentPath.includes("/procedimentos/protocolo"));
-  const [isFixaOpen, setIsFixaOpen] = useState(currentPath.includes("/procedimentos/fixa") || currentPath.includes("/procedimentos/adesiva") || currentPath.includes("/procedimentos/restauracao") || currentPath.includes("/procedimentos/ceramica") || currentPath.includes("/procedimentos/resina-impressa") || currentPath.includes("/procedimentos/provisorio"));
-  const [isEsteticaOpen, setIsEsteticaOpen] = useState(currentPath.includes("/procedimentos/bruxismo") || currentPath.includes("/procedimentos/clareamento") || currentPath.includes("/procedimentos/placa"));
-  const [isLabExternoOpen, setIsLabExternoOpen] = useState(currentPath.includes("/procedimentos/lab-externo") || currentPath.includes("/procedimentos/coroa-implante") || currentPath.includes("/procedimentos/fixa-zirconia"));
-
   const { signOut } = useAuth();
   const { toast } = useToast();
 
@@ -190,8 +138,7 @@ export function AppSidebar() {
     if (pagamentosMatch) setIsPagamentosOpen(true);
     if (utilitariosMatch) setIsUtilitariosOpen(true);
     if (configuracoesMatch) setIsConfiguracoesOpen(true);
-    if (atendimentosMatch) setIsAtendimentosOpen(true);
-  }, [cadastroMatch, financeiroMatch, pagamentosMatch, utilitariosMatch, configuracoesMatch, atendimentosMatch]);
+  }, [cadastroMatch, financeiroMatch, pagamentosMatch, utilitariosMatch, configuracoesMatch]);
 
   const handleSignOut = async () => {
     try {
@@ -279,26 +226,6 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Ordens de Serviço (Busca Universal) */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className={menuButtonClass}>
-                  <NavLink to="/procedimentos/consulta" end className={getNavClass}>
-                    <Search className="w-5 h-5 text-orange-400" />
-                    {!isCollapsed && <span className="font-medium">Ordens de Serviço</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              {/* Painel de Produção e Analytics de Prótese */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className={menuButtonClass}>
-                  <NavLink to="/analises/producao" end className={getNavClass}>
-                    <BarChart3 className="w-5 h-5 text-primary" />
-                    {!isCollapsed && <span className="font-semibold text-primary">Painel de Produção</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
               {/* Orçamentos */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className={menuButtonClass}>
@@ -315,130 +242,6 @@ export function AppSidebar() {
                     {!isCollapsed && <span className="text-teal-600 font-medium">Relatório Orçamentos</span>}
                   </NavLink>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              {/* NOVO GRUPO: ATENDIMENTOS */}
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => setIsAtendimentosOpen(!isAtendimentosOpen)}
-                  className="py-6 text-base font-bold bg-primary/5"
-                >
-                  <Stethoscope className="w-5 h-5 text-primary" />
-                  {!isCollapsed && (
-                    <>
-                      <span className="text-primary">Atendimentos</span>
-                      {isAtendimentosOpen ? (
-                        <ChevronDown className="ml-auto w-4 h-4 text-primary" />
-                      ) : (
-                        <ChevronRight className="ml-auto w-4 h-4 text-primary" />
-                      )}
-                    </>
-                  )}
-                </SidebarMenuButton>
-                
-                {isAtendimentosOpen && !isCollapsed && (
-                  <SidebarMenuSub className="ml-2 border-l-2 border-primary/20 flex flex-col gap-1 py-2">
-                    {/* Grupo: Próteses Removíveis */}
-                    <SidebarMenuItem className="ml-2">
-                      <SidebarMenuButton onClick={() => setIsRemovivelOpen(!isRemovivelOpen)} className="py-5 text-sm font-medium">
-                        <Package className="w-4 h-4 text-orange-400" />
-                        <span>Removíveis</span>
-                        {isRemovivelOpen ? <ChevronDown className="ml-auto w-3 h-3" /> : <ChevronRight className="ml-auto w-3 h-3" />}
-                      </SidebarMenuButton>
-                      {isRemovivelOpen && (
-                        <SidebarMenuSub>
-                          {procediventoRemovivelItems.map(item => (
-                            <SidebarMenuSubItem key={item.title}>
-                              <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
-                                <NavLink to={item.url} end><span>{item.title}</span></NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-
-                    {/* Grupo: Protocolos */}
-                    <SidebarMenuItem className="ml-2">
-                      <SidebarMenuButton onClick={() => setIsProtocoloOpen(!isProtocoloOpen)} className="py-5 text-sm font-medium">
-                        <ClipboardList className="w-4 h-4 text-orange-500" />
-                        <span>Protocolos</span>
-                        {isProtocoloOpen ? <ChevronDown className="ml-auto w-3 h-3" /> : <ChevronRight className="ml-auto w-3 h-3" />}
-                      </SidebarMenuButton>
-                      {isProtocoloOpen && (
-                        <SidebarMenuSub>
-                          {procediventoProtocoloItems.map(item => (
-                            <SidebarMenuSubItem key={item.title}>
-                              <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
-                                <NavLink to={item.url} end><span>{item.title}</span></NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-
-                    {/* Grupo: Próteses Fixas */}
-                    <SidebarMenuItem className="ml-2">
-                      <SidebarMenuButton onClick={() => setIsFixaOpen(!isFixaOpen)} className="py-5 text-sm font-medium">
-                        <FolderOpen className="w-4 h-4 text-orange-600" />
-                        <span>Fixas</span>
-                        {isFixaOpen ? <ChevronDown className="ml-auto w-3 h-3" /> : <ChevronRight className="ml-auto w-3 h-3" />}
-                      </SidebarMenuButton>
-                      {isFixaOpen && (
-                        <SidebarMenuSub>
-                          {procediventoFixaItems.map(item => (
-                            <SidebarMenuSubItem key={item.title}>
-                              <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
-                                <NavLink to={item.url} end><span>{item.title}</span></NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-
-                    {/* Grupo: Estética e Placas */}
-                    <SidebarMenuItem className="ml-2">
-                      <SidebarMenuButton onClick={() => setIsEsteticaOpen(!isEsteticaOpen)} className="py-5 text-sm font-medium">
-                        <Shield className="w-4 h-4 text-amber-500" />
-                        <span>Estética / Placas</span>
-                        {isEsteticaOpen ? <ChevronDown className="ml-auto w-3 h-3" /> : <ChevronRight className="ml-auto w-3 h-3" />}
-                      </SidebarMenuButton>
-                      {isEsteticaOpen && (
-                        <SidebarMenuSub>
-                          {procediventoEsteticaItems.map(item => (
-                            <SidebarMenuSubItem key={item.title}>
-                              <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
-                                <NavLink to={item.url} end><span>{item.title}</span></NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-
-                    {/* Grupo: Laboratórios Externos */}
-                    <SidebarMenuItem className="ml-2">
-                      <SidebarMenuButton onClick={() => setIsLabExternoOpen(!isLabExternoOpen)} className="py-5 text-sm font-medium">
-                        <FlaskConical className="w-4 h-4 text-orange-500" />
-                        <span>Lab. Externo</span>
-                        {isLabExternoOpen ? <ChevronDown className="ml-auto w-3 h-3" /> : <ChevronRight className="ml-auto w-3 h-3" />}
-                      </SidebarMenuButton>
-                      {isLabExternoOpen && (
-                        <SidebarMenuSub>
-                          {procediventoLabExternoItems.map(item => (
-                            <SidebarMenuSubItem key={item.title}>
-                              <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
-                                <NavLink to={item.url} end><span>{item.title}</span></NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  </SidebarMenuSub>
-                )}
               </SidebarMenuItem>
 
               {/* Cadastros with submenu */}

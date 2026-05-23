@@ -21,8 +21,6 @@ const Patients = React.lazy(() => import("@/pages/Patients"));
 const Appointments = React.lazy(() => import("@/pages/Appointments"));
 const Profile = React.lazy(() => import("@/pages/Profile"));
 const Dentistas = React.lazy(() => import("@/pages/cadastros/Dentistas").then(m => ({ default: m.Dentistas })));
-const Proteticos = React.lazy(() => import("@/pages/cadastros/Proteticos").then(m => ({ default: m.Proteticos })));
-// Importação legada de OrdemServico removida
 const Funcionarios = React.lazy(() => import("@/pages/cadastros/Funcionarios").then(m => ({ default: m.Funcionarios })));
 const Fornecedores = React.lazy(() => import("@/pages/cadastros/Fornecedores").then(m => ({ default: m.Fornecedores })));
 const Patrimonio = React.lazy(() => import("@/pages/cadastros/Patrimonio").then(m => ({ default: m.Patrimonio })));
@@ -30,7 +28,6 @@ const ControleEstoque = React.lazy(() => import("@/pages/cadastros/ControleEstoq
 const Laboratorio = React.lazy(() => import("@/pages/cadastros/Laboratorio").then(m => ({ default: m.Laboratorio })));
 const Convenios = React.lazy(() => import("@/pages/cadastros/Convenios").then(m => ({ default: m.Convenios })));
 const TabelaHonorarios = React.lazy(() => import("@/pages/cadastros/TabelaHonorarios").then(m => ({ default: m.TabelaHonorarios })));
-const CatalogoProcedimentos = React.lazy(() => import("@/pages/cadastros/CatalogoProcedimentos").then(m => ({ default: m.CatalogoProcedimentos })));
 const ContasPagar = React.lazy(() => import("@/pages/financeiro/ContasPagar"));
 const ContasReceber = React.lazy(() => import("@/pages/financeiro/ContasReceber"));
 const FluxoCaixa = React.lazy(() => import("@/pages/financeiro/FluxoCaixa"));
@@ -52,12 +49,6 @@ const Permissoes = React.lazy(() => import("@/pages/configuracoes/Permissoes").t
 const GerenciarUsuarios = React.lazy(() => import("@/pages/configuracoes/GerenciarUsuarios"));
 const LogsAuditoria = React.lazy(() => import("@/pages/configuracoes/LogsAuditoria"));
 const TwoFactorSettings = React.lazy(() => import("@/pages/configuracoes/TwoFactorSettings").then(m => ({ default: m.TwoFactorSettings })));
-const TodosProcedimentos = React.lazy(() => import("@/pages/procedimentos/TodosProcedimentos"));
-const ConsultaOSUniversal = React.lazy(() => import("@/pages/procedimentos/ConsultaOSUniversal"));
-const GenericProcedimentoListPage = React.lazy(() => import("@/pages/procedimentos/GenericProcedimentoListPage"));
-const GenericProcedimentoDetail = React.lazy(() => import("@/pages/procedimentos/GenericProcedimentoDetail"));
-const GenericNovoProcedimento = React.lazy(() => import("@/pages/procedimentos/GenericNovoProcedimento"));
-const PainelProducao = React.lazy(() => import("@/pages/analises/PainelProducao"));
 const ListaOrcamentos = React.lazy(() => import("@/pages/orcamentos/ListaOrcamentos"));
 const NovoOrcamento = React.lazy(() => import("@/pages/orcamentos/NovoOrcamento"));
 const OrcamentoDetalhe = React.lazy(() => import("@/pages/orcamentos/OrcamentoDetalhe"));
@@ -103,25 +94,13 @@ const AnimatedRoutes = () => {
             
             {/* Cadastro Routes */}
             <Route path="/cadastros/dentistas" element={<ProtectedRoute><AnimatedRoute><Dentistas /></AnimatedRoute></ProtectedRoute>} />
-            <Route path="/cadastros/proteticos" element={<ProtectedRoute><AnimatedRoute><Proteticos /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/funcionarios" element={<ProtectedRoute><AnimatedRoute><Funcionarios /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/fornecedores" element={<ProtectedRoute><AnimatedRoute><Fornecedores /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/patrimonio" element={<ProtectedRoute><AnimatedRoute><Patrimonio /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/estoque" element={<ProtectedRoute><AnimatedRoute><ControleEstoque /></AnimatedRoute></ProtectedRoute>} />
-            <Route path="/cadastros/os" element={<Navigate to="/procedimentos/consulta" replace />} />
             <Route path="/cadastros/laboratorio" element={<ProtectedRoute><AnimatedRoute><Laboratorio /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/convenios" element={<ProtectedRoute><AnimatedRoute><Convenios /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/cadastros/honorarios" element={<ProtectedRoute><AnimatedRoute><TabelaHonorarios /></AnimatedRoute></ProtectedRoute>} />
-            <Route path="/cadastros/catalogo" element={<ProtectedRoute><AnimatedRoute><CatalogoProcedimentos /></AnimatedRoute></ProtectedRoute>} />
-
-            {/* Procedimentos - Roteamento Genérico para os 15 Tipos */}
-            <Route path="/procedimentos" element={<ProtectedRoute><TodosProcedimentos /></ProtectedRoute>} />
-            <Route path="/procedimentos/consulta" element={<ProtectedRoute><ConsultaOSUniversal /></ProtectedRoute>} />
-            
-            {/* Rotas Genéricas: suportam ppr, pt, pm, fixa, protocolo-definitivo, etc. */}
-            <Route path="/procedimentos/:tipo" element={<ProtectedRoute><AnimatedRoute><GenericProcedimentoListPage /></AnimatedRoute></ProtectedRoute>} />
-            <Route path="/procedimentos/:tipo/novo" element={<ProtectedRoute><AnimatedRoute><GenericNovoProcedimento /></AnimatedRoute></ProtectedRoute>} />
-            <Route path="/procedimentos/:tipo/:id" element={<ProtectedRoute><AnimatedRoute><GenericProcedimentoDetail /></AnimatedRoute></ProtectedRoute>} />
 
             {/* Financeiro Routes */}
             <Route path="/financeiro/contas-pagar" element={<ProtectedRoute><AnimatedRoute><ContasPagar /></AnimatedRoute></ProtectedRoute>} />
@@ -135,8 +114,6 @@ const AnimatedRoutes = () => {
             <Route path="/relatorios/financeiro" element={<ProtectedRoute><AnimatedRoute><RelatorioFinanceiro /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/relatorios/comissao" element={<ProtectedRoute><AnimatedRoute><RelatorioComissao /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/relatorios/orcamentos" element={<ProtectedRoute><AnimatedRoute><RelatorioOrcamentos /></AnimatedRoute></ProtectedRoute>} />
-            <Route path="/analises/producao" element={<ProtectedRoute><AnimatedRoute><PainelProducao /></AnimatedRoute></ProtectedRoute>} />
-            
             {/* Orçamentos Routes */}
             <Route path="/orcamentos" element={<ProtectedRoute><AnimatedRoute><ListaOrcamentos /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/orcamentos/novo" element={<ProtectedRoute><AnimatedRoute><NovoOrcamento /></AnimatedRoute></ProtectedRoute>} />

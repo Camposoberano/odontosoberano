@@ -21,9 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { ProcedimentoBusca } from "@/components/orcamentos/ProcedimentoBusca";
 import { useOrcamentos, useOrcamento, OrcamentoItem } from "@/hooks/useOrcamentos";
-import { ProcedimentoCatalogo } from "@/hooks/useProcedimentosCatalogo";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -110,15 +108,14 @@ export default function NovoOrcamento() {
 
   const { total_bruto, total_liquido } = calcularTotais(itens, descontoTipo, descontoValor);
 
-  const adicionarProcedimento = useCallback((proc: ProcedimentoCatalogo) => {
+  const adicionarItem = useCallback(() => {
     setItens((prev) => [
       ...prev,
       {
-        procedimento_id: proc.id,
-        nome_procedimento: proc.nome,
+        nome_procedimento: "",
         quantidade: 1,
-        preco_unitario: proc.preco_sugerido,
-        preco_total: proc.preco_sugerido,
+        preco_unitario: 0,
+        preco_total: 0,
       },
     ]);
   }, []);
@@ -267,30 +264,23 @@ export default function NovoOrcamento() {
               </CardContent>
             </Card>
 
-            {/* Busca de Procedimentos */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Adicionar Procedimentos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ProcedimentoBusca onAdicionar={adicionarProcedimento} />
-              </CardContent>
-            </Card>
-
             {/* Tabela de Itens */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base">
                   Itens do Orçamento{" "}
                   <span className="text-muted-foreground font-normal text-sm">
                     ({itens.length} item{itens.length !== 1 ? "s" : ""})
                   </span>
                 </CardTitle>
+                <Button size="sm" onClick={adicionarItem} variant="outline">
+                  + Adicionar Item
+                </Button>
               </CardHeader>
               <CardContent>
                 {itens.length === 0 ? (
                   <p className="text-center text-sm text-muted-foreground py-8">
-                    Nenhum procedimento adicionado. Use a busca acima.
+                    Nenhum item adicionado. Clique em "+ Adicionar Item" acima.
                   </p>
                 ) : (
                   <div className="space-y-2">

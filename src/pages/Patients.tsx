@@ -13,7 +13,6 @@ import { Ortodontia } from "@/components/pacientes/Ortodontia";
 import { Fotos } from "@/components/pacientes/Fotos";
 import { Radiografias } from "@/components/pacientes/Radiografias";
 import { Receituario } from "@/components/pacientes/Receituario";
-import { ProcedimentosPaciente } from "@/components/pacientes/ProcedimentosPaciente";
 import { PatientSearch } from "@/components/pacientes/PatientSearch";
 import { usePacientes, Paciente } from "@/hooks/usePacientes";
 import { useAuth } from "@/contexts/AuthContext";
@@ -102,7 +101,6 @@ export default function Patients() {
 
   const sidebarItems = [
     { id: "ficha", label: "Ficha Clínica", icon: FileText, color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    { id: "procedimentos", label: "Procedimentos", icon: ClipboardList, color: "text-green-500", bgColor: "bg-green-500/10" },
     { id: "odontograma", label: "Odontograma", icon: Activity, color: "text-red-500", bgColor: "bg-red-500/10" },
     { id: "ortodontia", label: "Ortodontia", icon: AlignVerticalJustifyCenter, color: "text-purple-500", bgColor: "bg-purple-500/10" },
     { id: "fotos", label: "Fotos", icon: Camera, color: "text-pink-500", bgColor: "bg-pink-500/10" },
@@ -496,11 +494,6 @@ export default function Patients() {
                       {activeTab === "ficha" && (
                          <motion.div key="ficha" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <FichaClinica pacienteId={selectedPacienteId} />
-                         </motion.div>
-                      )}
-                      {activeTab === "procedimentos" && (
-                         <motion.div key="proc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                            <ProcedimentosPaciente pacienteId={selectedPacienteId} />
                          </motion.div>
                       )}
                       {activeTab === "odontograma" && (

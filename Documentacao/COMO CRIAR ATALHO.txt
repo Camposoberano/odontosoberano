@@ -1,0 +1,92 @@
+================================================================================
+                    ODONTO PRO - CAMPO SOBERANO
+           Como Criar Atalho na Area de Trabalho com Logo
+================================================================================
+
+METODO MAIS FACIL (RECOMENDADO):
+--------------------------------
+
+1. De dois cliques no arquivo:
+   "Criar Atalho com Logo.bat"
+
+2. Um atalho sera criado automaticamente na sua area de trabalho
+   com o logo da Campo Soberano
+
+3. Pronto! Agora e so clicar no atalho "Odonto PRO"
+   na area de trabalho para iniciar o sistema
+
+
+METODO MANUAL:
+--------------
+
+1. Clique com o botao direito em "Iniciar Odonto PRO.bat"
+
+2. Selecione "Enviar para > Area de trabalho (criar atalho)"
+
+3. Na area de trabalho, clique com o botao direito no atalho criado
+
+4. Selecione "Propriedades"
+
+5. Clique em "Alterar icone..."
+
+6. Clique em "Procurar..."
+
+7. Navegue ate a pasta do Odonto PRO e entre em "public"
+
+8. Selecione o arquivo "favicon.ico"
+
+9. Clique em "OK" e depois "Aplicar"
+
+
+O QUE O ATALHO FAZ:
+-------------------
+
+Quando voce clicar no atalho, o sistema vai:
+
+1. Iniciar o servidor Node.js automaticamente
+2. Aguardar o servidor carregar
+3. Abrir o navegador no endereco http://localhost:8080
+4. Deixar tudo pronto para uso!
+
+
+ARQUIVOS CRIADOS:
+-----------------
+
+- Iniciar Odonto PRO.bat
+  (Arquivo principal que inicia o sistema)
+
+- Criar Atalho com Logo.bat
+  (Cria o atalho automaticamente)
+
+- Criar Atalho na Area de Trabalho.bat
+  (Versao alternativa)
+
+- Odonto PRO.url
+  (Atalho rapido do navegador)
+
+
+SOBRE O LOGO:
+-------------
+
+O logo da Campo Soberano esta localizado em:
+- assets/logo.svg (Logo em formato vetorial)
+- public/favicon.ico (Icone do sistema)
+
+O logo apresenta:
+- Coroa (simbolizando "Soberano")
+- Chat bubble (representando comunicacao/WhatsApp)
+- Cores azul e roxo (identidade visual)
+
+
+SUPORTE:
+--------
+
+Em caso de problemas, verifique:
+1. Se o Node.js esta instalado
+2. Se todas as dependencias foram instaladas (npm install)
+3. Se a porta 8080 esta disponivel
+
+
+================================================================================
+                  Campo Soberano - Sistema Odontologico
+================================================================================

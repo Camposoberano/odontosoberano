@@ -104,45 +104,6 @@ export const useDashboardStats = () => {
     enabled: !!user?.id,
   });
 
-  // Novos Status de OS (Otimizado via VIEW)
-  const { data: osStats = { emAndamento: 0, atrasadas: 0 } } = useQuery({
-    queryKey: ["dashboard-os-stats-v2", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return { emAndamento: 0, atrasadas: 0 };
-
-      const { data, error } = await (supabase
-        .from('v_todos_procedimentos_full_exp' as any)
-        .select('status_geral, data_entrega')
-        .eq('user_id', user.id)
-        .in('status_geral', ['Pendente', 'Em andamento']) as any);
-
-      if (error) {
-          console.error("Erro ao buscar estatísticas de OS:", error);
-          return { emAndamento: 0, atrasadas: 0 };
-      }
-
-      let emAndamento = 0;
-      let atrasadas = 0;
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-
-      if (data) {
-        (data as any[]).forEach(proc => {
-          emAndamento++;
-          if (proc.data_entrega) {
-            const dataEntrega = new Date(proc.data_entrega);
-            if (dataEntrega < hoje) {
-              atrasadas++;
-            }
-          }
-        });
-      }
-
-      return { emAndamento, atrasadas };
-    },
-    enabled: !!user?.id,
-  });
-
   // Faturamento Previsto (Pendente para o mês atual)
   const { data: faturamentoPrevisto = 0 } = useQuery({
     queryKey: ["dashboard-faturamento-previsto", user?.id],
@@ -255,8 +216,6 @@ export const useDashboardStats = () => {
       faturamentoMensal,
       faturamentoPrevisto,
       produtosFalta,
-      osEmAndamento: osStats.emAndamento,
-      osAtrasadas: osStats.atrasadas,
     },
     proximosAgendamentos,
     estoqueBaixo,
