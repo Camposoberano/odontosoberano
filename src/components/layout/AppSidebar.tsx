@@ -64,6 +64,7 @@ const cadastroItems = [
   { title: "Laboratório", url: "/cadastros/laboratorio", icon: FlaskConical },
   { title: "Convênio / Planos", url: "/cadastros/convenios", icon: Shield },
   { title: "Tabela de Preços", url: "/cadastros/honorarios", icon: Calculator },
+  { title: "Catálogo de Procedimentos", url: "/cadastros/catalogo", icon: BookOpen },
 ];
 
 const financeiroItems = [
