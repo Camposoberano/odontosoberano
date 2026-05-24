@@ -57,7 +57,6 @@ export function usePacientes() {
       const { data, error } = await supabase
         .from('pacientes')
         .select('*')
-        .eq('user_id', user.id)
         .eq('status', 'Ativo')
         .order('nome');
 
