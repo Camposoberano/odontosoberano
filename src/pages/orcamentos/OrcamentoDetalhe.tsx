@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
   Edit,
@@ -63,6 +64,27 @@ export default function OrcamentoDetalhe() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [gerandoPDF, setGerandoPDF] = useState(false);
+
+  const { data: contasVinculadas = [] } = useQuery({
+    queryKey: ["contas_receber", "by_orcamento", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contas_receber")
+        .select("id, descricao, valor, data_vencimento, status, forma_pagamento")
+        .eq("orcamento_id", id!)
+        .order("data_vencimento", { ascending: true });
+      if (error) throw error;
+      return data as Array<{
+        id: string;
+        descricao: string;
+        valor: number;
+        data_vencimento: string;
+        status: string;
+        forma_pagamento: string | null;
+      }>;
+    },
+    enabled: !!id,
+  });
 
   const handleDownloadPDF = async () => {
     if (!orcamento || !pdfRef.current) return;
@@ -520,6 +542,63 @@ export default function OrcamentoDetalhe() {
             <CardContent className="pt-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Observações</p>
               <p className="text-sm">{orcamento.observacoes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Contas a Receber Geradas */}
+        {contasVinculadas.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                Contas a Receber Geradas ({contasVinculadas.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="w-32 text-right">Valor</TableHead>
+                    <TableHead className="w-32 text-center">Vencimento</TableHead>
+                    <TableHead className="w-28 text-center">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contasVinculadas.map((c) => {
+                    const statusColor =
+                      c.status === "Recebida" ? "bg-green-100 text-green-700" :
+                      c.status === "Vencida"  ? "bg-red-100 text-red-700" :
+                      c.status === "Cancelada"? "bg-gray-100 text-gray-600" :
+                                                "bg-yellow-100 text-yellow-700";
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell className="text-sm">{c.descricao}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {Number(c.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </TableCell>
+                        <TableCell className="text-center text-sm">
+                          {new Date(c.data_vencimento).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor}`}>
+                            {c.status}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              <div className="mt-3 flex justify-end">
+                <Link
+                  to="/financeiro/contas-receber"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Ver todas em Contas a Receber →
+                </Link>
+              </div>
             </CardContent>
           </Card>
         )}

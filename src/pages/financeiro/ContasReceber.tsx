@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, DollarSign, CheckCircle, AlertCircle, XCircle, Clock } from "lucide-react";
+import { Plus, Search, Edit, Trash2, DollarSign, CheckCircle, AlertCircle, XCircle, Clock, FileText } from "lucide-react";
 import { MobileTable } from "@/components/ui/mobile-table";
 import { useContasReceber, ContaReceber } from "@/hooks/useContasReceber";
 import { ContaReceberForm } from "@/components/financeiro/ContaReceberForm";
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function ContasReceber() {
+  const navigate = useNavigate();
   const { contasReceber, isLoading, createConta, updateConta, deleteConta } = useContasReceber();
   const [formOpen, setFormOpen] = useState(false);
   const [selectedConta, setSelectedConta] = useState<ContaReceber | null>(null);
@@ -184,7 +186,23 @@ export default function ContasReceber() {
           )}
         </div>
       )
-    }
+    },
+    {
+      key: "orcamento_id" as const,
+      header: "Orçamento",
+      render: (_value: any, conta: ContaReceber) => {
+        if (!conta.orcamento) return <span className="text-muted-foreground text-xs">—</span>;
+        return (
+          <button
+            onClick={() => navigate(`/orcamentos/${conta.orcamento!.id}`)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+          >
+            <FileText className="w-3 h-3" />
+            Orç. #{conta.orcamento.numero_orcamento}
+          </button>
+        );
+      }
+    },
   ];
 
   // Renderização do card mobile
@@ -194,10 +212,19 @@ export default function ContasReceber() {
         <div className="flex-1">
           <h3 className="font-medium text-sm">{conta.descricao}</h3>
           <p className="text-xs text-muted-foreground mt-1">{conta.categoria}</p>
+          {conta.orcamento && (
+            <button
+              onClick={() => navigate(`/orcamentos/${conta.orcamento!.id}`)}
+              className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+            >
+              <FileText className="w-3 h-3" />
+              Orç. #{conta.orcamento.numero_orcamento}
+            </button>
+          )}
         </div>
         {getStatusBadge(conta.status)}
       </div>
-      
+
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div>
           <span className="text-muted-foreground">Valor:</span>
@@ -215,7 +242,7 @@ export default function ContasReceber() {
           </div>
         </div>
       </div>
-      
+
       {conta.data_recebimento && (
         <div className="text-xs">
           <span className="text-muted-foreground">Recebimento:</span>

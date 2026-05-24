@@ -7,6 +7,7 @@ export type ContaReceber = {
   id: string;
   user_id: string;
   paciente_id?: string;
+  orcamento_id?: string;
   descricao: string;
   categoria: string;
   valor: number;
@@ -17,6 +18,7 @@ export type ContaReceber = {
   observacoes?: string;
   created_at: string;
   updated_at: string;
+  orcamento?: { id: string; numero_orcamento: number } | null;
 };
 
 export function useContasReceber() {
@@ -29,7 +31,7 @@ export function useContasReceber() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contas_receber")
-        .select("*")
+        .select("*, orcamento:orcamentos(id, numero_orcamento)")
         .order("data_vencimento", { ascending: false });
 
       if (error) throw error;
