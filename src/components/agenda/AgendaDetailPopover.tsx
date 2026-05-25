@@ -165,7 +165,7 @@ export function AgendaDetailPopover({
           variant="medical" 
           className="w-full h-10 font-extrabold text-[10px] uppercase tracking-wider shadow-lg shadow-primary/20"
           onClick={() => {
-            navigate(`/patients?id=${agendamento.paciente_id}&tab=procedimentos`);
+            navigate(`/patients/${agendamento.paciente_id}`);
             onClose();
           }}
         >
