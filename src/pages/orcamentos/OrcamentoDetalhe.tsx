@@ -115,7 +115,9 @@ export default function OrcamentoDetalhe() {
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`orcamento-${orcamento.numero_orcamento}.pdf`);
+      const nomePaciente = (orcamento.paciente?.nome ?? "paciente")
+        .toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "_");
+      pdf.save(`plano_de_tratamento_${nomePaciente}_${orcamento.numero_orcamento}.pdf`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Erro ao gerar PDF";
       toast({ title: "Erro ao gerar PDF", description: msg, variant: "destructive" });
@@ -131,12 +133,21 @@ export default function OrcamentoDetalhe() {
     }
     const tel = orcamento.paciente.telefone.replace(/\D/g, "");
     const total = orcamento.total_liquido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const itens = (orcamento.orcamento_itens ?? [])
+      .map(i => `• ${i.nome_procedimento}${i.dente_numero ? ` (dente ${i.dente_numero})` : ""}`)
+      .join("\n");
+    const pagamento = orcamento.forma_pagamento
+      ? `${orcamento.forma_pagamento}${orcamento.parcelas > 1 ? ` em ${orcamento.parcelas}x` : " à vista"}`
+      : "A combinar";
+
     const msg = encodeURIComponent(
-      `Olá ${orcamento.paciente.nome}! 👋\n\n` +
-      `Segue o orçamento #${orcamento.numero_orcamento}.\n\n` +
-      `💰 Total: ${total}\n` +
-      `💳 Pagamento: ${orcamento.forma_pagamento ?? "A combinar"}\n\n` +
-      `Para dúvidas ou aprovação, entre em contato. 😊`
+      `Olá, ${orcamento.paciente.nome}! 😊\n\n` +
+      `Aqui é o *Instituto Belém* — segue o seu *Plano de Tratamento #${orcamento.numero_orcamento}*.\n\n` +
+      `📋 *Procedimentos planejados:*\n${itens}\n\n` +
+      `💰 *Valor Total: ${total}*\n` +
+      `💳 Pagamento: ${pagamento}\n\n` +
+      `Para confirmar o seu plano de tratamento ou tirar qualquer dúvida, estamos à disposição! 🦷✨\n\n` +
+      `Atenciosamente,\n*Instituto Belém*`
     );
     window.open(`https://wa.me/55${tel}?text=${msg}`, "_blank");
     mudarStatus.mutate({ id: orcamento.id, status: "enviado" });
@@ -635,7 +646,13 @@ export default function OrcamentoDetalhe() {
 
       {/* Template PDF — renderizado fora da tela para html2canvas */}
       <div ref={pdfRef} style={{ display: "none" }}>
-        <OrcamentoPDFTemplate orcamento={orcamento} />
+        <OrcamentoPDFTemplate
+          orcamento={orcamento}
+          clinicaNome="Instituto Belém"
+          clinicaEndereco="Seu endereço aqui"
+          clinicaTelefone="(87) 9 0000-0000"
+          logoUrl={undefined}
+        />
       </div>
     </DashboardLayout>
   );
