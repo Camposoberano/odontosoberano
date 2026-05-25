@@ -1,16 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -19,9 +12,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MobileTable } from "@/components/ui/mobile-table";
-import { Plus, Search, Edit, Trash2, ArrowUp, ArrowDown, TrendingUp } from "lucide-react";
-import { useFluxoCaixa, type FluxoCaixa as FluxoCaixaType } from "@/hooks/useFluxoCaixa";
+import { Plus, Search, Edit, Trash2, ArrowUp, ArrowDown, TrendingUp, Clock, AlertCircle, FileText } from "lucide-react";
+import { useFluxoCaixa, type FluxoCaixa as FluxoCaixaType, type PrevisaoEntrada } from "@/hooks/useFluxoCaixa";
 import { FluxoCaixaForm } from "@/components/financeiro/FluxoCaixaForm";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -37,7 +31,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function FluxoCaixa() {
-  const { movimentacoes, isLoading, createMovimentacao, updateMovimentacao, deleteMovimentacao } = useFluxoCaixa();
+  const navigate = useNavigate();
+  const { movimentacoes, previsoes, isLoading, createMovimentacao, updateMovimentacao, deleteMovimentacao } = useFluxoCaixa();
   const [formOpen, setFormOpen] = useState(false);
   const [selectedMovimentacao, setSelectedMovimentacao] = useState<FluxoCaixaType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -105,6 +100,11 @@ export default function FluxoCaixa() {
     .reduce((acc, mov) => acc + Number(mov.valor), 0);
 
   const saldoAtual = totalEntradas - totalSaidas;
+
+  const totalPrevisoes = previsoes.reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalVencidas = previsoes
+    .filter(p => p.status === "Vencida")
+    .reduce((acc, p) => acc + Number(p.valor), 0);
 
   // Calcular saldo acumulado para cada movimentação
   const movimentacoesComSaldo = [...filteredMovimentacoes]
@@ -198,7 +198,7 @@ export default function FluxoCaixa() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card p-6 rounded-lg border">
             <div className="flex items-center gap-2 mb-2">
               <ArrowUp className="h-4 w-4 text-green-600" />
@@ -208,7 +208,7 @@ export default function FluxoCaixa() {
               {totalEntradas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
           </div>
-          
+
           <div className="bg-card p-6 rounded-lg border">
             <div className="flex items-center gap-2 mb-2">
               <ArrowDown className="h-4 w-4 text-red-600" />
@@ -220,10 +220,25 @@ export default function FluxoCaixa() {
           </div>
 
           <div className="bg-card p-6 rounded-lg border">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Saldo</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Saldo Atual</h3>
             <p className={`text-2xl font-bold ${saldoAtual >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {saldoAtual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
+          </div>
+
+          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <h3 className="text-sm font-medium text-blue-700">A Receber</h3>
+            </div>
+            <p className="text-2xl font-bold text-blue-600">
+              {totalPrevisoes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+            {totalVencidas > 0 && (
+              <p className="text-xs text-red-500 mt-1 font-medium">
+                {totalVencidas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} vencido
+              </p>
+            )}
           </div>
         </div>
 
@@ -290,6 +305,80 @@ export default function FluxoCaixa() {
           />
         </div>
       </div>
+
+      {/* Seção: Previsão de Entradas (contas a receber pendentes/vencidas) */}
+      {previsoes.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-600" />
+            <h2 className="text-lg font-bold">Previsão de Entradas</h2>
+            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+              {previsoes.length} conta{previsoes.length !== 1 ? "s" : ""}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Contas a receber pendentes originadas de orçamentos aprovados. Marque como "Recebida" em{" "}
+            <button
+              className="text-primary underline font-medium"
+              onClick={() => navigate("/financeiro/contas-receber")}
+            >
+              Contas a Receber
+            </button>{" "}
+            para registrar automaticamente no fluxo de caixa.
+          </p>
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-blue-50 border-b border-blue-200">
+                <tr>
+                  <th className="text-left px-4 py-3 font-semibold text-blue-700 text-xs uppercase tracking-wide">Descrição</th>
+                  <th className="text-left px-4 py-3 font-semibold text-blue-700 text-xs uppercase tracking-wide">Categoria</th>
+                  <th className="text-left px-4 py-3 font-semibold text-blue-700 text-xs uppercase tracking-wide">Vencimento</th>
+                  <th className="text-right px-4 py-3 font-semibold text-blue-700 text-xs uppercase tracking-wide">Valor</th>
+                  <th className="text-left px-4 py-3 font-semibold text-blue-700 text-xs uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {previsoes.map((p: PrevisaoEntrada) => (
+                  <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-800">{p.descricao}</td>
+                    <td className="px-4 py-3 text-slate-600 text-xs">{p.categoria}</td>
+                    <td className={`px-4 py-3 text-xs font-medium ${p.status === "Vencida" ? "text-red-600" : "text-slate-600"}`}>
+                      {format(new Date(p.data_movimentacao), "dd/MM/yyyy", { locale: ptBR })}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-blue-700">
+                      {Number(p.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        className={p.status === "Vencida"
+                          ? "bg-red-100 text-red-700 gap-1"
+                          : "bg-yellow-100 text-yellow-700 gap-1"}
+                      >
+                        {p.status === "Vencida"
+                          ? <AlertCircle className="w-3 h-3" />
+                          : <Clock className="w-3 h-3" />}
+                        {p.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.orcamento && (
+                        <button
+                          onClick={() => navigate(`/orcamentos/${p.orcamento!.id}`)}
+                          className="flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          <FileText className="w-3 h-3" />
+                          Orç. #{p.orcamento.numero_orcamento}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <FluxoCaixaForm
         open={formOpen}

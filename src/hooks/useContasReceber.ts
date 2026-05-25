@@ -94,10 +94,43 @@ export function useContasReceber() {
         .single();
 
       if (error) throw error;
+
+      // Auto-sync com fluxo_caixa baseado no novo status
+      if (data.status === "Recebida") {
+        // Verifica se já existe entrada no fluxo_caixa para evitar duplicata
+        const { data: existing } = await supabase
+          .from("fluxo_caixa")
+          .select("id")
+          .eq("conta_receber_id", id)
+          .maybeSingle();
+
+        if (!existing) {
+          await supabase.from("fluxo_caixa").insert([{
+            user_id: user?.id,
+            tipo: "Entrada",
+            descricao: result.descricao,
+            categoria: result.categoria,
+            valor: result.valor,
+            data_movimentacao: result.data_recebimento ?? new Date().toISOString().split("T")[0],
+            forma_pagamento: result.forma_pagamento ?? null,
+            observacoes: result.observacoes ?? null,
+            conta_receber_id: id,
+          }]);
+        }
+      } else if (data.status === "Cancelada" || data.status === "Pendente") {
+        // Remove entrada do fluxo_caixa se existir (estorno / reabertura)
+        await supabase
+          .from("fluxo_caixa")
+          .delete()
+          .eq("conta_receber_id", id);
+      }
+
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contas_receber"] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo_caixa"] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo_caixa_previsoes"] });
       toast({
         title: "Sucesso",
         description: "Conta a receber atualizada com sucesso!",

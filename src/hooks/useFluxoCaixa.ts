@@ -13,8 +13,23 @@ export type FluxoCaixa = {
   data_movimentacao: string;
   forma_pagamento?: string;
   observacoes?: string;
+  conta_receber_id?: string | null;
   created_at: string;
   updated_at: string;
+};
+
+// Previsão: conta a receber Pendente/Vencida mapeada para exibição no fluxo
+export type PrevisaoEntrada = {
+  id: string;
+  tipo: "Previsão";
+  descricao: string;
+  categoria: string;
+  valor: number;
+  data_movimentacao: string; // = data_vencimento
+  status: "Pendente" | "Vencida";
+  paciente_id?: string | null;
+  orcamento_id?: string | null;
+  orcamento?: { id: string; numero_orcamento: number } | null;
 };
 
 export function useFluxoCaixa() {
@@ -32,6 +47,33 @@ export function useFluxoCaixa() {
 
       if (error) throw error;
       return data as FluxoCaixa[];
+    },
+    enabled: !!user,
+  });
+
+  // Contas a receber Pendente/Vencida como previsão de entradas
+  const { data: previsoes = [], isLoading: isLoadingPrevisoes } = useQuery({
+    queryKey: ["fluxo_caixa_previsoes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contas_receber")
+        .select("*, orcamento:orcamentos(id, numero_orcamento)")
+        .in("status", ["Pendente", "Vencida"])
+        .order("data_vencimento", { ascending: true });
+
+      if (error) throw error;
+      return (data ?? []).map((c: any): PrevisaoEntrada => ({
+        id: c.id,
+        tipo: "Previsão",
+        descricao: c.descricao,
+        categoria: c.categoria,
+        valor: c.valor,
+        data_movimentacao: c.data_vencimento,
+        status: c.status,
+        paciente_id: c.paciente_id,
+        orcamento_id: c.orcamento_id,
+        orcamento: c.orcamento,
+      }));
     },
     enabled: !!user,
   });
@@ -118,7 +160,8 @@ export function useFluxoCaixa() {
 
   return {
     movimentacoes,
-    isLoading,
+    previsoes,
+    isLoading: isLoading || isLoadingPrevisoes,
     createMovimentacao: createMutation.mutateAsync,
     updateMovimentacao: updateMutation.mutateAsync,
     deleteMovimentacao: deleteMutation.mutateAsync,
