@@ -97,19 +97,32 @@ export default function OrcamentoDetalhe() {
 
       const el = pdfRef.current;
       el.style.display = "block";
-      el.style.position = "fixed";
-      el.style.top = "-9999px";
-      el.style.left = "0";
+      el.style.position = "absolute";
+      el.style.left = "-9999px";
+      el.style.top = "0";
       el.style.width = "800px";
       el.style.background = "#fff";
+      el.style.zIndex = "-1";
 
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#fff" });
+      // aguardar browser renderizar antes de capturar
+      await new Promise(r => setTimeout(r, 100));
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#fff",
+        logging: false,
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+      });
 
       el.style.display = "none";
       el.style.position = "";
-      el.style.top = "";
       el.style.left = "";
+      el.style.top = "";
       el.style.width = "";
+      el.style.zIndex = "";
 
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;

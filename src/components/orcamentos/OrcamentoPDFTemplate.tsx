@@ -281,10 +281,8 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
             Plano de Tratamento de {orcamento.paciente?.nome ?? "—"}
           </p>
 
-          {/* ── ODONTOGRAMA ── */}
-          {dentesAfetados.length > 0 && (
-            <OdontogramaVisualizacao dentesAfetados={dentesAfetados} />
-          )}
+          {/* ── ODONTOGRAMA ── sempre visível no plano de tratamento */}
+          <OdontogramaVisualizacao dentesAfetados={dentesAfetados} />
 
           {/* ── TABELA DE PROCEDIMENTOS ── */}
           <table style={s.table}>
