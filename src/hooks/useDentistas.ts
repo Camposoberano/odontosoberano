@@ -15,6 +15,7 @@ export interface Dentista {
   endereco?: string;
   data_nascimento?: string;
   status: 'Ativo' | 'Inativo';
+  cor?: string;
   created_at: string;
   updated_at: string;
 }

@@ -15,8 +15,10 @@ import { Agendamento, useAgendamentos } from "@/hooks/useAgendamentos";
 import { usePacientes } from "@/hooks/usePacientes";
 import { useDentistas } from "@/hooks/useDentistas";
 import { useConvenios } from "@/hooks/useConvenios";
+import { useProcedimentosCatalogo, CATEGORIAS_PROCEDIMENTOS } from "@/hooks/useProcedimentosCatalogo";
 import { MarcadoresSelector } from "./MarcadoresSelector";
 import { Badge } from "@/components/ui/badge";
+import { Search } from "lucide-react";
 
 interface AgendamentoFormProps {
   open: boolean;
@@ -30,6 +32,13 @@ export function AgendamentoForm({ open, onOpenChange, onSubmit, agendamento }: A
   const { dentistas, refetch: refetchDentistas } = useDentistas();
   const { convenios, refetch: refetchConvenios } = useConvenios();
   const { fetchAgendamentos } = useAgendamentos();
+  const [buscaProcedimento, setBuscaProcedimento] = useState("");
+  const [categoriaProcedimento, setCategoriaProcedimento] = useState<string>("");
+  const { data: procedimentosCatalogo = [] } = useProcedimentosCatalogo({
+    busca: buscaProcedimento,
+    categoria: categoriaProcedimento || undefined,
+    apenasAtivos: true,
+  });
 
   const [formData, setFormData] = useState({
     paciente_id: "",
@@ -237,26 +246,65 @@ export function AgendamentoForm({ open, onOpenChange, onSubmit, agendamento }: A
             </div>
 
             <div className="space-y-2 col-span-2">
-              <Label htmlFor="procedimento">Procedimento *</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {["PPR", "PT", "Protocolo Definitivo", "Protocolo Provisório", "Bruxismo", "Limpeza"].map((proc) => (
-                  <Badge 
-                    key={proc} 
-                    variant="outline" 
-                    className="cursor-pointer hover:bg-primary hover:text-white transition-colors border-primary/20 text-[10px] font-black uppercase tracking-tighter"
-                    onClick={() => setFormData({ ...formData, procedimento: proc })}
-                  >
-                    {proc}
-                  </Badge>
-                ))}
+              <Label>Procedimento *</Label>
+
+              {/* Filtros do catálogo */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar procedimento..."
+                    value={buscaProcedimento}
+                    onChange={(e) => setBuscaProcedimento(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={categoriaProcedimento || "todas"} onValueChange={(v) => setCategoriaProcedimento(v === "todas" ? "" : v)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as categorias</SelectItem>
+                    {CATEGORIAS_PROCEDIMENTOS.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Lista de procedimentos do catálogo */}
+              {procedimentosCatalogo.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border rounded-xl bg-slate-50">
+                  {procedimentosCatalogo.map((proc) => (
+                    <Badge
+                      key={proc.id}
+                      variant={formData.procedimento === proc.nome ? "default" : "outline"}
+                      className={`cursor-pointer text-[10px] font-black uppercase tracking-tighter transition-colors ${
+                        formData.procedimento === proc.nome
+                          ? "bg-primary text-white border-primary"
+                          : "hover:bg-primary/10 border-primary/20"
+                      }`}
+                      onClick={() => setFormData({ ...formData, procedimento: proc.nome })}
+                    >
+                      {proc.nome}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Campo manual (sempre visível para edição/personalização) */}
               <Input
                 id="procedimento"
                 value={formData.procedimento}
                 onChange={(e) => setFormData({ ...formData, procedimento: e.target.value })}
-                placeholder="Ex: Limpeza, Obturação, etc."
+                placeholder="Procedimento selecionado ou digite manualmente"
                 required
               />
+              {formData.procedimento && (
+                <p className="text-[10px] text-muted-foreground font-bold">
+                  ✓ Procedimento: <span className="text-primary">{formData.procedimento}</span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

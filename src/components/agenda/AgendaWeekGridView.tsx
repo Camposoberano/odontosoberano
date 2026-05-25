@@ -8,9 +8,10 @@ interface AgendaWeekGridViewProps {
   appointments: Agendamento[];
   onAppointmentClick: (appointment: Agendamento) => void;
   onAddClick: (date: Date, time: string) => void;
+  dentistaColors?: Record<string, string>;
 }
 
-export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentClick, onAddClick }: AgendaWeekGridViewProps) {
+export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentClick, onAddClick, dentistaColors = {} }: AgendaWeekGridViewProps) {
   const startOfSelectedWeek = startOfWeek(selectedDate, { locale: ptBR });
   const days = Array.from({ length: 6 }).map((_, i) => addDays(startOfSelectedWeek, i)); // Segunda a Sábado
 
@@ -58,19 +59,25 @@ export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentCl
                     }}
                   >
                     <div className="flex flex-col gap-1">
-                      {dayApts.map(apt => (
-                        <div 
+                      {dayApts.map(apt => {
+                        const cor = apt.dentista_id ? dentistaColors[apt.dentista_id] : undefined;
+                        return (
+                        <div
                           key={apt.id}
                           onClick={(e) => {
                             e.stopPropagation();
                             onAppointmentClick(apt);
                           }}
-                          className="p-1 rounded bg-primary/10 border border-primary/20 cursor-pointer hover:bg-primary/20 transition-all"
+                          style={cor ? { borderLeftColor: cor, borderLeftWidth: 3, backgroundColor: `${cor}18` } : {}}
+                          className="p-1 rounded border border-primary/20 cursor-pointer hover:opacity-80 transition-all"
                         >
-                          <p className="text-[9px] font-black text-primary truncate uppercase">{apt.pacientes?.nome?.split(' ')[0]}</p>
+                          <p className="text-[9px] font-black truncate uppercase" style={cor ? { color: cor } : { color: "var(--primary)" }}>
+                            {apt.pacientes?.nome?.split(' ')[0]}
+                          </p>
                           <p className="text-[8px] opacity-70 truncate">{apt.procedimento}</p>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </td>
                 );

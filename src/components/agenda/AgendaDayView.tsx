@@ -11,6 +11,7 @@ interface AgendaDayViewProps {
   appointments: Agendamento[];
   onAppointmentClick: (appointment: Agendamento) => void;
   onAddClick: (time: string) => void;
+  dentistaColors?: Record<string, string>; // dentista_id → hex color
 }
 
 
@@ -24,7 +25,7 @@ const statusColors: Record<string, string> = {
   "7-Faltou": "bg-slate-200 border-slate-300 text-slate-800",
 };
 
-export function AgendaDayView({ selectedDate, appointments, onAppointmentClick, onAddClick }: AgendaDayViewProps) {
+export function AgendaDayView({ selectedDate, appointments, onAppointmentClick, onAddClick, dentistaColors = {} }: AgendaDayViewProps) {
 
   // Gerar slots de 30 minutos das 08:00 às 19:00
   const timeSlots = [];
@@ -64,13 +65,16 @@ export function AgendaDayView({ selectedDate, appointments, onAppointmentClick, 
                 }}
               >
                 {slotAppointments.length > 0 ? (
-                  slotAppointments.map((apt) => (
-                    <div 
+                  slotAppointments.map((apt) => {
+                    const dentistaCor = apt.dentista_id ? dentistaColors[apt.dentista_id] : undefined;
+                    return (
+                    <div
                       key={apt.id}
                       onClick={(e) => {
                         e.stopPropagation();
                         onAppointmentClick(apt);
                       }}
+                      style={dentistaCor ? { borderLeftColor: dentistaCor, borderLeftWidth: 4 } : {}}
                       className={cn(
                         "flex-1 min-w-[200px] max-w-[400px] p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-95 flex flex-col justify-between",
                         statusColors[apt.status] || "bg-slate-50 border-slate-200"
@@ -106,7 +110,8 @@ export function AgendaDayView({ selectedDate, appointments, onAppointmentClick, 
                         </div>
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="flex-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="text-[10px] font-black text-primary/40 uppercase flex items-center gap-1">

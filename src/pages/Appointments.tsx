@@ -65,6 +65,12 @@ export default function Appointments() {
   const { pacientes } = usePacientes();
   const { dentistas } = useDentistas();
 
+  // Mapa dentista_id → cor para identificação visual na agenda
+  const dentistaColors = useMemo(() =>
+    Object.fromEntries(dentistas.map(d => [d.id, d.cor ?? '#6366f1'])),
+    [dentistas]
+  );
+
   useEffect(() => {
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
@@ -294,32 +300,48 @@ export default function Appointments() {
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 w-full lg:w-3/4 space-y-6">
             <Tabs defaultValue="day" className="w-full">
-              <div className="flex items-center justify-start mb-4 overflow-x-auto no-scrollbar">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <TabsList className="bg-slate-100/50 p-1 rounded-xl">
                   <TabsTrigger value="day" className="font-bold">Dia</TabsTrigger>
                   <TabsTrigger value="week" className="font-bold">Semana</TabsTrigger>
                   <TabsTrigger value="month" className="font-bold">Mês</TabsTrigger>
                 </TabsList>
+                {/* Legenda de cores por dentista */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  {dentistas.filter(d => d.status === 'Ativo').map(d => (
+                    <div key={d.id} className="flex items-center gap-1.5">
+                      <div
+                        className="w-3 h-3 rounded-full border border-white shadow-sm"
+                        style={{ backgroundColor: d.cor ?? '#6366f1' }}
+                      />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        {d.nome.split(' ')[0]} {d.nome.split(' ')[1] ?? ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
               
               <TabsContent value="day" className="mt-0">
                  <motion.div variants={itemVariants}>
-                    <AgendaDayView 
+                    <AgendaDayView
                       selectedDate={selectedDate}
                       appointments={filteredAgendamentos}
                       onAppointmentClick={handleShowDetail}
                       onAddClick={handleAddClick}
+                      dentistaColors={dentistaColors}
                     />
                  </motion.div>
               </TabsContent>
 
               <TabsContent value="week" className="mt-0">
                  <motion.div variants={itemVariants}>
-                    <AgendaWeekGridView 
+                    <AgendaWeekGridView
                       selectedDate={selectedDate}
                       appointments={filteredAgendamentos}
                       onAppointmentClick={handleShowDetail}
                       onAddClick={(date, time) => handleAddClick(date, time)}
+                      dentistaColors={dentistaColors}
                     />
                  </motion.div>
               </TabsContent>
