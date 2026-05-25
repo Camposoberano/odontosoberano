@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -39,6 +40,23 @@ export type CreatePacienteData = Omit<
   Paciente,
   'id' | 'user_id' | 'created_at' | 'updated_at'
 >;
+
+export function usePaciente(id: string | undefined) {
+  return useQuery({
+    queryKey: ["paciente", id],
+    enabled: !!id,
+    queryFn: async (): Promise<Paciente | null> => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("pacientes")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return { ...data, status: data.status as "Ativo" | "Inativo" };
+    },
+  });
+}
 
 export function usePacientes() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);

@@ -18,6 +18,7 @@ import { useRealTimeSync } from "@/hooks/useRealTimeSync";
 const Auth = React.lazy(() => import("@/pages/Auth"));
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 const Patients = React.lazy(() => import("@/pages/Patients"));
+const PacienteDetalhe = React.lazy(() => import("@/pages/pacientes/PacienteDetalhe"));
 const Appointments = React.lazy(() => import("@/pages/Appointments"));
 const Profile = React.lazy(() => import("@/pages/Profile"));
 const Dentistas = React.lazy(() => import("@/pages/cadastros/Dentistas").then(m => ({ default: m.Dentistas })));
@@ -90,6 +91,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<ProtectedRoute><AnimatedRoute><Dashboard /></AnimatedRoute></ProtectedRoute>} />
         <Route path="/patients" element={<ProtectedRoute><AnimatedRoute><Patients /></AnimatedRoute></ProtectedRoute>} />
+        <Route path="/patients/:id" element={<ProtectedRoute><AnimatedRoute><PacienteDetalhe /></AnimatedRoute></ProtectedRoute>} />
         <Route path="/appointments" element={<ProtectedRoute><AnimatedRoute><Appointments /></AnimatedRoute></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><AnimatedRoute><Profile /></AnimatedRoute></ProtectedRoute>} />
             

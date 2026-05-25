@@ -21,6 +21,23 @@ export type ContaReceber = {
   orcamento?: { id: string; numero_orcamento: number } | null;
 };
 
+export function useContasReceberByPaciente(pacienteId: string | undefined) {
+  return useQuery({
+    queryKey: ["contas_receber", "by_paciente", pacienteId],
+    enabled: !!pacienteId,
+    queryFn: async (): Promise<ContaReceber[]> => {
+      if (!pacienteId) return [];
+      const { data, error } = await supabase
+        .from("contas_receber")
+        .select("*, orcamento:orcamentos(id, numero_orcamento)")
+        .eq("paciente_id", pacienteId)
+        .order("data_vencimento", { ascending: true });
+      if (error) throw error;
+      return data as ContaReceber[];
+    },
+  });
+}
+
 export function useContasReceber() {
   const { toast } = useToast();
   const queryClient = useQueryClient();

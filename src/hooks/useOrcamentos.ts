@@ -297,6 +297,23 @@ export function useOrcamentos() {
   };
 }
 
+export function useOrcamentosByPaciente(pacienteId: string | undefined) {
+  return useQuery({
+    queryKey: ["orcamentos", "by_paciente", pacienteId],
+    enabled: !!pacienteId,
+    queryFn: async (): Promise<Orcamento[]> => {
+      if (!pacienteId) return [];
+      const { data, error } = await supabase
+        .from("orcamentos")
+        .select("*")
+        .eq("paciente_id", pacienteId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Orcamento[];
+    },
+  });
+}
+
 export function useOrcamento(id: string | undefined) {
   return useQuery({
     queryKey: [QUERY_KEY, id],

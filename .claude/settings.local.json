@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "Bash(rtk grep *)",
+      "Bash(xargs -I {} basename {})"
+    ]
+  },
   "enabledMcpjsonServers": [
     "n8n",
     "supabase-institutobelem"

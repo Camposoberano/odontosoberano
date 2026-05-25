@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,7 @@ import { motion, Variants } from "framer-motion";
 
 export default function Patients() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { pacientes, loading, createPaciente, updatePaciente, deletePaciente } = usePacientes();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -353,12 +354,11 @@ export default function Patients() {
                     <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Inicie a gestão pesquisando por nome, cpf ou telefone abaixo</p>
                  </div>
                )}
-               <PatientSearch 
-                 selectedPacienteId={selectedPacienteId} 
+               <PatientSearch
+                 selectedPacienteId={selectedPacienteId}
                  onSelect={(id) => {
-                   setSelectedPacienteId(id);
-                   setActiveTab("ficha");
-                 }} 
+                   navigate(`/patients/${id}`);
+                 }}
                  placeholder="Digite o nome do paciente..."
                  className="shadow-xl rounded-2xl"
                />
