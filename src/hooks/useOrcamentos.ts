@@ -43,7 +43,7 @@ export interface Orcamento {
   updated_at: string;
   // joins
   paciente?: { id: string; nome: string; telefone?: string; email?: string } | null;
-  dentista?: { id: string; nome: string } | null;
+  dentista?: { id: string; nome: string; cro?: string | null } | null;
   orcamento_itens?: OrcamentoItem[];
 }
 
@@ -85,7 +85,7 @@ export function useOrcamentos() {
         .select(`
           *,
           paciente:pacientes(id, nome, telefone, email),
-          dentista:dentistas(id, nome),
+          dentista:dentistas(id, nome, cro),
           orcamento_itens(*)
         `)
         .order("created_at", { ascending: false });
@@ -103,7 +103,7 @@ export function useOrcamentos() {
         .select(`
           *,
           paciente:pacientes(id, nome, telefone, email),
-          dentista:dentistas(id, nome),
+          dentista:dentistas(id, nome, cro),
           orcamento_itens(*)
         `)
         .single();
@@ -129,7 +129,7 @@ export function useOrcamentos() {
         .select(`
           *,
           paciente:pacientes(id, nome, telefone, email),
-          dentista:dentistas(id, nome),
+          dentista:dentistas(id, nome, cro),
           orcamento_itens(*)
         `)
         .single();
@@ -325,7 +325,7 @@ export function useOrcamento(id: string | undefined) {
         .select(`
           *,
           paciente:pacientes(id, nome, telefone, email),
-          dentista:dentistas(id, nome),
+          dentista:dentistas(id, nome, cro),
           orcamento_itens(*)
         `)
         .eq("id", id)

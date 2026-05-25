@@ -649,9 +649,9 @@ export default function OrcamentoDetalhe() {
         <OrcamentoPDFTemplate
           orcamento={orcamento}
           clinicaNome="Instituto Belém"
-          clinicaEndereco="Seu endereço aqui"
-          clinicaTelefone="(87) 9 0000-0000"
-          logoUrl={undefined}
+          clinicaEndereco="Belém, PA"
+          clinicaTelefone=""
+          logoUrl="/logo-instituto-belem.png"
         />
       </div>
     </DashboardLayout>
