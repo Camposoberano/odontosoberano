@@ -43,8 +43,8 @@ export const useDashboardStats = () => {
 
       if (error) throw error;
 
-      const confirmados = data?.filter(a => a.status === "Confirmado").length || 0;
-      const pendentes = data?.filter(a => a.status === "Agendado").length || 0;
+      const confirmados = data?.filter(a => a.status === "2-Confirmado").length || 0;
+      const pendentes = data?.filter(a => a.status === "1-Agendado").length || 0;
 
       return {
         total: data?.length || 0,
@@ -235,8 +235,7 @@ export const useDashboardStats = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("status")
-        .eq("user_id", user!.id);
+        .select("status");
       if (error) throw error;
       return {
         aprovados: data?.filter(o => o.status === "aprovado").length || 0,
@@ -254,7 +253,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("status, created_at")
-        .eq("user_id", user!.id)
         .gte("created_at", subMonths(new Date(), 6).toISOString());
       if (error) throw error;
       const meses: Record<string, { mes: string; aprovados: number; reprovados: number; emAberto: number }> = {};
@@ -319,7 +317,7 @@ export const useDashboardStats = () => {
         .from("agendamentos")
         .select("paciente_id")
         .eq("user_id", user!.id)
-        .neq("status", "cancelado")
+        .not("status", "in", '("7-Faltou","6-Atrasado")')
         .gte("data_agendamento", subMonths(new Date(), 6).toISOString());
       if (error) throw error;
       return new Set((data || []).map(a => a.paciente_id).filter(Boolean)).size;
@@ -350,7 +348,7 @@ export const useDashboardStats = () => {
         .from("agendamentos")
         .select("id, data_agendamento, procedimento, paciente_id, dentista_id")
         .eq("user_id", user!.id)
-        .eq("status", "cancelado")
+        .eq("status", "7-Faltou")
         .gte("data_agendamento", subDays(new Date(), 30).toISOString())
         .order("data_agendamento", { ascending: false })
         .limit(20);
@@ -387,7 +385,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("paciente_id, created_at, status")
-        .eq("user_id", user!.id)
         .eq("status", "aprovado");
       if (error) throw error;
       // rough proxy: distinct pacientes with orcamento aprovado this month = novos

@@ -473,13 +473,13 @@ export default function Dashboard() {
             <Card className="rounded-2xl border-2">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-black flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-red-500" /> Consultas Canceladas (últimos 30 dias)
+                  <XCircle className="w-5 h-5 text-red-500" /> Faltas (últimos 30 dias)
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {cancelados.length === 0 ? (
                   <div className="p-8 text-center text-muted-foreground">
-                    Nenhuma consulta cancelada nos últimos 30 dias.
+                    Nenhuma falta registrada nos últimos 30 dias.
                   </div>
                 ) : (
                   <div className="overflow-x-auto">

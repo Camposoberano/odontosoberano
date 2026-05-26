@@ -19,24 +19,32 @@ export function useNotificacoes() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Faltas nos últimos 15 dias
+      // Faltas nos últimos 15 dias (status "7-Faltou", sem join FK)
       const quinzeDiasAtras = new Date();
       quinzeDiasAtras.setDate(quinzeDiasAtras.getDate() - 15);
 
       const { data: faltas } = await supabase
         .from('agendamentos')
-        .select('id, data_agendamento, status, pacientes (nome)')
+        .select('id, data_agendamento, status, paciente_id')
         .eq('user_id', user.id)
-        .eq('status', 'Faltou')
+        .eq('status', '7-Faltou')
         .gte('data_agendamento', quinzeDiasAtras.toISOString());
 
-      if (faltas) {
+      if (faltas?.length) {
+        // Buscar nomes dos pacientes separadamente
+        const pacIds = [...new Set(faltas.map(f => f.paciente_id).filter(Boolean))] as string[];
+        const { data: pacs } = await supabase
+          .from('pacientes')
+          .select('id, nome')
+          .in('id', pacIds);
+        const pacsMap = new Map((pacs || []).map(p => [p.id, p.nome]));
+
         faltas.forEach(falta => {
           notificacoes.push({
             id: `falta-${falta.id}`,
             tipo: 'FALTA',
             titulo: 'Alerta de Falta',
-            mensagem: `Paciente ${(falta.pacientes as any)?.nome || 'Desconhecido'} faltou à consulta.`,
+            mensagem: `Paciente ${pacsMap.get(falta.paciente_id || '') || 'Desconhecido'} faltou à consulta.`,
             data: falta.data_agendamento,
             lida: false,
             link: '/appointments'
