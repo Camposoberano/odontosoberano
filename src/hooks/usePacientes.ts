@@ -32,6 +32,16 @@ export interface Paciente {
   nome_responsavel?: string | null;
   cpf_responsavel?: string | null;
   telefone_responsavel?: string | null;
+  // campos extras (migração 116)
+  etiquetas?: string[] | null;
+  numero_prontuario?: string | null;
+  rede_social?: string | null;
+  paciente_estrangeiro?: boolean | null;
+  data_nasc_responsavel?: string | null;
+  email_responsavel?: string | null;
+  plano_id?: string | null;
+  numero_carteirinha?: string | null;
+  titular_plano?: string | null;
   created_at?: string;
   updated_at?: string;
 }

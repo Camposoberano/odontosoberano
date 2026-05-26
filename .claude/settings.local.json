@@ -3,7 +3,9 @@
     "allow": [
       "mcp__plugin_context-mode_context-mode__ctx_search",
       "Bash(rtk grep *)",
-      "Bash(xargs -I {} basename {})"
+      "Bash(xargs -I {} basename {})",
+      "Bash(find E:\\\\Projetos_Novos\\\\Instituto Belem\\\\supabase\\\\migrations *)",
+      "Bash(rtk find *)"
     ]
   },
   "enabledMcpjsonServers": [

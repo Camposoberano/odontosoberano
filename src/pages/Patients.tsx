@@ -17,7 +17,7 @@ import { PatientSearch } from "@/components/pacientes/PatientSearch";
 import { usePacientes, Paciente } from "@/hooks/usePacientes";
 import { useAuth } from "@/contexts/AuthContext";
 import { MobileTable } from "@/components/ui/mobile-table";
-import { 
+import {
   Search,
   Plus,
   Filter,
@@ -39,7 +39,8 @@ import {
   AlignVerticalJustifyCenter,
   Menu,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  MessageCircle
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AnimatePresence } from "framer-motion";
@@ -189,14 +190,18 @@ export default function Patients() {
         </div>
       )
     },
-    { 
-      key: 'email' as keyof Paciente, 
-      header: 'Email',
-      className: 'text-sm text-muted-foreground'
+    {
+      key: 'cpf' as keyof Paciente,
+      header: 'CPF',
+      render: (value: any, paciente: Paciente) => (
+        <span className="text-sm text-muted-foreground font-mono">
+          {paciente.cpf ? paciente.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '—'}
+        </span>
+      )
     },
-    { 
-      key: 'telefone' as keyof Paciente, 
-      header: 'Telefone',
+    {
+      key: 'telefone' as keyof Paciente,
+      header: 'Celular',
       className: 'text-sm text-muted-foreground'
     },
     { 
@@ -280,11 +285,30 @@ export default function Patients() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {paciente.telefone && (
+          <DropdownMenuItem asChild>
+            <a
+              href={`https://wa.me/55${paciente.telefone.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center"
+            >
+              <MessageCircle className="w-4 h-4 mr-2 text-green-600" />
+              WhatsApp
+            </a>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => handleEditPaciente(paciente)}>
           <Edit className="w-4 h-4 mr-2" />
           Editar Dados
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
+          onClick={() => navigate(`/patients/${paciente.id}`)}
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Abrir Ficha
+        </DropdownMenuItem>
+        <DropdownMenuItem
           onClick={() => handleDeleteClick(paciente)}
           className="text-destructive"
         >

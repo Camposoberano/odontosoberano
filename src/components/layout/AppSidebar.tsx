@@ -31,6 +31,12 @@ import {
   ShieldCheck,
   User,
   LayoutDashboard,
+  Gift,
+  AlertCircle,
+  Stethoscope,
+  Bell,
+  Landmark,
+  Tag,
 } from "lucide-react";
 
 
@@ -67,6 +73,16 @@ const cadastroItems = [
   { title: "Catálogo de Procedimentos", url: "/cadastros/catalogo", icon: BookOpen },
 ];
 
+const relatoriosItems = [
+  { title: "Aniversariantes", url: "/relatorios/aniversariantes", icon: Gift },
+  { title: "Tratamentos Abertos", url: "/relatorios/pacientes-tratamentos-abertos", icon: AlertCircle },
+  { title: "Vendas por Profissional", url: "/relatorios/vendas-por-profissional", icon: UserCheck },
+  { title: "Vendas por Tratamento", url: "/relatorios/vendas-por-tratamentos", icon: Stethoscope },
+  { title: "Vendas por Plano", url: "/relatorios/vendas-por-planos", icon: CreditCardIcon },
+  { title: "Despesas por Categoria", url: "/relatorios/despesas-por-categoria", icon: TrendingDown },
+  { title: "Pacientes Indicados", url: "/relatorios/pacientes-indicados", icon: Users },
+];
+
 const financeiroItems = [
   { title: "Contas a Pagar", url: "/financeiro/contas-pagar", icon: Receipt },
   { title: "Contas a Receber", url: "/financeiro/contas-receber", icon: TrendingUp },
@@ -95,6 +111,9 @@ const configuracoesItems = [
   { title: "Senha do Administrador", url: "/configuracoes/senha-admin", icon: Lock },
   { title: "Informações da Clínica", url: "/configuracoes/informacoes-clinica", icon: Info },
   { title: "Permissões", url: "/configuracoes/permissoes", icon: ShieldCheck },
+  { title: "Categorias de Despesa", url: "/configuracoes/categorias", icon: Tag },
+  { title: "Contas Financeiras", url: "/configuracoes/contas-financeiras", icon: Landmark },
+  { title: "Comunicação", url: "/configuracoes/comunicacao", icon: Bell },
 ];
 
 const menuItems = [
@@ -111,6 +130,7 @@ export function AppSidebar() {
   // Route match helpers for submenu opening
   const cadastroMatch = currentPath.startsWith("/cadastros") || currentPath === "/patients";
   const financeiroMatch = currentPath.startsWith("/financeiro") || currentPath === "/relatorios/financeiro";
+  const relatoriosMatch = currentPath.startsWith("/relatorios") && currentPath !== "/relatorios/financeiro";
   const pagamentosMatch = currentPath.startsWith("/pagamentos");
   const utilitariosMatch = currentPath.startsWith("/utilitarios");
   const configuracoesMatch = currentPath.startsWith("/configuracoes") || currentPath === "/profile";
@@ -118,6 +138,7 @@ export function AppSidebar() {
   // Active state helpers - only true when the parent menu should be highlighted
   const isCadastroActive = false; // Parent menu never highlighted, only children
   const isFinanceiroActive = false; // Parent menu never highlighted, only children
+  const isRelatoriosActive = false; // Parent menu never highlighted, only children
   const isPagamentosActive = false; // Parent menu never highlighted, only children
   const isUtilitariosActive = false; // Parent menu never highlighted, only children
   const isConfiguracoesActive = false; // Parent menu never highlighted, only children
@@ -125,6 +146,7 @@ export function AppSidebar() {
   // Initialize open state from current route to avoid flicker
   const [isCadastroOpen, setIsCadastroOpen] = useState(cadastroMatch);
   const [isFinanceiroOpen, setIsFinanceiroOpen] = useState(financeiroMatch);
+  const [isRelatoriosOpen, setIsRelatoriosOpen] = useState(relatoriosMatch);
   const [isPagamentosOpen, setIsPagamentosOpen] = useState(pagamentosMatch);
   const [isUtilitariosOpen, setIsUtilitariosOpen] = useState(utilitariosMatch);
   const [isConfiguracoesOpen, setIsConfiguracoesOpen] = useState(configuracoesMatch);
@@ -136,10 +158,11 @@ export function AppSidebar() {
   React.useLayoutEffect(() => {
     if (cadastroMatch) setIsCadastroOpen(true);
     if (financeiroMatch) setIsFinanceiroOpen(true);
+    if (relatoriosMatch) setIsRelatoriosOpen(true);
     if (pagamentosMatch) setIsPagamentosOpen(true);
     if (utilitariosMatch) setIsUtilitariosOpen(true);
     if (configuracoesMatch) setIsConfiguracoesOpen(true);
-  }, [cadastroMatch, financeiroMatch, pagamentosMatch, utilitariosMatch, configuracoesMatch]);
+  }, [cadastroMatch, financeiroMatch, relatoriosMatch, pagamentosMatch, utilitariosMatch, configuracoesMatch]);
 
   const handleSignOut = async () => {
     try {
@@ -319,6 +342,41 @@ export function AppSidebar() {
               
 
               
+              {/* Relatórios with submenu */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setIsRelatoriosOpen(!isRelatoriosOpen)}
+                  className={`${menuButtonClass} ${getParentNavClass(isRelatoriosActive)}`}
+                >
+                  <BarChart3 className={`w-5 h-5 ${isRelatoriosActive ? "text-primary" : "text-sky-500"}`} />
+                  {!isCollapsed && (
+                    <>
+                      <span className={isRelatoriosActive ? "text-primary" : "text-sky-600"}>Relatórios</span>
+                      {isRelatoriosOpen ? (
+                        <ChevronDown className="w-4 h-4 ml-auto" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 ml-auto" />
+                      )}
+                    </>
+                  )}
+                </SidebarMenuButton>
+
+                {isRelatoriosOpen && !isCollapsed && (
+                  <SidebarMenuSub>
+                    {relatoriosItems.map((item) => (
+                      <SidebarMenuSubItem key={item.title}>
+                        <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
+                          <NavLink to={item.url} end>
+                            <item.icon className="w-3 h-3" />
+                            <span>{item.title}</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+
               {/* Pagamentos with submenu */}
               <SidebarMenuItem>
                 <SidebarMenuButton

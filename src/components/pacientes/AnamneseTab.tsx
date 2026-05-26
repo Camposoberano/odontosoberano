@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, ClipboardList } from "lucide-react";
+import { Loader2, Save, ClipboardList, ChevronDown, ChevronRight } from "lucide-react";
 
 const DOENCAS_OPTIONS = [
   { id: "diabetes", label: "Diabetes" },
@@ -26,6 +27,21 @@ const DOENCAS_OPTIONS = [
   { id: "renal", label: "Doença renal" },
 ];
 
+interface HabitosOrtodontia {
+  roer_unhas: boolean;
+  bruxismo: boolean;
+  chupeta: boolean;
+  succao_dedo: boolean;
+}
+
+interface HistoricoDental {
+  periodontia: boolean;
+  cirurgias: boolean;
+  endodontia: boolean;
+  profilaxia: boolean;
+  ortodontia_previa: boolean;
+}
+
 interface AnamneseData {
   id?: string;
   alergias: string;
@@ -37,7 +53,26 @@ interface AnamneseData {
   alcool: boolean;
   pressao_arterial: string;
   observacoes: string;
+  // Ortodontia
+  queixa_principal: string;
+  habitos: HabitosOrtodontia;
+  historico_dental: HistoricoDental;
+  perfil_facial: string;
+  sobremordida: string;
+  trespasse_horizontal: string;
+  mordida_cruzada: boolean;
+  desvio_linha_media: string;
+  classe_canino_d: string;
+  classe_canino_e: string;
+  classe_paciente: string;
+  frequencia_respiratoria: string;
+  fc_bpm: string;
+  alteracao_ganglionar: boolean;
+  aleitamento: string;
 }
+
+const DEFAULT_HABITOS: HabitosOrtodontia = { roer_unhas: false, bruxismo: false, chupeta: false, succao_dedo: false };
+const DEFAULT_HISTORICO_DENTAL: HistoricoDental = { periodontia: false, cirurgias: false, endodontia: false, profilaxia: false, ortodontia_previa: false };
 
 const DEFAULT: AnamneseData = {
   alergias: "",
@@ -49,6 +84,21 @@ const DEFAULT: AnamneseData = {
   alcool: false,
   pressao_arterial: "",
   observacoes: "",
+  queixa_principal: "",
+  habitos: { ...DEFAULT_HABITOS },
+  historico_dental: { ...DEFAULT_HISTORICO_DENTAL },
+  perfil_facial: "",
+  sobremordida: "",
+  trespasse_horizontal: "",
+  mordida_cruzada: false,
+  desvio_linha_media: "",
+  classe_canino_d: "",
+  classe_canino_e: "",
+  classe_paciente: "",
+  frequencia_respiratoria: "",
+  fc_bpm: "",
+  alteracao_ganglionar: false,
+  aleitamento: "",
 };
 
 interface AnamneseTabProps {
@@ -59,6 +109,7 @@ export function AnamneseTab({ pacienteId }: AnamneseTabProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<AnamneseData>(DEFAULT);
+  const [isOrtodontiaOpen, setIsOrtodontiaOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["anamnese", pacienteId],
@@ -76,17 +127,33 @@ export function AnamneseTab({ pacienteId }: AnamneseTabProps) {
 
   useEffect(() => {
     if (data) {
+      const d = data as any;
       setForm({
-        id: data.id,
-        alergias: data.alergias ?? "",
-        medicamentos_uso: data.medicamentos_uso ?? "",
-        doencas_sistemicas: (data.doencas_sistemicas as string[]) ?? [],
-        historico_cirurgias: data.historico_cirurgias ?? "",
-        gestante: data.gestante ?? false,
-        fumante: data.fumante ?? false,
-        alcool: data.alcool ?? false,
-        pressao_arterial: data.pressao_arterial ?? "",
-        observacoes: data.observacoes ?? "",
+        id: d.id,
+        alergias: d.alergias ?? "",
+        medicamentos_uso: d.medicamentos_uso ?? "",
+        doencas_sistemicas: (d.doencas_sistemicas as string[]) ?? [],
+        historico_cirurgias: d.historico_cirurgias ?? "",
+        gestante: d.gestante ?? false,
+        fumante: d.fumante ?? false,
+        alcool: d.alcool ?? false,
+        pressao_arterial: d.pressao_arterial ?? "",
+        observacoes: d.observacoes ?? "",
+        queixa_principal: d.queixa_principal ?? "",
+        habitos: { ...DEFAULT_HABITOS, ...(d.habitos ?? {}) },
+        historico_dental: { ...DEFAULT_HISTORICO_DENTAL, ...(d.historico_dental ?? {}) },
+        perfil_facial: d.perfil_facial ?? "",
+        sobremordida: d.sobremordida ?? "",
+        trespasse_horizontal: d.trespasse_horizontal ?? "",
+        mordida_cruzada: d.mordida_cruzada ?? false,
+        desvio_linha_media: d.desvio_linha_media ?? "",
+        classe_canino_d: d.classe_canino_d ?? "",
+        classe_canino_e: d.classe_canino_e ?? "",
+        classe_paciente: d.classe_paciente ?? "",
+        frequencia_respiratoria: d.frequencia_respiratoria != null ? String(d.frequencia_respiratoria) : "",
+        fc_bpm: d.fc_bpm != null ? String(d.fc_bpm) : "",
+        alteracao_ganglionar: d.alteracao_ganglionar ?? false,
+        aleitamento: d.aleitamento ?? "",
       });
     }
   }, [data]);
@@ -105,6 +172,21 @@ export function AnamneseTab({ pacienteId }: AnamneseTabProps) {
         alcool: values.alcool,
         pressao_arterial: values.pressao_arterial || null,
         observacoes: values.observacoes || null,
+        queixa_principal: values.queixa_principal || null,
+        habitos: values.habitos,
+        historico_dental: values.historico_dental,
+        perfil_facial: values.perfil_facial || null,
+        sobremordida: values.sobremordida || null,
+        trespasse_horizontal: values.trespasse_horizontal || null,
+        mordida_cruzada: values.mordida_cruzada,
+        desvio_linha_media: values.desvio_linha_media || null,
+        classe_canino_d: values.classe_canino_d || null,
+        classe_canino_e: values.classe_canino_e || null,
+        classe_paciente: values.classe_paciente || null,
+        frequencia_respiratoria: values.frequencia_respiratoria ? Number(values.frequencia_respiratoria) : null,
+        fc_bpm: values.fc_bpm ? Number(values.fc_bpm) : null,
+        alteracao_ganglionar: values.alteracao_ganglionar,
+        aleitamento: values.aleitamento || null,
       };
 
       if (values.id) {
@@ -282,6 +364,177 @@ export function AnamneseTab({ pacienteId }: AnamneseTabProps) {
           className="rounded-xl"
           rows={3}
         />
+      </div>
+
+      {/* Seção Ortodontia (colapsável) */}
+      <div className="border-2 rounded-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setIsOrtodontiaOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-violet-50 hover:bg-violet-100 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-violet-600" />
+            <span className="font-black text-xs uppercase tracking-widest text-violet-700">
+              Ortodontia / Dados Complementares
+            </span>
+          </div>
+          {isOrtodontiaOpen ? (
+            <ChevronDown className="w-4 h-4 text-violet-500" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-violet-500" />
+          )}
+        </button>
+
+        {isOrtodontiaOpen && (
+          <div className="p-4 space-y-6">
+            {/* Queixa principal */}
+            <div className="space-y-2">
+              <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Queixa Principal</Label>
+              <Textarea
+                placeholder="Motivo da consulta ortodôntica..."
+                value={form.queixa_principal}
+                onChange={(e) => setForm((f) => ({ ...f, queixa_principal: e.target.value }))}
+                className="rounded-xl"
+                rows={2}
+              />
+            </div>
+
+            {/* Hábitos */}
+            <div className="space-y-3">
+              <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Hábitos</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {(["roer_unhas", "bruxismo", "chupeta", "succao_dedo"] as const).map((h) => (
+                  <div key={h} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`habito-${h}`}
+                      checked={form.habitos[h]}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, habitos: { ...f.habitos, [h]: !!v } }))}
+                    />
+                    <label htmlFor={`habito-${h}`} className="text-sm font-medium cursor-pointer capitalize">
+                      {h.replace("_", " ")}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Histórico dental */}
+            <div className="space-y-3">
+              <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Histórico Dental</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {(["periodontia", "cirurgias", "endodontia", "profilaxia", "ortodontia_previa"] as const).map((h) => (
+                  <div key={h} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`hd-${h}`}
+                      checked={form.historico_dental[h]}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, historico_dental: { ...f.historico_dental, [h]: !!v } }))}
+                    />
+                    <label htmlFor={`hd-${h}`} className="text-sm font-medium cursor-pointer capitalize">
+                      {h === "ortodontia_previa" ? "Ortodontia prévia" : h}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Avaliação facial e oclusal */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Perfil Facial</Label>
+                <Select value={form.perfil_facial} onValueChange={(v) => setForm((f) => ({ ...f, perfil_facial: v }))}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="reto">Reto</SelectItem>
+                    <SelectItem value="convexo">Convexo</SelectItem>
+                    <SelectItem value="concavo">Côncavo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Classe Paciente</Label>
+                <Select value={form.classe_paciente} onValueChange={(v) => setForm((f) => ({ ...f, classe_paciente: v }))}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="I">Classe I</SelectItem>
+                    <SelectItem value="II">Classe II</SelectItem>
+                    <SelectItem value="III">Classe III</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Aleitamento</Label>
+                <Select value={form.aleitamento} onValueChange={(v) => setForm((f) => ({ ...f, aleitamento: v }))}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="materno">Materno</SelectItem>
+                    <SelectItem value="artificial">Artificial</SelectItem>
+                    <SelectItem value="misto">Misto</SelectItem>
+                    <SelectItem value="nao_informado">Não informado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Classe Canino D.</Label>
+                <Select value={form.classe_canino_d} onValueChange={(v) => setForm((f) => ({ ...f, classe_canino_d: v }))}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="I">Classe I</SelectItem>
+                    <SelectItem value="II">Classe II</SelectItem>
+                    <SelectItem value="III">Classe III</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Classe Canino E.</Label>
+                <Select value={form.classe_canino_e} onValueChange={(v) => setForm((f) => ({ ...f, classe_canino_e: v }))}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="I">Classe I</SelectItem>
+                    <SelectItem value="II">Classe II</SelectItem>
+                    <SelectItem value="III">Classe III</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Medidas */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Sobremordida</Label>
+                <Input placeholder="Ex: 3mm" value={form.sobremordida} onChange={(e) => setForm((f) => ({ ...f, sobremordida: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Trespasse Horiz.</Label>
+                <Input placeholder="Ex: 4mm" value={form.trespasse_horizontal} onChange={(e) => setForm((f) => ({ ...f, trespasse_horizontal: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Desvio L. Média</Label>
+                <Input placeholder="Ex: 2mm direita" value={form.desvio_linha_media} onChange={(e) => setForm((f) => ({ ...f, desvio_linha_media: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">Freq. Resp. (rpm)</Label>
+                <Input type="number" placeholder="Ex: 18" value={form.frequencia_respiratoria} onChange={(e) => setForm((f) => ({ ...f, frequencia_respiratoria: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase tracking-widest text-slate-600">FC (bpm)</Label>
+                <Input type="number" placeholder="Ex: 72" value={form.fc_bpm} onChange={(e) => setForm((f) => ({ ...f, fc_bpm: e.target.value }))} className="rounded-xl" />
+              </div>
+            </div>
+
+            {/* Toggles ortod. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between p-4 rounded-xl border-2 bg-slate-50">
+                <Label className="font-bold text-sm">Mordida Cruzada</Label>
+                <Switch checked={form.mordida_cruzada} onCheckedChange={(v) => setForm((f) => ({ ...f, mordida_cruzada: v }))} />
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-xl border-2 bg-slate-50">
+                <Label className="font-bold text-sm">Alteração Ganglionar</Label>
+                <Switch checked={form.alteracao_ganglionar} onCheckedChange={(v) => setForm((f) => ({ ...f, alteracao_ganglionar: v }))} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <Button

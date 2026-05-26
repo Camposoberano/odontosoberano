@@ -14,6 +14,7 @@ import { Fotos } from "@/components/pacientes/Fotos";
 import { Radiografias } from "@/components/pacientes/Radiografias";
 import { Receituario } from "@/components/pacientes/Receituario";
 import { AnamneseTab } from "@/components/pacientes/AnamneseTab";
+import { EvolucaoSection } from "@/components/pacientes/EvolucaoSection";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -454,6 +455,9 @@ export default function PacienteDetalhe() {
                     <FichaClinica pacienteId={id} />
                     <div className="border-t-2 border-slate-100 pt-8 mt-8">
                       <Odontograma pacienteId={id} />
+                    </div>
+                    <div className="border-t-2 border-slate-100 pt-8 mt-8">
+                      <EvolucaoSection pacienteId={id} />
                     </div>
                   </motion.div>
                 )}

@@ -57,6 +57,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       password,
     });
 
+    // Detectar erro de rede / mixed content (HTTPS site → HTTP Supabase)
+    if (error && (error.message?.includes('Failed to fetch') || error.name === 'TypeError' || error.message?.includes('NetworkError'))) {
+      return { error: { ...error, message: 'Erro de conexão com o servidor. Verifique a configuração do Supabase.' } };
+    }
+
     // Registrar auditoria de login bem-sucedido
     if (!error && data.user) {
       try {
@@ -71,7 +76,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         });
       } catch (auditError) {
         // Não falhar o login se a auditoria falhar
-        // TODO: Implementar logging service em produção (Sentry/LogRocket)
       }
     }
 
@@ -79,8 +83,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
+    // Usar BASE_URL do Vite para suportar subpath (ex: /orto/)
+    const redirectUrl = `${window.location.origin}${import.meta.env.BASE_URL}`;
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -124,12 +129,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.error("Supabase signout soft-failed:", error);
       }
 
-      // Redirecionar para auth
-      window.location.href = '/auth';
+      // Redirecionar para auth (respeita subpath ex: /orto/)
+      window.location.href = `${import.meta.env.BASE_URL}auth`;
     } catch (error) {
       // Mesmo com erro crítico, limpa e redireciona
       await del('REACT_QUERY_OFFLINE_CACHE');
-      window.location.href = '/auth';
+      window.location.href = `${import.meta.env.BASE_URL}auth`;
     }
   };
 

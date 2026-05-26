@@ -54,6 +54,16 @@ const TwoFactorSettings = React.lazy(() => import("@/pages/configuracoes/TwoFact
 const ListaOrcamentos = React.lazy(() => import("@/pages/orcamentos/ListaOrcamentos"));
 const NovoOrcamento = React.lazy(() => import("@/pages/orcamentos/NovoOrcamento"));
 const OrcamentoDetalhe = React.lazy(() => import("@/pages/orcamentos/OrcamentoDetalhe"));
+const RelatorioAniversariantes = React.lazy(() => import("@/pages/relatorios/RelatorioAniversariantes"));
+const RelatorioPacientesTratamentosAbertos = React.lazy(() => import("@/pages/relatorios/RelatorioPacientesTratamentosAbertos"));
+const RelatorioVendasProfissional = React.lazy(() => import("@/pages/relatorios/RelatorioVendasProfissional"));
+const RelatorioVendasTratamentos = React.lazy(() => import("@/pages/relatorios/RelatorioVendasTratamentos"));
+const RelatorioVendasPlanos = React.lazy(() => import("@/pages/relatorios/RelatorioVendasPlanos"));
+const RelatorioDespesasCategoria = React.lazy(() => import("@/pages/relatorios/RelatorioDespesasCategoria"));
+const RelatorioPacientesIndicados = React.lazy(() => import("@/pages/relatorios/RelatorioPacientesIndicados"));
+const CategoriasConfig = React.lazy(() => import("@/pages/configuracoes/Categorias"));
+const ContasFinanceirasConfig = React.lazy(() => import("@/pages/configuracoes/ContasFinanceiras"));
+const ComunicacaoConfig = React.lazy(() => import("@/pages/configuracoes/Comunicacao"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -118,6 +128,13 @@ const AnimatedRoutes = () => {
             <Route path="/relatorios/financeiro" element={<ProtectedRoute><AnimatedRoute><RelatorioFinanceiro /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/relatorios/comissao" element={<ProtectedRoute><AnimatedRoute><RelatorioComissao /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/relatorios/orcamentos" element={<ProtectedRoute><AnimatedRoute><RelatorioOrcamentos /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/aniversariantes" element={<ProtectedRoute><AnimatedRoute><RelatorioAniversariantes /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/pacientes-tratamentos-abertos" element={<ProtectedRoute><AnimatedRoute><RelatorioPacientesTratamentosAbertos /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/vendas-por-profissional" element={<ProtectedRoute><AnimatedRoute><RelatorioVendasProfissional /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/vendas-por-tratamentos" element={<ProtectedRoute><AnimatedRoute><RelatorioVendasTratamentos /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/vendas-por-planos" element={<ProtectedRoute><AnimatedRoute><RelatorioVendasPlanos /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/despesas-por-categoria" element={<ProtectedRoute><AnimatedRoute><RelatorioDespesasCategoria /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/relatorios/pacientes-indicados" element={<ProtectedRoute><AnimatedRoute><RelatorioPacientesIndicados /></AnimatedRoute></ProtectedRoute>} />
             {/* Orçamentos Routes */}
             <Route path="/orcamentos" element={<ProtectedRoute><AnimatedRoute><ListaOrcamentos /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/orcamentos/novo" element={<ProtectedRoute><AnimatedRoute><NovoOrcamento /></AnimatedRoute></ProtectedRoute>} />
@@ -141,6 +158,9 @@ const AnimatedRoutes = () => {
             <Route path="/configuracoes/usuarios" element={<ProtectedRoute><AnimatedRoute><GerenciarUsuarios /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/configuracoes/seguranca" element={<ProtectedRoute><AnimatedRoute><TwoFactorSettings /></AnimatedRoute></ProtectedRoute>} />
             <Route path="/configuracoes/logs-auditoria" element={<ProtectedRoute><AnimatedRoute><LogsAuditoria /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/configuracoes/categorias" element={<ProtectedRoute><AnimatedRoute><CategoriasConfig /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/configuracoes/contas-financeiras" element={<ProtectedRoute><AnimatedRoute><ContasFinanceirasConfig /></AnimatedRoute></ProtectedRoute>} />
+            <Route path="/configuracoes/comunicacao" element={<ProtectedRoute><AnimatedRoute><ComunicacaoConfig /></AnimatedRoute></ProtectedRoute>} />
             
             
             {/* Catch-all route for 404 */}
