@@ -21,6 +21,7 @@ import {
   Calculator,
   Receipt,
   TrendingUp,
+  TrendingDown,
   Banknote,
   CheckSquare,
   CreditCard as CreditCardIcon,
