@@ -129,7 +129,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.error("Supabase signout soft-failed:", error);
       }
 
-      // Redirecionar para auth (respeita subpath ex: /orto/)
+      // Redirecionar para auth (respeita subpath ex: /belem/)
       window.location.href = `${import.meta.env.BASE_URL}auth`;
     } catch (error) {
       // Mesmo com erro crítico, limpa e redireciona

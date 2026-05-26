@@ -133,7 +133,7 @@ export default function Auth() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
             <img
-              src="/orto/logo-ib.jpg"
+              src="/belem/logo-ib.jpg"
               alt="Instituto Belém"
               className="w-32 h-32 rounded-2xl object-cover shadow-2xl"
               style={{boxShadow: "0 0 40px rgba(248,204,114,0.3)"}}

@@ -175,7 +175,7 @@ const AppContent = () => {
   useRealTimeSync();
 
   return (
-    <BrowserRouter basename="/orto/">
+    <BrowserRouter basename="/belem/">
       <AnimatedRoutes />
     </BrowserRouter>
   );

@@ -200,7 +200,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border/50 p-2 h-14 sm:h-16 flex items-center">
         <div className="flex items-center gap-3 w-full hover-scale cursor-pointer" onClick={() => navigate("/")}>
           <img
-            src="/orto/logo-ib.jpg"
+            src="/belem/logo-ib.jpg"
             alt="Instituto Belém"
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover flex-shrink-0 shadow-md"
           />

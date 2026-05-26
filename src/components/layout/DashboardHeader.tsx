@@ -74,7 +74,7 @@ export function DashboardHeader() {
           <div className="flex items-center gap-2 sm:gap-4">
             <SidebarTrigger className="hover-scale hidden md:flex text-[#010101] hover:bg-black/10" />
             <img
-              src="/orto/logo-ib.jpg"
+              src="/belem/logo-ib.jpg"
               alt="Instituto Belém"
               className="w-8 h-8 rounded-md object-cover cursor-pointer shadow-sm"
               onClick={() => navigate("/")}

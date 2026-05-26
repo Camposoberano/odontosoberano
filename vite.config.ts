@@ -7,7 +7,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/orto/",
+  base: "/belem/",
   server: {
     host: "::",
     port: 8081,
@@ -29,18 +29,18 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/orto/',
-        start_url: '/orto/',
-        id: '/orto/',
+        scope: '/belem/',
+        start_url: '/belem/',
+        id: '/belem/',
         categories: ['medical', 'business', 'productivity'],
         icons: [
           {
-            src: '/orto/pwa-192x192.png',
+            src: '/belem/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/orto/pwa-512x512.png',
+            src: '/belem/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
@@ -56,4 +56,3 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
-
