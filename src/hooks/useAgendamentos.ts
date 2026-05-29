@@ -61,7 +61,7 @@ export const useAgendamentos = () => {
 
       let query = supabase
         .from("agendamentos")
-        .select("*, pacientes(id, nome, telefone, email), dentistas(id, nome), convenios(id, nome)")
+        .select("*")
         .eq("user_id", user.id)
         .order("data_agendamento", { ascending: true });
 
@@ -77,8 +77,33 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
-      // Relacionamentos já vêm do join no select — sem N+1
-      setAgendamentos((data ?? []) as unknown as Agendamento[]);
+      if (data && data.length > 0) {
+        const pacienteIds = [...new Set(data.map(a => a.paciente_id))];
+        const dentistaIds = [...new Set(data.map(a => a.dentista_id).filter(Boolean))];
+        const convenioIds = [...new Set(data.map(a => a.convenio_id).filter(Boolean))];
+
+        const [pacientesData, dentistasData, conveniosData] = await Promise.all([
+          supabase.from("pacientes").select("id, nome, telefone, email").in("id", pacienteIds),
+          dentistaIds.length > 0 ? supabase.from("dentistas").select("id, nome").in("id", dentistaIds as string[]) : Promise.resolve({ data: [] }),
+          convenioIds.length > 0 ? supabase.from("convenios").select("id, nome").in("id", convenioIds as string[]) : Promise.resolve({ data: [] }),
+        ]);
+
+        const pacientesMap = new Map<string, any>();
+        pacientesData.data?.forEach(p => pacientesMap.set(p.id, p));
+        const dentistasMap = new Map<string, any>();
+        dentistasData.data?.forEach(d => dentistasMap.set(d.id, d));
+        const conveniosMap = new Map<string, any>();
+        conveniosData.data?.forEach(c => conveniosMap.set(c.id, c));
+
+        setAgendamentos(data.map(a => ({
+          ...a,
+          pacientes: pacientesMap.get(a.paciente_id),
+          dentistas: a.dentista_id ? dentistasMap.get(a.dentista_id) : undefined,
+          convenios: a.convenio_id ? conveniosMap.get(a.convenio_id) : undefined,
+        })) as Agendamento[]);
+      } else {
+        setAgendamentos([]);
+      }
     } catch (error: any) {
       toast({
         title: "Erro ao carregar agendamentos",

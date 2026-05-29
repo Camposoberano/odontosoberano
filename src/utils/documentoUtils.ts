@@ -116,49 +116,42 @@ export async function exportarDocumentoPDF(elementId: string, filename: string):
   const el = document.getElementById(elementId);
   if (!el) throw new Error(`Elemento não encontrado: ${elementId}`);
 
-  // Garantir visibilidade para captura correta pelo html2canvas
-  const prev = {
-    display: el.style.display,
-    position: el.style.position,
-    left: el.style.left,
-    top: el.style.top,
-    width: el.style.width,
-    visibility: el.style.visibility,
-    zIndex: el.style.zIndex,
-  };
-  el.style.display = 'block';
-  el.style.position = 'absolute';
-  el.style.left = '-9999px';
-  el.style.top = '0';
-  el.style.width = '800px';
-  el.style.visibility = 'hidden';
-  el.style.zIndex = '9999';
+  // Clonar e mover para body — evita problemas de position:fixed/zIndex do container pai
+  const clone = el.cloneNode(true) as HTMLElement;
+  clone.style.cssText = [
+    'position:absolute',
+    'left:-99999px',
+    'top:0',
+    'width:800px',
+    'background:#fff',
+    'pointer-events:none',
+  ].join(';');
+  document.body.appendChild(clone);
 
-  // Aguardar imagens carregarem
+  // Aguardar imagens carregarem no clone
   await Promise.all(
-    Array.from(el.querySelectorAll('img')).map(img =>
+    Array.from(clone.querySelectorAll('img')).map(img =>
       img.complete ? Promise.resolve() : new Promise<void>(r => { img.onload = r; img.onerror = r; })
     )
   );
-  await new Promise(r => setTimeout(r, 150));
+  await new Promise(r => setTimeout(r, 200));
 
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import('jspdf') as any,
     import('html2canvas') as any,
   ]);
 
-  const canvas = await html2canvas(el, {
+  const canvas = await html2canvas(clone, {
     scale: 2,
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#ffffff',
     logging: false,
-    width: el.scrollWidth,
-    height: el.scrollHeight,
+    width: clone.scrollWidth,
+    height: clone.scrollHeight,
   });
 
-  // Restaurar estado original
-  Object.assign(el.style, prev);
+  document.body.removeChild(clone);
 
   const imgWidth = 210;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
