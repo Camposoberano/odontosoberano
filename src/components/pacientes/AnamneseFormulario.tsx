@@ -448,14 +448,15 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
 
   const handleWhatsApp = () => {
     if (!paciente?.telefone) { toast.error('Paciente sem telefone cadastrado'); return; }
-    const alertas = gerarAlertas();
+    const tel = paciente.telefone.replace(/\D/g, '');
+    if (!/^\d{10,11}$/.test(tel)) { toast.error('Telefone inválido para WhatsApp'); return; }
+    // Mensagem sem alertas clínicos por WhatsApp (LGPD — dados de saúde via canal 3º)
     const msg = encodeURIComponent(
       `Olá ${nomePaciente ?? 'Paciente'}! 🦷\n\n` +
       `Sua *Ficha de Anamnese* foi registrada com sucesso no Instituto Belém de Odontologia.\n\n` +
-      (alertas.length > 0 ? `⚠ *Alertas clínicos:*\n${alertas.map(a => `• ${a}`).join('\n')}\n\n` : '') +
-      `Se precisar de qualquer informação, estamos à disposição!\n\n*Instituto Belém de Odontologia*`
+      `Agradecemos sua colaboração. Qualquer dúvida, estamos à disposição!\n\n` +
+      `*Instituto Belém de Odontologia*`
     );
-    const tel = paciente.telefone.replace(/\D/g, '');
     window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
   };
 

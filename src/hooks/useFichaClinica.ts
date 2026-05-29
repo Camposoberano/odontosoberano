@@ -70,39 +70,22 @@ export function useFichaClinica(pacienteId?: string) {
     mutationFn: async (input: FichaClinicaInput) => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      // Check if ficha already exists
-      const { data: existing } = await supabase
+      // Upsert atômico — sem race condition (constraint: user_id + paciente_id)
+      const { data, error } = await supabase
         .from("ficha_clinica")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("paciente_id", input.paciente_id)
-        .maybeSingle();
+        .upsert(
+          { ...input, user_id: user.id },
+          { onConflict: "user_id,paciente_id" }
+        )
+        .select()
+        .single();
 
-      if (existing) {
-        // Update existing
-        const { data, error } = await supabase
-          .from("ficha_clinica")
-          .update(input)
-          .eq("id", existing.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return data;
-      } else {
-        // Create new
-        const { data, error } = await supabase
-          .from("ficha_clinica")
-          .insert([{ ...input, user_id: user.id }])
-          .select()
-          .single();
-
-        if (error) throw error;
-        return data;
-      }
+      if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ficha_clinica"] });
+    onSuccess: (_data, input) => {
+      // Invalida só a ficha do paciente salvo, não todas
+      queryClient.invalidateQueries({ queryKey: ["ficha_clinica", input.paciente_id] });
       toast({
         title: "Ficha salva",
         description: "A ficha clínica foi salva com sucesso.",

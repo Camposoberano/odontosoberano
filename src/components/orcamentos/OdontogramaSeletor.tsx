@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Teeth, X } from "lucide-react";
+import { X } from "lucide-react";
 
 // FDI: vista do profissional (espelhada — dir. do pac. = esq. da boca do pov. do prof.)
 const SUPERIOR_DIR = ["18","17","16","15","14","13","12","11"]; // Q1
@@ -36,7 +36,7 @@ interface DenteProps {
   onToggle: () => void;
 }
 
-function Dente({ numero, selecionado, superior, onToggle }: DenteProps) {
+const Dente = memo(function Dente({ numero, selecionado, superior, onToggle }: DenteProps) {
   const w = denteWidth(numero);
   return (
     <button
@@ -67,7 +67,7 @@ function Dente({ numero, selecionado, superior, onToggle }: DenteProps) {
       )}
     </button>
   );
-}
+});
 
 interface OdontogramaSeletorProps {
   dentes: string[];

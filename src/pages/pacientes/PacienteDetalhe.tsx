@@ -287,7 +287,7 @@ const TABS = [
   { id: "tratamentos", label: "Tratamentos",  icon: Activity,      color: "text-red-500",    bgColor: "bg-red-500/10" },
   { id: "anamnese",    label: "Anamnese",     icon: ClipboardList, color: "text-violet-600", bgColor: "bg-violet-500/10" },
   { id: "imagens",     label: "Imagens",      icon: Camera,        color: "text-pink-500",   bgColor: "bg-pink-500/10" },
-  { id: "documentos",  label: "Documentos",   icon: Pill,          color: "text-emerald-500",bgColor: "bg-emerald-500/10" },
+  { id: "documentos",  label: "Documentos",   icon: FileText,      color: "text-emerald-500",bgColor: "bg-emerald-500/10" },
   { id: "debitos",     label: "Débitos",      icon: DollarSign,    color: "text-orange-500", bgColor: "bg-orange-500/10" },
 ];
 
