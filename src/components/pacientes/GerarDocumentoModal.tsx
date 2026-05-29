@@ -16,6 +16,7 @@ import { TCLETemplate } from '@/components/documentos/TCLETemplate';
 import { AtestadoTemplate } from '@/components/documentos/AtestadoTemplate';
 import { ReceituarioPDFTemplate } from '@/components/documentos/ReceituarioPDFTemplate';
 import { AnamnesePDFTemplate, TipoAnamnese } from '@/components/documentos/AnamnesePDFTemplate';
+import { useAnamnese } from '@/hooks/useAnamnese';
 import { toast } from 'sonner';
 
 interface Props {
@@ -24,13 +25,17 @@ interface Props {
   paciente: Paciente;
   dentistas: Dentista[];
   clinica?: InformacoesClinica | null;
+  orcamento?: Record<string, any> | null;
+  tipoInicial?: TipoDocumento;
 }
 
 const GRUPOS = ['Contrato', 'TCLE', 'Clínico', 'Anamnese'] as const;
 
-export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinica }: Props) {
-  const [tipo, setTipo] = useState<TipoDocumento | ''>('');
-  const [grupoAtivo, setGrupoAtivo] = useGrupoState<string>('Contrato');
+export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinica, orcamento, tipoInicial }: Props) {
+  const [tipo, setTipo] = useState<TipoDocumento | ''>(tipoInicial ?? '');
+  const [grupoAtivo, setGrupoAtivo] = useGrupoState<string>(
+    tipoInicial ? (TIPOS_DOCUMENTO.find(t => t.value === tipoInicial)?.grupo ?? 'Contrato') : 'Contrato'
+  );
   const [dentistaId, setDentistaId] = useState<string>('');
   const [extras, setExtras] = useState<Record<string, string>>({});
   const [gerandoPDF, setGerandoPDF] = useState(false);
@@ -38,6 +43,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
   const templateRef = useRef<HTMLDivElement>(null);
 
   const { createDocumento } = useDocumentos(paciente.id);
+  const { data: anamneseData } = useAnamnese(paciente.id);
 
   const dentistaSelecionado = dentistas.find(d => d.id === dentistaId) ?? dentistas[0];
 
@@ -54,7 +60,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
       dentista_responsavel: dentistaSelecionado?.nome,
       logo_url: clinica.logo_base64,
     } : undefined,
-    undefined,
+    orcamento ?? undefined,
     dentistaSelecionado,
   );
 
@@ -266,7 +272,14 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
       />
     );
     if (tipo === 'receituario_pdf') return <ReceituarioPDFTemplate ref={templateRef} vars={vars} medicamentos={[]} />;
-    if (isAnamnese) return <AnamnesePDFTemplate ref={templateRef} vars={vars} tipo={tipo as TipoAnamnese} />;
+    if (isAnamnese) return (
+      <AnamnesePDFTemplate
+        ref={templateRef}
+        vars={vars}
+        tipo={tipo as TipoAnamnese}
+        anamnese={anamneseData ?? undefined}
+      />
+    );
     return null;
   };
 

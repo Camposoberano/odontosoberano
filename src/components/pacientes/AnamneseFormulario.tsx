@@ -1,11 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Send } from "lucide-react";
+import { ChevronRight, ChevronLeft, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAnamnese } from "@/hooks/useAnamnese";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 // ─── Estrutura das Perguntas (fiel ao soberano.pro) ────────────────────────
@@ -256,11 +259,31 @@ interface Props {
 
 export function AnamneseFormulario({ pacienteId, nomePaciente }: Props) {
   const { user } = useAuth();
-  const [step, setStep] = useState(0); // 0=hero, 1..N=secoes, N+1=conclusão, N+2=sucesso
+  const queryClient = useQueryClient();
+  const { data: anamneseExistente, isLoading: loadingAnamnese } = useAnamnese(pacienteId);
+
+  const [step, setStep] = useState(0);
   const [respostas, setRespostas] = useState<Record<string, string>>({});
   const [detalhes, setDetalhes] = useState<Record<string, string>>({});
   const [erros, setErros] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Pré-preencher respostas quando anamnese existente carrega
+  useEffect(() => {
+    if (!anamneseExistente?.dados_completos) return;
+    const dc = anamneseExistente.dados_completos as Record<string, string>;
+    const novasRespostas: Record<string, string> = {};
+    const novosDetalhes: Record<string, string> = {};
+    Object.entries(dc).forEach(([k, v]) => {
+      if (k.endsWith("_detalhe")) {
+        novosDetalhes[k.replace("_detalhe", "")] = v;
+      } else {
+        novasRespostas[k] = v;
+      }
+    });
+    setRespostas(novasRespostas);
+    setDetalhes(novosDetalhes);
+  }, [anamneseExistente]);
 
   const setResposta = useCallback((id: string, valor: string) => {
     setRespostas(prev => ({ ...prev, [id]: valor }));
@@ -368,7 +391,9 @@ export function AnamneseFormulario({ pacienteId, nomePaciente }: Props) {
         .upsert(payload, { onConflict: "user_id,paciente_id" });
 
       if (error) throw error;
-      setStep(TOTAL_STEPS + 1); // tela de sucesso
+      // Invalida cache para que o hook busque dados atualizados
+      queryClient.invalidateQueries({ queryKey: ["anamnese", pacienteId] });
+      setStep(TOTAL_STEPS + 1);
     } catch (err: any) {
       toast.error("Erro ao salvar anamnese: " + err.message);
     } finally {
@@ -420,11 +445,25 @@ export function AnamneseFormulario({ pacienteId, nomePaciente }: Props) {
                     <p className="font-black text-sky-700 text-lg">👤 {nomePaciente}</p>
                   </div>
                 )}
+
+                {/* Alertas médicos já salvos */}
+                {anamneseExistente?.alertas_medicos && anamneseExistente.alertas_medicos.length > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 max-w-sm mx-auto text-left space-y-2">
+                    <p className="font-black text-red-700 text-xs uppercase tracking-widest flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Alertas da Ficha Anterior
+                    </p>
+                    {anamneseExistente.alertas_medicos.map((a, i) => (
+                      <Badge key={i} className="bg-red-100 text-red-800 text-xs block w-fit">⚠ {a}</Badge>
+                    ))}
+                  </div>
+                )}
+
                 <Button
                   onClick={avancar}
+                  disabled={loadingAnamnese}
                   className="w-full max-w-sm mx-auto rounded-2xl h-14 text-lg font-black shadow-xl shadow-sky-500/30 gap-2"
                 >
-                  Iniciar Ficha <ChevronRight className="w-5 h-5" />
+                  {anamneseExistente ? "Atualizar Ficha" : "Iniciar Ficha"} <ChevronRight className="w-5 h-5" />
                 </Button>
               </motion.div>
             )}

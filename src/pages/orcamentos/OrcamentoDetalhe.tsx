@@ -42,6 +42,12 @@ import { ptBR } from "date-fns/locale";
 import { AlertTriangle, PlayCircle, CheckSquare, Package } from "lucide-react";
 import { useInformacoesClinica } from "@/hooks/useInformacoesClinica";
 import { EvolucaoSection } from "@/components/pacientes/EvolucaoSection";
+import { GerarDocumentoModal } from "@/components/pacientes/GerarDocumentoModal";
+import { useDentistas } from "@/hooks/useDentistas";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import { BookOpen } from "lucide-react";
 
 const STATUS_CONFIG: Record<
   StatusOrcamento,
@@ -69,7 +75,10 @@ export default function OrcamentoDetalhe() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { informacoes: clinica } = useInformacoesClinica();
+  const { dentistas } = useDentistas();
   const [gerandoPDF, setGerandoPDF] = useState(false);
+  const [showDocDialog, setShowDocDialog] = useState(false);
+  const [showDocModal, setShowDocModal] = useState(false);
 
   const { data: contasVinculadas = [] } = useQuery({
     queryKey: ["contas_receber", "by_orcamento", id],
@@ -294,6 +303,9 @@ export default function OrcamentoDetalhe() {
         description: `${parcelas} conta(s) a receber criada(s)`,
       });
     }
+
+    // Após aprovação → perguntar se quer gerar documento
+    setShowDocDialog(true);
   };
 
   const handleDuplicar = async () => {
@@ -706,6 +718,45 @@ export default function OrcamentoDetalhe() {
             <EvolucaoSection pacienteId={orcamento.paciente_id} />
           </CardContent>
         </Card>
+      )}
+
+      {/* Dialog pós-aprovação: gerar documento */}
+      <Dialog open={showDocDialog} onOpenChange={setShowDocDialog}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-black">
+              <BookOpen className="w-5 h-5 text-primary" />
+              Orçamento aprovado!
+            </DialogTitle>
+            <DialogDescription>
+              Deseja gerar o Contrato de Prestação de Serviços ou outro documento para este paciente?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-2">
+            <Button
+              className="rounded-xl font-black gap-2 shadow-lg shadow-primary/20"
+              onClick={() => { setShowDocDialog(false); setShowDocModal(true); }}
+            >
+              <BookOpen className="w-4 h-4" /> Gerar Contrato / Documento
+            </Button>
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowDocDialog(false)}>
+              Agora não
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de geração de documento vinculado ao orçamento */}
+      {orcamento?.paciente && (
+        <GerarDocumentoModal
+          open={showDocModal}
+          onClose={() => setShowDocModal(false)}
+          paciente={orcamento.paciente as any}
+          dentistas={dentistas}
+          clinica={clinica}
+          orcamento={orcamento}
+          tipoInicial="contrato"
+        />
       )}
 
       {/* Template PDF — renderizado fora da tela para html2canvas */}

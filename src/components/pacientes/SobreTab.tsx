@@ -3,10 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
-  User, Phone, Mail, MapPin, Calendar, CreditCard, Heart,
-  Tag, Globe, UserCheck, Briefcase, Home,
+  User, Phone, Mail, MapPin, Calendar, CreditCard,
+  Tag, Globe, UserCheck, Briefcase, AlertTriangle,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAnamnese } from "@/hooks/useAnamnese";
 
 interface Props {
   paciente: Paciente;
@@ -47,6 +48,7 @@ function Secao({ titulo, children }: { titulo: string; children: React.ReactNode
 }
 
 export function SobreTab({ paciente }: Props) {
+  const { data: anamnese } = useAnamnese(paciente.id);
   const enderecoCompleto = [
     paciente.rua && `${paciente.rua}, ${paciente.numero ?? "s/n"}`,
     paciente.complemento,
@@ -90,6 +92,19 @@ export function SobreTab({ paciente }: Props) {
             <Campo label="Profissão" value={paciente.profissao} icon={Briefcase} />
             <Campo label="Como conheceu" value={paciente.como_conheceu} />
           </div>
+          {/* Alertas médicos da anamnese */}
+          {anamnese?.alertas_medicos && anamnese.alertas_medicos.length > 0 && (
+            <div className="col-span-full">
+              <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Alertas Clínicos
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {anamnese.alertas_medicos.map((a, i) => (
+                  <Badge key={i} className="bg-red-100 text-red-800 text-[10px] border border-red-200">⚠ {a}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
           {paciente.etiquetas && paciente.etiquetas.length > 0 && (
             <div>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-1">
