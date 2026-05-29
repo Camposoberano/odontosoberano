@@ -403,6 +403,76 @@ export type Database = {
         }
         Relationships: []
       }
+      documentos: {
+        Row: {
+          assinado_em: string | null
+          assinatura_paciente_url: string | null
+          conteudo_json: Json
+          created_at: string | null
+          dentista_id: string | null
+          docuseal_id: string | null
+          id: string
+          orcamento_id: string | null
+          paciente_id: string
+          pdf_url: string | null
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+          titulo: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assinado_em?: string | null
+          assinatura_paciente_url?: string | null
+          conteudo_json?: Json
+          created_at?: string | null
+          dentista_id?: string | null
+          docuseal_id?: string | null
+          id?: string
+          orcamento_id?: string | null
+          paciente_id: string
+          pdf_url?: string | null
+          tipo: Database["public"]["Enums"]["tipo_documento"]
+          titulo: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assinado_em?: string | null
+          assinatura_paciente_url?: string | null
+          conteudo_json?: Json
+          created_at?: string | null
+          dentista_id?: string | null
+          docuseal_id?: string | null
+          id?: string
+          orcamento_id?: string | null
+          paciente_id?: string
+          pdf_url?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_documento"]
+          titulo?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_dentista_id_fkey"
+            columns: ["dentista_id"]
+            referencedRelation: "dentistas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dentistas: {
         Row: {
           cpf: string
@@ -1386,7 +1456,28 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      tipo_documento:
+        | "contrato"
+        | "tcle_cirurgia"
+        | "tcle_implante"
+        | "tcle_ortodontia"
+        | "tcle_clareamento"
+        | "tcle_endodontia"
+        | "tcle_protese"
+        | "tcle_faceta"
+        | "tcle_enxerto"
+        | "tcle_periodontal"
+        | "tcle_imagem"
+        | "tcle_sedacao"
+        | "receituario_pdf"
+        | "atestado"
+        | "anamnese_padrao"
+        | "anamnese_infantil"
+        | "anamnese_transicao"
+        | "anamnese_resumida"
+        | "anamnese_completa"
+        | "anamnese_periodontal"
+        | "anamnese_pcd"
     }
     CompositeTypes: {
       [_ in never]: never

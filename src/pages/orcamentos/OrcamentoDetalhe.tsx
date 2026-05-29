@@ -39,17 +39,22 @@ import { useToast } from "@/hooks/use-toast";
 import { calcularExpiracao, EXPIRACAO_CONFIG } from "@/utils/orcamentoUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, PlayCircle, CheckSquare, Package } from "lucide-react";
+import { useInformacoesClinica } from "@/hooks/useInformacoesClinica";
+import { EvolucaoSection } from "@/components/pacientes/EvolucaoSection";
 
 const STATUS_CONFIG: Record<
   StatusOrcamento,
   { label: string; color: string; bgColor: string }
 > = {
-  rascunho:          { label: "Rascunho",          color: "text-gray-600",   bgColor: "bg-gray-100" },
-  enviado:           { label: "Enviado",            color: "text-blue-600",   bgColor: "bg-blue-50" },
-  aprovado:          { label: "Aprovado",           color: "text-green-600",  bgColor: "bg-green-50" },
-  recusado:          { label: "Recusado",           color: "text-red-600",    bgColor: "bg-red-50" },
-  contrato_assinado: { label: "Contrato Assinado",  color: "text-purple-600", bgColor: "bg-purple-50" },
+  rascunho:          { label: "Rascunho",          color: "text-gray-600",    bgColor: "bg-gray-100" },
+  enviado:           { label: "Enviado",            color: "text-blue-600",    bgColor: "bg-blue-50" },
+  aprovado:          { label: "Aprovado",           color: "text-green-600",   bgColor: "bg-green-50" },
+  recusado:          { label: "Recusado",           color: "text-red-600",     bgColor: "bg-red-50" },
+  contrato_assinado: { label: "Contrato Assinado",  color: "text-purple-600",  bgColor: "bg-purple-50" },
+  em_andamento:      { label: "Em Andamento",       color: "text-amber-600",   bgColor: "bg-amber-50" },
+  finalizado:        { label: "Finalizado",         color: "text-teal-600",    bgColor: "bg-teal-50" },
+  entregue:          { label: "Entregue",           color: "text-emerald-700", bgColor: "bg-emerald-100" },
 };
 
 const DOCUSEAL_API_KEY = import.meta.env.VITE_DOCUSEAL_API_KEY as string | undefined;
@@ -63,6 +68,7 @@ export default function OrcamentoDetalhe() {
   const { data: orcamento, isLoading } = useOrcamento(id);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { informacoes: clinica } = useInformacoesClinica();
   const [gerandoPDF, setGerandoPDF] = useState(false);
 
   const { data: contasVinculadas = [] } = useQuery({
@@ -451,6 +457,36 @@ export default function OrcamentoDetalhe() {
               Aprovar (+ Conta a Receber)
             </Button>
           )}
+          {(orcamento.status === "aprovado" || orcamento.status === "contrato_assinado") && (
+            <Button
+              variant="outline"
+              onClick={() => mudarStatus.mutate({ id: orcamento.id, status: "em_andamento" })}
+              className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+            >
+              <PlayCircle className="w-4 h-4" />
+              Iniciar Tratamento
+            </Button>
+          )}
+          {orcamento.status === "em_andamento" && (
+            <Button
+              variant="outline"
+              onClick={() => mudarStatus.mutate({ id: orcamento.id, status: "finalizado" })}
+              className="gap-2 text-teal-600 border-teal-300 hover:bg-teal-50"
+            >
+              <CheckSquare className="w-4 h-4" />
+              Finalizar
+            </Button>
+          )}
+          {orcamento.status === "finalizado" && (
+            <Button
+              variant="outline"
+              onClick={() => mudarStatus.mutate({ id: orcamento.id, status: "entregue" })}
+              className="gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+            >
+              <Package className="w-4 h-4" />
+              Marcar Entregue
+            </Button>
+          )}
           {orcamento.status !== "recusado" && (
             <Button
               variant="outline"
@@ -657,14 +693,30 @@ export default function OrcamentoDetalhe() {
         </Card>
       </div>
 
+      {/* Evolução / Sessões do tratamento */}
+      {(orcamento.status === "em_andamento" || orcamento.status === "finalizado" || orcamento.status === "entregue" || orcamento.status === "aprovado") && orcamento.paciente_id && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PlayCircle className="w-4 h-4 text-amber-500" />
+              Evolução do Tratamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EvolucaoSection pacienteId={orcamento.paciente_id} />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Template PDF — renderizado fora da tela para html2canvas */}
       <div ref={pdfRef} style={{ display: "none" }}>
         <OrcamentoPDFTemplate
           orcamento={orcamento}
-          clinicaNome="Instituto Belém"
-          clinicaEndereco="Belém, PA"
-          clinicaTelefone=""
-          logoUrl="/logo-instituto-belem.png"
+          clinicaNome={clinica?.nome_clinica ?? "Instituto Belém"}
+          clinicaEndereco={clinica ? [clinica.endereco, clinica.numero, clinica.bairro, clinica.cidade, clinica.estado].filter(Boolean).join(', ') : "Belém, PA"}
+          clinicaTelefone={clinica?.telefone ?? clinica?.celular ?? ""}
+          clinicaCNPJ={clinica?.cnpj ?? ""}
+          logoUrl={clinica?.logo_base64 ?? "/belem/logo-ib.jpg"}
         />
       </div>
     </DashboardLayout>

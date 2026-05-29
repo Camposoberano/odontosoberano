@@ -8,6 +8,7 @@ export interface Medicamento {
   dosagem: string;
   frequencia: string;
   duracao: string;
+  via?: string;
   observacoes?: string;
 }
 

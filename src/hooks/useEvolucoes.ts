@@ -30,9 +30,14 @@ export function useEvolucoes(pacienteId: string | undefined) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: evolucoes = [], isLoading } = useQuery({
+  const { data: evolucoes = [], isLoading, error: queryError } = useQuery({
     queryKey: ['evolucoes', pacienteId],
     enabled: !!pacienteId && !!user,
+    retry: (failureCount, error: any) => {
+      // Não retenta 404 — tabela ainda pode estar aguardando reload do PostgREST
+      const is404 = error?.message?.includes('404') || error?.code === 'PGRST106';
+      return !is404 && failureCount < 2;
+    },
     queryFn: async (): Promise<Evolucao[]> => {
       const { data, error } = await supabase
         .from('evolucoes')
@@ -40,7 +45,15 @@ export function useEvolucoes(pacienteId: string | undefined) {
         .eq('paciente_id', pacienteId!)
         .order('data', { ascending: false })
         .order('created_at', { ascending: false });
-      if (error) throw error;
+      if (error) {
+        // 404 = tabela não exposta ainda pelo PostgREST (schema cache desatualizado)
+        // Retorna vazio em vez de quebrar a UI
+        if ((error as any).status === 404 || error.message?.includes('relation')) {
+          console.warn('evolucoes: tabela não encontrada via PostgREST — aguardando reload do schema');
+          return [];
+        }
+        throw error;
+      }
       return data as Evolucao[];
     },
   });
@@ -82,6 +95,7 @@ export function useEvolucoes(pacienteId: string | undefined) {
   return {
     evolucoes,
     isLoading,
+    queryError,
     createEvolucao: createMutation.mutate,
     deleteEvolucao: deleteMutation.mutate,
     isCreating: createMutation.isPending,

@@ -7,7 +7,10 @@ export type StatusOrcamento =
   | "enviado"
   | "aprovado"
   | "recusado"
-  | "contrato_assinado";
+  | "contrato_assinado"
+  | "em_andamento"
+  | "finalizado"
+  | "entregue";
 
 export interface OrcamentoItem {
   id: string;
@@ -157,15 +160,20 @@ export function useOrcamentos() {
       if (status === "enviado") extra.data_envio = new Date().toISOString();
       if (status === "aprovado") extra.data_aprovacao = new Date().toISOString();
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("orcamentos")
         .update({ status, ...extra })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id, status")
+        .single();
 
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      // Invalida lista + detalhe específico
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, variables.id] });
       toast({ title: "Status atualizado" });
     },
     onError: (err: Error) => {

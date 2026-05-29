@@ -147,41 +147,6 @@ export function FichaClinica({ pacienteId }: FichaClinicaProps) {
       {pacienteId && (
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Dados Pessoais - Read Only */}
-            <motion.div variants={itemVariants}>
-              <Card className="glass-card h-full">
-                <CardHeader>
-                  <CardTitle className="text-lg">Dados Pessoais</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Nome Completo</Label>
-                      <Input value={selectedPaciente?.nome || ""} disabled />
-                    </div>
-                    <div>
-                      <Label>CPF</Label>
-                      <Input value={selectedPaciente?.cpf || ""} disabled />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Data de Nascimento</Label>
-                      <Input value={selectedPaciente?.data_nascimento || ""} disabled />
-                    </div>
-                    <div>
-                      <Label>Telefone</Label>
-                      <Input value={selectedPaciente?.telefone || ""} disabled />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Endereço</Label>
-                    <Input value={selectedPaciente?.endereco || ""} disabled />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
             {/* Contato de Emergência */}
             <motion.div variants={itemVariants}>
               <Card className="glass-card h-full">
@@ -223,50 +188,6 @@ export function FichaClinica({ pacienteId }: FichaClinicaProps) {
             </motion.div>
           </div>
 
-          {/* Anamnese */}
-          <motion.div variants={itemVariants}>
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-lg">Anamnese</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="queixa_principal">Queixa Principal</Label>
-                  <Textarea
-                    id="queixa_principal"
-                    placeholder="Descreva o motivo da consulta"
-                    className="min-h-[80px]"
-                    value={formData.queixa_principal}
-                    onChange={(e) => handleInputChange('queixa_principal', e.target.value)}
-                  />
-                </div>
-
-                <Separator />
-
-                <div>
-                  <Label htmlFor="historico_medico">Histórico Médico</Label>
-                  <Textarea
-                    id="historico_medico"
-                    placeholder="Doenças, cirurgias, medicamentos em uso..."
-                    className="min-h-[100px]"
-                    value={formData.historico_medico}
-                    onChange={(e) => handleInputChange('historico_medico', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="alergias">Alergias</Label>
-                  <Textarea
-                    id="alergias"
-                    placeholder="Medicamentos, materiais, alimentos..."
-                    className="min-h-[60px]"
-                    value={formData.alergias}
-                    onChange={(e) => handleInputChange('alergias', e.target.value)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
 
           {/* Exame Clínico */}
           <motion.div variants={itemVariants}>

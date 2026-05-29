@@ -13,6 +13,9 @@ import { Ortodontia } from "@/components/pacientes/Ortodontia";
 import { Fotos } from "@/components/pacientes/Fotos";
 import { Radiografias } from "@/components/pacientes/Radiografias";
 import { Receituario } from "@/components/pacientes/Receituario";
+import { DocumentosTab } from "@/components/pacientes/DocumentosTab";
+import { SobreTab } from "@/components/pacientes/SobreTab";
+import { AnamneseFormulario } from "@/components/pacientes/AnamneseFormulario";
 import { PatientSearch } from "@/components/pacientes/PatientSearch";
 import { usePacientes, Paciente } from "@/hooks/usePacientes";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,7 +43,10 @@ import {
   Menu,
   ChevronRight,
   ArrowLeft,
-  MessageCircle
+  MessageCircle,
+  BookOpen,
+  Info,
+  ClipboardCheck,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AnimatePresence } from "framer-motion";
@@ -74,7 +80,7 @@ export default function Patients() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pacienteToDelete, setPacienteToDelete] = useState<Paciente | null>(null);
   const [selectedPacienteId, setSelectedPacienteId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState("ficha");
+  const [activeTab, setActiveTab] = useState("sobre");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -102,12 +108,15 @@ export default function Patients() {
   }, [searchParams]);
 
   const sidebarItems = [
-    { id: "ficha", label: "Ficha Clínica", icon: FileText, color: "text-blue-500", bgColor: "bg-blue-500/10" },
+    { id: "sobre", label: "Sobre", icon: Info, color: "text-sky-500", bgColor: "bg-sky-500/10" },
+    { id: "anamnese", label: "Anamnese", icon: ClipboardCheck, color: "text-rose-500", bgColor: "bg-rose-500/10" },
+    { id: "ficha", label: "Tratamento", icon: FileText, color: "text-blue-500", bgColor: "bg-blue-500/10" },
     { id: "odontograma", label: "Odontograma", icon: Activity, color: "text-red-500", bgColor: "bg-red-500/10" },
     { id: "ortodontia", label: "Ortodontia", icon: AlignVerticalJustifyCenter, color: "text-purple-500", bgColor: "bg-purple-500/10" },
     { id: "fotos", label: "Fotos", icon: Camera, color: "text-pink-500", bgColor: "bg-pink-500/10" },
     { id: "radiografias", label: "Radiografias", icon: FileImage, color: "text-orange-500", bgColor: "bg-orange-500/10" },
     { id: "receituario", label: "Receituário", icon: Pill, color: "text-emerald-500", bgColor: "bg-emerald-500/10" },
+    { id: "documentos", label: "Documentos", icon: BookOpen, color: "text-indigo-500", bgColor: "bg-indigo-500/10" },
   ];
 
   if (!user) {
@@ -515,6 +524,16 @@ export default function Patients() {
              >
                 <Card className="p-4 sm:p-8 rounded-[40px] border-2 shadow-2xl bg-white/80 backdrop-blur-md">
                    <AnimatePresence mode="wait">
+                      {activeTab === "anamnese" && selectedPaciente && (
+                         <motion.div key="anamnese" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                            <AnamneseFormulario pacienteId={selectedPacienteId} nomePaciente={selectedPaciente.nome} />
+                         </motion.div>
+                      )}
+                      {activeTab === "sobre" && selectedPaciente && (
+                         <motion.div key="sobre" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                            <SobreTab paciente={selectedPaciente} />
+                         </motion.div>
+                      )}
                       {activeTab === "ficha" && (
                          <motion.div key="ficha" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <FichaClinica pacienteId={selectedPacienteId} />
@@ -543,6 +562,11 @@ export default function Patients() {
                       {activeTab === "receituario" && (
                          <motion.div key="receit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <Receituario pacienteId={selectedPacienteId} />
+                         </motion.div>
+                      )}
+                      {activeTab === "documentos" && selectedPaciente && (
+                         <motion.div key="docs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                            <DocumentosTab pacienteId={selectedPacienteId} paciente={selectedPaciente} />
                          </motion.div>
                       )}
                    </AnimatePresence>

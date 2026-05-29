@@ -13,8 +13,9 @@ import { Odontograma } from "@/components/pacientes/Odontograma";
 import { Fotos } from "@/components/pacientes/Fotos";
 import { Radiografias } from "@/components/pacientes/Radiografias";
 import { Receituario } from "@/components/pacientes/Receituario";
-import { AnamneseTab } from "@/components/pacientes/AnamneseTab";
+import { AnamneseFormulario } from "@/components/pacientes/AnamneseFormulario";
 import { EvolucaoSection } from "@/components/pacientes/EvolucaoSection";
+import { DocumentosTab } from "@/components/pacientes/DocumentosTab";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -131,20 +132,34 @@ function OrcamentosTab({ pacienteId }: { pacienteId: string }) {
   const navigate = useNavigate();
   const { data: orcamentos = [], isLoading } = useOrcamentosByPaciente(pacienteId);
   if (isLoading) return <LoadingState />;
-  if (orcamentos.length === 0) return <EmptyState msg="Nenhum orçamento para este paciente." />;
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-          <FileText className="w-5 h-5 text-green-600" />
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+            <FileText className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-slate-800 tracking-tight">Orçamentos</h2>
+            <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
+              {orcamentos.length} orçamento{orcamentos.length !== 1 ? "s" : ""}
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-black text-slate-800 tracking-tight">Orçamentos</h2>
-          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
-            {orcamentos.length} orçamento{orcamentos.length !== 1 ? "s" : ""}
-          </p>
-        </div>
+        <Button
+          onClick={() => navigate(`/orcamentos/novo?paciente=${pacienteId}`)}
+          className="rounded-xl font-black text-[11px] uppercase tracking-widest gap-2 shadow-lg shadow-primary/20"
+          size="sm"
+        >
+          <ExternalLink className="w-3.5 h-3.5" /> Novo Orçamento
+        </Button>
       </div>
+      {orcamentos.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="text-sm font-bold uppercase tracking-widest">Nenhum orçamento ainda</p>
+        </div>
+      ) : (
       <div className="overflow-x-auto rounded-2xl border-2">
         <table className="w-full text-sm">
           <thead className="bg-slate-50">
@@ -175,6 +190,7 @@ function OrcamentosTab({ pacienteId }: { pacienteId: string }) {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }
@@ -463,7 +479,7 @@ export default function PacienteDetalhe() {
                 )}
                 {activeTab === "anamnese" && (
                   <motion.div key="anamnese" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <AnamneseTab pacienteId={id} />
+                    <AnamneseFormulario pacienteId={id!} nomePaciente={paciente?.nome} />
                   </motion.div>
                 )}
                 {activeTab === "imagens" && (
@@ -474,9 +490,9 @@ export default function PacienteDetalhe() {
                     </div>
                   </motion.div>
                 )}
-                {activeTab === "documentos" && (
+                {activeTab === "documentos" && paciente && (
                   <motion.div key="documentos" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <Receituario pacienteId={id} />
+                    <DocumentosTab pacienteId={id!} paciente={paciente} />
                   </motion.div>
                 )}
                 {activeTab === "debitos" && (

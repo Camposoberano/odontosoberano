@@ -27,6 +27,8 @@ import { AgendaDayView } from "@/components/agenda/AgendaDayView";
 import { AgendaDetailPopover } from "@/components/agenda/AgendaDetailPopover";
 import { AgendaWeekGridView } from "@/components/agenda/AgendaWeekGridView";
 import { AgendaSidebarList } from "@/components/agenda/AgendaSidebarList";
+import { AgendaMonthView } from "@/components/agenda/AgendaMonthView";
+import { AniversariantesWidget } from "@/components/agenda/AniversariantesWidget";
 
 
 
@@ -65,9 +67,13 @@ export default function Appointments() {
   const { pacientes } = usePacientes();
   const { dentistas } = useDentistas();
 
-  // Mapa dentista_id → cor para identificação visual na agenda
+  // Paleta fallback — dentistas sem cor cadastrada recebem cor distinta por índice
+  const DENTISTA_PALETTE = ['#e11d48', '#7c3aed', '#0284c7', '#059669', '#d97706', '#db2777', '#0891b2', '#65a30d'];
+
   const dentistaColors = useMemo(() =>
-    Object.fromEntries(dentistas.map(d => [d.id, d.cor ?? '#6366f1'])),
+    Object.fromEntries(
+      dentistas.map((d, i) => [d.id, d.cor ?? DENTISTA_PALETTE[i % DENTISTA_PALETTE.length]])
+    ),
     [dentistas]
   );
 
@@ -326,7 +332,7 @@ export default function Appointments() {
                  <motion.div variants={itemVariants}>
                     <AgendaDayView
                       selectedDate={selectedDate}
-                      appointments={filteredAgendamentos}
+                      appointments={selectedDayAppointments}
                       onAppointmentClick={handleShowDetail}
                       onAddClick={handleAddClick}
                       dentistaColors={dentistaColors}
@@ -348,37 +354,27 @@ export default function Appointments() {
 
               <TabsContent value="month" className="mt-0">
                 <motion.div variants={itemVariants}>
-                  <Card className="glass-card">
-                    <CardHeader>
-                      <CardTitle>Calendário de Agendamentos</CardTitle>
-                      <CardDescription>{filteredAgendamentos.length} agendamento(s) este mês</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex justify-center">
-                      <Calendar
-                        mode="single" selected={selectedDate} 
-                        onSelect={(date) => {
-                          if (date) {
-                            if (isSameDay(date, selectedDate)) {
-                              handleAddClick(date);
-                            }
-                            setSelectedDate(date);
-                          }
-                        }}
-                        onMonthChange={setCurrentMonth} month={currentMonth} locale={ptBR}
-                        className="rounded-md border pointer-events-auto"
-                        modifiers={{ hasAppointments: (day) => appointmentsByDay.has(format(day, 'yyyy-MM-dd')) }}
-                        modifiersClassNames={{ hasAppointments: "has-appointments" }}
-                      />
-                    </CardContent>
-                  </Card>
+                  <AgendaMonthView
+                    selectedDate={selectedDate}
+                    currentMonth={currentMonth}
+                    appointments={filteredAgendamentos}
+                    dentistaColors={dentistaColors}
+                    dentistas={dentistas}
+                    onSelectDate={(date) => {
+                      setSelectedDate(date);
+                      setCurrentMonth(date);
+                    }}
+                    onMonthChange={setCurrentMonth}
+                    onAddClick={(date) => handleAddClick(date)}
+                  />
                 </motion.div>
               </TabsContent>
             </Tabs>
           </div>
 
-          <aside className="w-full lg:w-1/4 h-full sticky top-6">
-            <motion.div variants={itemVariants} className="h-[calc(100vh-180px)]">
-              <AgendaSidebarList 
+          <aside className="w-full lg:w-1/4 h-full sticky top-6 space-y-0">
+            <motion.div variants={itemVariants} className="h-[calc(100vh-280px)]">
+              <AgendaSidebarList
                 selectedDate={selectedDate}
                 appointments={selectedDayAppointments}
                 loading={loading}
@@ -386,6 +382,9 @@ export default function Appointments() {
                 getInitials={getInitials}
                 getStatusColor={getStatusColor}
               />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <AniversariantesWidget />
             </motion.div>
           </aside>
         </div>

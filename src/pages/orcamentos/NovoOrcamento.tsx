@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Trash2, Save, Send, ChevronLeft } from "lucide-react";
-import { DenteSeletor } from "@/components/orcamentos/DenteSeletor";
+import { OdontogramaBotao } from "@/components/orcamentos/OdontogramaSeletor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ interface ItemLocal {
   preco_total: number;
   observacao?: string;
   dente_numero?: string | null;
+  dentes_selecionados?: string[]; // multi-dente (expande em N rows ao salvar)
 }
 
 function calcularTotais(
@@ -56,6 +57,7 @@ function calcularTotais(
 
 export default function NovoOrcamento() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { id } = useParams<{ id: string }>();
   const isEdicao = !!id;
   const { toast } = useToast();
@@ -65,7 +67,7 @@ export default function NovoOrcamento() {
 
   const [pacientes, setPacientes] = useState<PacienteOpcao[]>([]);
   const [dentistas, setDentistas] = useState<DentistaOpcao[]>([]);
-  const [pacienteId, setPacienteId] = useState("");
+  const [pacienteId, setPacienteId] = useState(searchParams.get("paciente") ?? "");
   const [dentistaId, setDentistaId] = useState("");
   const [itens, setItens] = useState<ItemLocal[]>([]);
   const [descontoTipo, setDescontoTipo] = useState<"percentual" | "valor">("valor");
@@ -104,6 +106,7 @@ export default function NovoOrcamento() {
         preco_unitario: i.preco_unitario,
         preco_total: i.preco_total,
         observacao: i.observacao ?? undefined,
+        dente_numero: (i as any).dente_numero ?? null,
       }))
     );
   }, [orcamentoExistente]);
@@ -119,9 +122,24 @@ export default function NovoOrcamento() {
         quantidade: 1,
         preco_unitario: proc.preco_sugerido,
         preco_total: proc.preco_sugerido,
+        dentes_selecionados: [],
       },
     ]);
   }, []);
+
+  const atualizarDentes = (index: number, dentes: string[]) => {
+    setItens(prev => {
+      const novo = [...prev];
+      const item = { ...novo[index] };
+      item.dentes_selecionados = dentes;
+      // Atualiza total: preco_unitario × nº dentes (mínimo 1)
+      item.preco_total = item.preco_unitario * Math.max(1, dentes.length);
+      // Sincroniza dente_numero com o primeiro selecionado (para compatibilidade)
+      item.dente_numero = dentes.length === 1 ? dentes[0] : dentes.length > 1 ? dentes.join(",") : null;
+      novo[index] = item;
+      return novo;
+    });
+  };
 
   const atualizarItem = (index: number, campo: keyof ItemLocal, valor: number | string) => {
     setItens((prev) => {
@@ -177,10 +195,36 @@ export default function NovoOrcamento() {
         orcamentoId = criado.id;
       }
 
-      // Inserir itens
-      if (itens.length > 0) {
-        const { error } = await supabase.from("orcamento_itens").insert(
-          itens.map((i) => ({
+      // Expandir itens multi-dente em N linhas individuais
+      const itensExpandidos: Array<{
+        orcamento_id: string;
+        procedimento_id: string | null;
+        nome_procedimento: string;
+        quantidade: number;
+        preco_unitario: number;
+        preco_total: number;
+        observacao: string | null;
+        dente_numero: string | null;
+      }> = [];
+
+      for (const i of itens) {
+        const dentes = i.dentes_selecionados ?? (i.dente_numero ? [i.dente_numero] : []);
+        if (dentes.length > 1) {
+          // Um row por dente, preco_unitario por dente
+          for (const dente of dentes) {
+            itensExpandidos.push({
+              orcamento_id: orcamentoId,
+              procedimento_id: i.procedimento_id ?? null,
+              nome_procedimento: i.nome_procedimento,
+              quantidade: 1,
+              preco_unitario: i.preco_unitario,
+              preco_total: i.preco_unitario,
+              observacao: i.observacao ?? null,
+              dente_numero: dente,
+            });
+          }
+        } else {
+          itensExpandidos.push({
             orcamento_id: orcamentoId,
             procedimento_id: i.procedimento_id ?? null,
             nome_procedimento: i.nome_procedimento,
@@ -188,9 +232,13 @@ export default function NovoOrcamento() {
             preco_unitario: i.preco_unitario,
             preco_total: i.preco_total,
             observacao: i.observacao ?? null,
-            dente_numero: i.dente_numero ?? null,
-          }))
-        );
+            dente_numero: dentes[0] ?? null,
+          });
+        }
+      }
+
+      if (itensExpandidos.length > 0) {
+        const { error } = await supabase.from("orcamento_itens").insert(itensExpandidos);
         if (error) throw error;
       }
 
@@ -297,7 +345,7 @@ export default function NovoOrcamento() {
                     {/* Header da tabela */}
                     <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground px-1">
                       <div className="col-span-4">Procedimento</div>
-                      <div className="col-span-2 text-center">Dente</div>
+                      <div className="col-span-2 text-center">Dente(s) 🦷</div>
                       <div className="col-span-1 text-center">Qtd</div>
                       <div className="col-span-2 text-right">Valor Unit. (R$)</div>
                       <div className="col-span-2 text-right">Total</div>
@@ -314,9 +362,9 @@ export default function NovoOrcamento() {
                           />
                         </div>
                         <div className="col-span-2 flex justify-center">
-                          <DenteSeletor
-                            value={item.dente_numero}
-                            onChange={(v) => atualizarItem(idx, "dente_numero", v ?? "")}
+                          <OdontogramaBotao
+                            dentes={item.dentes_selecionados ?? (item.dente_numero ? [item.dente_numero] : [])}
+                            onChange={(dentes) => atualizarDentes(idx, dentes)}
                           />
                         </div>
                         <div className="col-span-1">

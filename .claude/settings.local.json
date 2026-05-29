@@ -5,7 +5,13 @@
       "Bash(rtk grep *)",
       "Bash(xargs -I {} basename {})",
       "Bash(find E:\\\\Projetos_Novos\\\\Instituto Belem\\\\supabase\\\\migrations *)",
-      "Bash(rtk find *)"
+      "Bash(rtk find *)",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "Bash(xargs grep -l \"file\\\\|upload\\\\|import\\\\|csv\\\\|xlsx\\\\|excel\")",
+      "Bash(rtk ls *)",
+      "Bash(xargs ls -lh)",
+      "Bash(rtk git *)",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file"
     ]
   },
   "enabledMcpjsonServers": [

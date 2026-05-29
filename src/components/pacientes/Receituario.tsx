@@ -7,11 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Save, Printer, FileText, Pill, Clock, Calendar, Trash2, X } from "lucide-react";
+import { Plus, Save, Printer, FileText, Pill, Clock, Calendar, Trash2, X, Download, Loader2 } from "lucide-react";
 import { usePacientes } from "@/hooks/usePacientes";
-import { useReceituario, Medicamento } from "@/hooks/useReceituario";
-import { useState } from "react";
+import { useReceituario, Medicamento, Receituario as ReceituarioType } from "@/hooks/useReceituario";
+import { useState, useRef, useEffect } from "react";
 import { PatientSearch } from "@/components/pacientes/PatientSearch";
+import { useInformacoesClinica } from "@/hooks/useInformacoesClinica";
+import { buildVars, exportarDocumentoPDF } from "@/utils/documentoUtils";
+import { ReceituarioPDFTemplate } from "@/components/documentos/ReceituarioPDFTemplate";
+import { toast } from "sonner";
 
 interface ReceituarioProps {
   pacienteId: string;
@@ -20,8 +24,36 @@ interface ReceituarioProps {
 export function Receituario({ pacienteId }: ReceituarioProps) {
   const { pacientes } = usePacientes();
   const { receituarios, loading, createReceituario, deleteReceituario } = useReceituario(pacienteId);
+  const { informacoes: clinica } = useInformacoesClinica();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [pdfTarget, setPdfTarget] = useState<ReceituarioType | null>(null);
+  const [gerandoPDF, setGerandoPDF] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
+
+  const selectedPaciente = pacientes.find((p) => p.id === pacienteId);
+
+  useEffect(() => {
+    if (!pdfTarget) return;
+    const timeout = setTimeout(async () => {
+      try {
+        const nome = selectedPaciente?.nome ?? 'Paciente';
+        const data = new Date(pdfTarget.data_prescricao).toLocaleDateString('pt-BR');
+        await exportarDocumentoPDF('documento-pdf', `Receituário — ${nome} — ${data}.pdf`);
+      } catch {
+        toast.error('Erro ao gerar PDF');
+      } finally {
+        setPdfTarget(null);
+        setGerandoPDF(false);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [pdfTarget]);
+
+  const handlePDF = (receituario: ReceituarioType) => {
+    setGerandoPDF(true);
+    setPdfTarget(receituario);
+  };
 
   const [newReceituario, setNewReceituario] = useState({
     data_prescricao: new Date().toISOString().split('T')[0],
@@ -36,10 +68,9 @@ export function Receituario({ pacienteId }: ReceituarioProps) {
     dosagem: "",
     frequencia: "",
     duracao: "",
+    via: "Oral",
     observacoes: "",
   });
-
-  const selectedPaciente = pacientes.find((p) => p.id === pacienteId);
 
   const addMedicamento = () => {
     if (!currentMedicamento.nome || !currentMedicamento.dosagem) return;
@@ -76,6 +107,7 @@ export function Receituario({ pacienteId }: ReceituarioProps) {
         validade: "",
       });
       setMedicamentos([]);
+      setCurrentMedicamento({ nome: "", dosagem: "", frequencia: "", duracao: "", via: "Oral", observacoes: "" });
       setDialogOpen(false);
     } catch (error) {
       console.error("Erro ao salvar receituário:", error);
@@ -256,14 +288,30 @@ export function Receituario({ pacienteId }: ReceituarioProps) {
                         </div>
                       </div>
 
-                      <div>
-                        <Label htmlFor="obs_medicamento">Observações do Medicamento</Label>
-                        <Input
-                          id="obs_medicamento"
-                          value={currentMedicamento.observacoes}
-                          onChange={(e) => setCurrentMedicamento({ ...currentMedicamento, observacoes: e.target.value })}
-                          placeholder="Ex: Tomar com alimentos"
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="via">Via de Administração</Label>
+                          <Select
+                            value={currentMedicamento.via ?? 'Oral'}
+                            onValueChange={(v) => setCurrentMedicamento({ ...currentMedicamento, via: v })}
+                          >
+                            <SelectTrigger id="via"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {['Oral', 'Tópico', 'Sublingual', 'Injetável', 'Outro'].map(v => (
+                                <SelectItem key={v} value={v}>{v}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="obs_medicamento">Observações</Label>
+                          <Input
+                            id="obs_medicamento"
+                            value={currentMedicamento.observacoes}
+                            onChange={(e) => setCurrentMedicamento({ ...currentMedicamento, observacoes: e.target.value })}
+                            placeholder="Ex: Tomar com alimentos"
+                          />
+                        </div>
                       </div>
 
                       <Button 
@@ -407,8 +455,19 @@ export function Receituario({ pacienteId }: ReceituarioProps) {
                           )}
 
                           <div className="flex justify-end gap-2 pt-2">
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePDF(receituario)}
+                              disabled={gerandoPDF}
+                            >
+                              {gerandoPDF && pdfTarget?.id === receituario.id
+                                ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                : <Download className="w-4 h-4 mr-2" />}
+                              PDF
+                            </Button>
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => handlePrint(receituario)}
                             >
@@ -432,6 +491,31 @@ export function Receituario({ pacienteId }: ReceituarioProps) {
             </Card>
           )}
         </>
+      )}
+
+      {/* Template oculto para captura PDF */}
+      {pdfTarget && (
+        <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
+          <ReceituarioPDFTemplate
+            ref={pdfRef}
+            vars={buildVars(
+              selectedPaciente,
+              clinica ? {
+                nome: clinica.nome_clinica,
+                cnpj: clinica.cnpj,
+                cidade: clinica.cidade,
+                estado: clinica.estado,
+                endereco: [clinica.endereco, clinica.numero, clinica.bairro].filter(Boolean).join(', '),
+                telefone: clinica.telefone || clinica.celular,
+                cro_responsavel: clinica.cro_clinica,
+                logo_url: clinica.logo_base64,
+              } : undefined,
+            )}
+            medicamentos={pdfTarget.medicamentos}
+            diagnostico={pdfTarget.diagnostico ?? undefined}
+            observacoes={pdfTarget.observacoes ?? undefined}
+          />
+        </div>
       )}
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

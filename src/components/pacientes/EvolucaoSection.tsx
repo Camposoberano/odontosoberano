@@ -21,7 +21,7 @@ interface EvolucaoSectionProps {
 }
 
 export function EvolucaoSection({ pacienteId }: EvolucaoSectionProps) {
-  const { evolucoes, isLoading, createEvolucao, deleteEvolucao, isCreating } = useEvolucoes(pacienteId);
+  const { evolucoes, isLoading, queryError, createEvolucao, deleteEvolucao, isCreating } = useEvolucoes(pacienteId);
   const { dentistas } = useDentistas();
 
   const [showForm, setShowForm] = useState(false);

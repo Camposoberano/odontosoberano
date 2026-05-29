@@ -1,9 +1,9 @@
 @echo off
-title Instituto Belém - Inicializacao
+title Instituto Belï¿½m - Inicializacao
 color 03
 chcp 65001 >nul
 echo ===================================================
-echo         INSTITUTO BELÉM - SISTEMA ON
+echo         INSTITUTO BELï¿½M - SISTEMA ON
 echo ===================================================
 echo.
 cd /d "%~dp0"
@@ -21,14 +21,14 @@ if not exist "node_modules\" (
     echo OK!
 ) else ( echo OK! )
 echo [3/4] Ligando servidor...
-start "Instituto Belém" /MIN cmd /c "npm run dev"
+start "Instituto Belï¿½m" /MIN cmd /c "npm run dev"
 echo [4/4] Aguardando (6s)...
 timeout /t 6 /nobreak >nul
 echo.
 echo Sistema pronto! Abrindo navegador...
-echo URL: http://localhost:8081/orto/
+echo URL: http://localhost:8081/belem/
 echo.
 echo [ATENCAO] NAO feche a janela preta minimizada!
 echo.
-start http://localhost:8081/orto/
+start http://localhost:8081/belem/
 pause >nul
