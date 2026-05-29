@@ -11,13 +11,11 @@ import { Dentista } from '@/hooks/useDentistas';
 import { useDocumentos } from '@/hooks/useDocumentos';
 import { buildVars, exportarDocumentoPDF, TIPOS_DOCUMENTO, TipoDocumento } from '@/utils/documentoUtils';
 import { InformacoesClinica } from '@/hooks/useInformacoesClinica';
-import { lazy, Suspense } from 'react';
-const ContratoTemplate = lazy(() => import('@/components/documentos/ContratoTemplate').then(m => ({ default: m.ContratoTemplate })));
-const TCLETemplate = lazy(() => import('@/components/documentos/TCLETemplate').then(m => ({ default: m.TCLETemplate })));
-const AtestadoTemplate = lazy(() => import('@/components/documentos/AtestadoTemplate').then(m => ({ default: m.AtestadoTemplate })));
-const ReceituarioPDFTemplate = lazy(() => import('@/components/documentos/ReceituarioPDFTemplate').then(m => ({ default: m.ReceituarioPDFTemplate })));
-const AnamnesePDFTemplate = lazy(() => import('@/components/documentos/AnamnesePDFTemplate').then(m => ({ default: m.AnamnesePDFTemplate })));
-import type { TipoAnamnese } from '@/components/documentos/AnamnesePDFTemplate';
+import { ContratoTemplate } from '@/components/documentos/ContratoTemplate';
+import { TCLETemplate } from '@/components/documentos/TCLETemplate';
+import { AtestadoTemplate } from '@/components/documentos/AtestadoTemplate';
+import { ReceituarioPDFTemplate } from '@/components/documentos/ReceituarioPDFTemplate';
+import { AnamnesePDFTemplate, TipoAnamnese } from '@/components/documentos/AnamnesePDFTemplate';
 import { useAnamnese } from '@/hooks/useAnamnese';
 import { toast } from 'sonner';
 
@@ -395,12 +393,10 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
           </Button>
         </div>
 
-        {/* Template oculto para captura — lazy loaded */}
-        <Suspense fallback={null}>
-          <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
-            {renderTemplate()}
-          </div>
-        </Suspense>
+        {/* Template oculto para captura */}
+        <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
+          {renderTemplate()}
+        </div>
       </DialogContent>
     </Dialog>
   );

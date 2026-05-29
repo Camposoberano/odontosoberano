@@ -84,7 +84,7 @@ export function usePacientes() {
       
       const { data, error } = await supabase
         .from('pacientes')
-        .select('id, nome, email, telefone, cpf, data_nascimento, status, numero_prontuario, apelido, genero, rua, numero, bairro, cidade, estado, cep, complemento, observacao_endereco, ultima_consulta, created_at, updated_at, user_id, area_tratamento, profissao, como_conheceu, nome_responsavel, cpf_responsavel, telefone_responsavel, etiquetas, rede_social, paciente_estrangeiro, data_nasc_responsavel, email_responsavel, plano_id, numero_carteirinha, titular_plano')
+        .select('*')
         .eq('status', 'Ativo')
         .order('nome')
         .limit(1000);

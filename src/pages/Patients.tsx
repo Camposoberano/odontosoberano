@@ -81,6 +81,9 @@ export default function Patients() {
   const [pacienteToDelete, setPacienteToDelete] = useState<Paciente | null>(null);
   const [selectedPacienteId, setSelectedPacienteId] = useState<string>("");
   const [activeTab, setActiveTab] = useState("sobre");
+  const [letraFiltro, setLetraFiltro] = useState("Todos");
+  const [pagina, setPagina] = useState(1);
+  const POR_PAGINA = 20;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -400,23 +403,123 @@ export default function Patients() {
         </motion.div>
 
         {!selectedPacienteId ? (
-          /* EMPTY STATE / LANDING */
-          <motion.div 
-            variants={itemVariants}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-8"
-          >
-             <Card className="p-6 border-2 border-dashed rounded-[32px] bg-slate-50/50 flex flex-col items-center text-center gap-4 opacity-60">
-                <FileText className="w-10 h-10 text-slate-300" />
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Fichas Clínicas</span>
-             </Card>
-             <Card className="p-6 border-2 border-dashed rounded-[32px] bg-slate-50/50 flex flex-col items-center text-center gap-4 opacity-60">
-                <ClipboardList className="w-10 h-10 text-slate-300" />
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Histórico de Atendimentos</span>
-             </Card>
-             <Card className="p-6 border-2 border-dashed rounded-[32px] bg-slate-50/50 flex flex-col items-center text-center gap-4 opacity-60">
-                <Pill className="w-10 h-10 text-slate-300" />
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Receituários e Documentos</span>
-             </Card>
+          /* LISTA ALFABÉTICA COM PAGINAÇÃO */
+          <motion.div variants={itemVariants} className="space-y-4">
+            {/* Filtro alfabético */}
+            <div className="flex flex-wrap gap-1">
+              {['Todos', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')].map(letra => (
+                <button
+                  key={letra}
+                  onClick={() => { setLetraFiltro(letra); setPagina(1); }}
+                  className={`w-8 h-8 text-xs font-black rounded-lg transition-all ${
+                    letraFiltro === letra
+                      ? 'bg-primary text-white shadow-md shadow-primary/30'
+                      : 'bg-slate-100 text-slate-500 hover:bg-primary/10 hover:text-primary'
+                  }`}
+                >
+                  {letra === 'Todos' ? '★' : letra}
+                </button>
+              ))}
+            </div>
+
+            {/* Totalizador */}
+            {(() => {
+              const lista = filteredPatients.filter(p =>
+                letraFiltro === 'Todos' || p.nome.toUpperCase().startsWith(letraFiltro)
+              );
+              const total = lista.length;
+              const totalPaginas = Math.ceil(total / POR_PAGINA);
+              const paginaAtual = Math.min(pagina, totalPaginas || 1);
+              const inicio = (paginaAtual - 1) * POR_PAGINA;
+              const visiveis = lista.slice(inicio, inicio + POR_PAGINA);
+
+              return (
+                <>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground font-bold uppercase tracking-widest px-1">
+                    <span>{total} paciente{total !== 1 ? 's' : ''}{letraFiltro !== 'Todos' ? ` com "${letraFiltro}"` : ''}</span>
+                    {totalPaginas > 1 && (
+                      <span>Página {paginaAtual} de {totalPaginas}</span>
+                    )}
+                  </div>
+
+                  <Card className="border-2 rounded-[28px] overflow-hidden">
+                    {visiveis.length === 0 ? (
+                      <div className="p-12 text-center text-muted-foreground">
+                        <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p className="font-bold text-sm uppercase tracking-widest">Nenhum paciente encontrado</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-50">
+                        {visiveis.map(paciente => (
+                          <button
+                            key={paciente.id}
+                            onClick={() => navigate(`/patients/${paciente.id}`)}
+                            className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-primary/5 transition-colors text-left group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
+                              <User className="w-4 h-4 text-primary group-hover:text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-black text-slate-800 text-sm truncate">{paciente.nome}</p>
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {paciente.cpf && <span className="font-mono mr-3">{paciente.cpf}</span>}
+                                {paciente.telefone && <span>{paciente.telefone}</span>}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Badge className={paciente.status === 'Ativo' ? 'bg-green-100 text-green-700 text-[10px]' : 'bg-red-100 text-red-700 text-[10px]'}>
+                                {paciente.status}
+                              </Badge>
+                              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Paginação */}
+                  {totalPaginas > 1 && (
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        disabled={paginaAtual <= 1}
+                        onClick={() => setPagina(p => Math.max(1, p - 1))}
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </Button>
+                      {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                        const p = Math.max(1, Math.min(totalPaginas - 4, paginaAtual - 2)) + i;
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => setPagina(p)}
+                            className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${
+                              p === paginaAtual
+                                ? 'bg-primary text-white shadow-md'
+                                : 'bg-slate-100 text-slate-600 hover:bg-primary/10'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        disabled={paginaAtual >= totalPaginas}
+                        onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </motion.div>
         ) : (
           /* SINGLE PATIENT VIEW WITH SIDEBAR */
