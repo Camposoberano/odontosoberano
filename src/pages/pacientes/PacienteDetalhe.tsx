@@ -479,7 +479,7 @@ export default function PacienteDetalhe() {
                 )}
                 {activeTab === "anamnese" && (
                   <motion.div key="anamnese" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <AnamneseFormulario pacienteId={id!} nomePaciente={paciente?.nome} />
+                    <AnamneseFormulario pacienteId={id!} nomePaciente={paciente?.nome} paciente={paciente} />
                   </motion.div>
                 )}
                 {activeTab === "imagens" && (

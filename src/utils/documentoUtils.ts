@@ -90,7 +90,7 @@ export function buildVars(
     CLINICA_TELEFONE: clinicaConfig?.telefone ?? '',
     CLINICA_CRO_RESPONSAVEL: clinicaConfig?.cro_responsavel ?? dentista?.cro ?? '',
     CLINICA_DENTISTA_NOME: clinicaConfig?.dentista_responsavel ?? dentista?.nome ?? '',
-    CLINICA_LOGO_URL: clinicaConfig?.logo_url ?? '',
+    CLINICA_LOGO_URL: clinicaConfig?.logo_url ?? '/belem/logo-ib.jpg',
 
     DENTISTA_NOME: dentista?.nome ?? clinicaConfig?.dentista_responsavel ?? '',
     DENTISTA_CRO: dentista?.cro ?? clinicaConfig?.cro_responsavel ?? '',
@@ -116,6 +116,32 @@ export async function exportarDocumentoPDF(elementId: string, filename: string):
   const el = document.getElementById(elementId);
   if (!el) throw new Error(`Elemento não encontrado: ${elementId}`);
 
+  // Garantir visibilidade para captura correta pelo html2canvas
+  const prev = {
+    display: el.style.display,
+    position: el.style.position,
+    left: el.style.left,
+    top: el.style.top,
+    width: el.style.width,
+    visibility: el.style.visibility,
+    zIndex: el.style.zIndex,
+  };
+  el.style.display = 'block';
+  el.style.position = 'absolute';
+  el.style.left = '-9999px';
+  el.style.top = '0';
+  el.style.width = '800px';
+  el.style.visibility = 'hidden';
+  el.style.zIndex = '9999';
+
+  // Aguardar imagens carregarem
+  await Promise.all(
+    Array.from(el.querySelectorAll('img')).map(img =>
+      img.complete ? Promise.resolve() : new Promise<void>(r => { img.onload = r; img.onerror = r; })
+    )
+  );
+  await new Promise(r => setTimeout(r, 150));
+
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import('jspdf') as any,
     import('html2canvas') as any,
@@ -130,6 +156,9 @@ export async function exportarDocumentoPDF(elementId: string, filename: string):
     width: el.scrollWidth,
     height: el.scrollHeight,
   });
+
+  // Restaurar estado original
+  Object.assign(el.style, prev);
 
   const imgWidth = 210;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;

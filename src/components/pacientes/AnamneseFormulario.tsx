@@ -1,10 +1,13 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Send, AlertTriangle } from "lucide-react";
+import { ChevronRight, ChevronLeft, Send, AlertTriangle, Download, Printer, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { AnamnesePDFTemplate } from "@/components/documentos/AnamnesePDFTemplate";
+import { buildVars, exportarDocumentoPDF } from "@/utils/documentoUtils";
+import { useInformacoesClinica } from "@/hooks/useInformacoesClinica";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnamnese } from "@/hooks/useAnamnese";
@@ -257,10 +260,13 @@ interface Props {
   nomePaciente?: string;
 }
 
-export function AnamneseFormulario({ pacienteId, nomePaciente }: Props) {
+export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props & { paciente?: any }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: anamneseExistente, isLoading: loadingAnamnese } = useAnamnese(pacienteId);
+  const { informacoes: clinica } = useInformacoesClinica();
+  const pdfRef = useRef<HTMLDivElement>(null);
+  const [gerandoPDF, setGerandoPDF] = useState(false);
 
   const [step, setStep] = useState(0);
   const [respostas, setRespostas] = useState<Record<string, string>>({});
@@ -399,6 +405,58 @@ export function AnamneseFormulario({ pacienteId, nomePaciente }: Props) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const vars = buildVars(paciente, clinica ? {
+    nome: clinica.nome_clinica, cnpj: clinica.cnpj,
+    cidade: clinica.cidade, estado: clinica.estado,
+    endereco: [clinica.endereco, clinica.numero, clinica.bairro].filter(Boolean).join(', '),
+    telefone: clinica.telefone || clinica.celular,
+    logo_url: clinica.logo_base64,
+  } : undefined);
+
+  const anamneseParaPDF = {
+    queixa_principal: respostas.queixa_principal,
+    alergias: respostas.alergia === 'Sim' ? (detalhes.alergia || 'Sim') : undefined,
+    medicamentos_uso: respostas.medicacao === 'Sim' ? (detalhes.medicacao || 'Sim') : undefined,
+    gestante: respostas.gravida === 'Sim',
+    fumante: respostas.fumante === 'Sim',
+    alcool: respostas.drogas === 'Sim',
+    pressao_arterial: respostas.media_pressao || respostas.pressao_arterial,
+    historico_cirurgias: respostas.cirurgia === 'Sim' ? (detalhes.cirurgia || 'Sim') : undefined,
+    frequencia_respiratoria: respostas.freq_respiratoria ? Number(respostas.freq_respiratoria) : undefined,
+    fc_bpm: respostas.freq_cardiaca ? Number(respostas.freq_cardiaca) : undefined,
+  };
+
+  const handleBaixarPDF = async () => {
+    setGerandoPDF(true);
+    try {
+      await exportarDocumentoPDF('anamnese-pdf-export', `Anamnese — ${nomePaciente ?? 'Paciente'}.pdf`);
+    } catch { toast.error('Erro ao gerar PDF'); }
+    finally { setGerandoPDF(false); }
+  };
+
+  const handleImprimir = () => {
+    const el = document.getElementById('anamnese-pdf-export');
+    if (!el) return;
+    const w = window.open('', '_blank')!;
+    w.document.write(`<html><head><title>Anamnese</title></head><body>${el.outerHTML}</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+
+  const handleWhatsApp = () => {
+    if (!paciente?.telefone) { toast.error('Paciente sem telefone cadastrado'); return; }
+    const alertas = gerarAlertas();
+    const msg = encodeURIComponent(
+      `Olá ${nomePaciente ?? 'Paciente'}! 🦷\n\n` +
+      `Sua *Ficha de Anamnese* foi registrada com sucesso no Instituto Belém de Odontologia.\n\n` +
+      (alertas.length > 0 ? `⚠ *Alertas clínicos:*\n${alertas.map(a => `• ${a}`).join('\n')}\n\n` : '') +
+      `Se precisar de qualquer informação, estamos à disposição!\n\n*Instituto Belém de Odontologia*`
+    );
+    const tel = paciente.telefone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
   };
 
   const progresso = step === 0 ? 0 : Math.round((step / TOTAL_STEPS) * 100);
@@ -553,15 +611,52 @@ export function AnamneseFormulario({ pacienteId, nomePaciente }: Props) {
             {/* SUCESSO */}
             {step > TOTAL_STEPS && (
               <motion.div key="sucesso" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-16 space-y-6">
-                <div className="w-32 h-32 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto text-7xl shadow-xl">
+                className="text-center py-8 space-y-6">
+                <div className="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto text-6xl shadow-xl">
                   ✓
                 </div>
                 <div>
-                  <h2 className="text-4xl font-extrabold text-slate-800">Ficha enviada!</h2>
-                  <p className="text-slate-500 text-xl mt-3">
+                  <h2 className="text-3xl font-extrabold text-slate-800">Ficha enviada!</h2>
+                  <p className="text-slate-500 text-lg mt-2">
                     Agradecemos sua colaboração.<br />Por favor, aguarde na recepção.
                   </p>
+                </div>
+
+                {/* Alertas registrados */}
+                {gerarAlertas().length > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left space-y-1 max-w-sm mx-auto">
+                    <p className="font-black text-red-700 text-xs uppercase tracking-widest">⚠ Alertas registrados</p>
+                    {gerarAlertas().map((a, i) => (
+                      <p key={i} className="text-red-600 text-sm">• {a}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
+                  <Button
+                    onClick={handleBaixarPDF}
+                    disabled={gerandoPDF}
+                    className="flex-1 rounded-2xl h-12 font-black gap-2"
+                  >
+                    {gerandoPDF ? '...' : <><Download className="w-4 h-4" /> Baixar PDF</>}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleImprimir}
+                    className="flex-1 rounded-2xl h-12 font-bold gap-2 border-2"
+                  >
+                    <Printer className="w-4 h-4" /> Imprimir
+                  </Button>
+                  {paciente?.telefone && (
+                    <Button
+                      variant="outline"
+                      onClick={handleWhatsApp}
+                      className="flex-1 rounded-2xl h-12 font-bold gap-2 border-2 text-green-600 border-green-300 hover:bg-green-50"
+                    >
+                      <MessageCircle className="w-4 h-4" /> WhatsApp
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -569,6 +664,21 @@ export function AnamneseFormulario({ pacienteId, nomePaciente }: Props) {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Template oculto para captura PDF da anamnese */}
+      {step > TOTAL_STEPS && (
+        <div
+          id="anamnese-pdf-export"
+          style={{ position: 'absolute', left: '-9999px', top: 0, width: '800px', visibility: 'hidden' }}
+        >
+          <AnamnesePDFTemplate
+            ref={pdfRef}
+            vars={vars}
+            tipo="anamnese_padrao"
+            anamnese={anamneseParaPDF as any}
+          />
+        </div>
+      )}
     </div>
   );
 }
