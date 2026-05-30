@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Send, AlertTriangle, Download, Printer, MessageCircle } from "lucide-react";
+import { ChevronRight, ChevronLeft, Send, AlertTriangle, Download, Printer, MessageCircle, Link2, Copy, CheckCircle2, Clock } from "lucide-react";
+import { useGenerateAnamneseToken, useActiveTokens, buildAnamneseUrl } from "@/hooks/useAnamneseToken";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -273,6 +274,28 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
   const [detalhes, setDetalhes] = useState<Record<string, string>>({});
   const [erros, setErros] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const generateToken = useGenerateAnamneseToken(pacienteId, nomePaciente ?? "");
+  const { data: tokens } = useActiveTokens(pacienteId);
+
+  const handleGenerateLink = async () => {
+    const url = await generateToken.mutateAsync();
+    navigator.clipboard.writeText(url).catch(() => {});
+    toast.success("Link gerado e copiado!");
+  };
+
+  const handleCopyLink = (url: string) => {
+    navigator.clipboard.writeText(url).catch(() => {});
+    toast.success("Link copiado!");
+  };
+
+  const handleWhatsAppLink = (url: string) => {
+    const nome = nomePaciente?.split(" ")[0] ?? "";
+    const msg = encodeURIComponent(
+      `Olá${nome ? `, ${nome}` : ""}! Por favor, preencha sua ficha médica antes da consulta:\n${url}`
+    );
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
 
   // Pré-preencher respostas quando anamnese existente carrega
   useEffect(() => {
@@ -663,6 +686,68 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
             )}
 
           </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Seção: Enviar link ao paciente */}
+      <div className="mt-4 border-2 rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50">
+          <Link2 className="w-4 h-4 text-emerald-600" />
+          <span className="font-black text-xs uppercase tracking-widest text-emerald-700">
+            Enviar link de anamnese ao paciente
+          </span>
+        </div>
+        <div className="p-4 space-y-4 bg-white">
+          <p className="text-sm text-muted-foreground">
+            Gere um link único para o paciente preencher no celular — sem precisar de login. Válido por 7 dias.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGenerateLink}
+            disabled={generateToken.isPending}
+            className="rounded-xl font-bold text-xs uppercase tracking-widest h-10"
+          >
+            {generateToken.isPending ? (
+              <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />Gerando...</span>
+            ) : (
+              <span className="flex items-center gap-2"><Link2 className="w-4 h-4" />Gerar novo link</span>
+            )}
+          </Button>
+
+          {tokens && tokens.length > 0 && (
+            <div className="space-y-2">
+              <p className="font-bold text-xs uppercase tracking-widest text-slate-500">Links recentes</p>
+              {tokens.map((t) => {
+                const url = buildAnamneseUrl(t.token);
+                const isUsed = !!t.used_at;
+                const isExpired = !isUsed && new Date(t.expires_at) <= new Date();
+                const isActive = !isUsed && !isExpired;
+                return (
+                  <div key={t.token} className="flex items-center gap-2 p-3 rounded-xl border bg-slate-50">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-mono text-slate-600 truncate">{url}</p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        {isUsed && <span className="flex items-center gap-1 text-xs text-green-600 font-bold"><CheckCircle2 className="w-3 h-3" />Preenchido</span>}
+                        {isExpired && <span className="flex items-center gap-1 text-xs text-amber-600 font-bold"><Clock className="w-3 h-3" />Expirado</span>}
+                        {isActive && <span className="flex items-center gap-1 text-xs text-blue-600 font-bold"><Link2 className="w-3 h-3" />Ativo</span>}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button type="button" onClick={() => handleCopyLink(url)} title="Copiar link" className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
+                          <Copy className="w-4 h-4 text-slate-500" />
+                        </button>
+                        <button type="button" onClick={() => handleWhatsAppLink(url)} title="WhatsApp" className="p-1.5 rounded-lg hover:bg-green-100 transition-colors">
+                          <MessageCircle className="w-4 h-4 text-green-600" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

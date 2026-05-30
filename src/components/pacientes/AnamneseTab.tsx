@@ -10,7 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, ClipboardList, ChevronDown, ChevronRight } from "lucide-react";
+import { Loader2, Save, ClipboardList, ChevronDown, ChevronRight, Link2, Copy, MessageCircle, CheckCircle2, Clock } from "lucide-react";
+import { useGenerateAnamneseToken, useActiveTokens, buildAnamneseUrl } from "@/hooks/useAnamneseToken";
 
 const DOENCAS_OPTIONS = [
   { id: "diabetes", label: "Diabetes" },
@@ -103,13 +104,38 @@ const DEFAULT: AnamneseData = {
 
 interface AnamneseTabProps {
   pacienteId: string;
+  pacienteNome?: string;
 }
 
-export function AnamneseTab({ pacienteId }: AnamneseTabProps) {
+export function AnamneseTab({ pacienteId, pacienteNome = "" }: AnamneseTabProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<AnamneseData>(DEFAULT);
   const [isOrtodontiaOpen, setIsOrtodontiaOpen] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState("");
+
+  const generateToken = useGenerateAnamneseToken(pacienteId, pacienteNome);
+  const { data: tokens } = useActiveTokens(pacienteId);
+
+  const handleGenerateLink = async () => {
+    const url = await generateToken.mutateAsync();
+    setCopiedUrl(url);
+    navigator.clipboard.writeText(url).catch(() => {});
+    toast.success("Link gerado e copiado!");
+  };
+
+  const handleCopy = (url: string) => {
+    navigator.clipboard.writeText(url).catch(() => {});
+    setCopiedUrl(url);
+    toast.success("Link copiado!");
+  };
+
+  const handleWhatsApp = (url: string) => {
+    const msg = encodeURIComponent(
+      `Olá${pacienteNome ? `, ${pacienteNome.split(" ")[0]}` : ""}! Por favor, preencha sua ficha médica antes da consulta:\n${url}`
+    );
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["anamnese", pacienteId],
@@ -549,6 +575,97 @@ export function AnamneseTab({ pacienteId }: AnamneseTabProps) {
         )}
         Salvar Anamnese
       </Button>
+
+      {/* Seção: Enviar link ao paciente */}
+      <div className="border-2 rounded-2xl overflow-hidden mt-2">
+        <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50">
+          <Link2 className="w-4 h-4 text-emerald-600" />
+          <span className="font-black text-xs uppercase tracking-widest text-emerald-700">
+            Enviar link de anamnese ao paciente
+          </span>
+        </div>
+        <div className="p-4 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Gere um link único para o paciente preencher a anamnese no celular — sem precisar de login.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGenerateLink}
+            disabled={generateToken.isPending}
+            className="rounded-xl font-bold text-xs uppercase tracking-widest h-10"
+          >
+            {generateToken.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Link2 className="w-4 h-4 mr-2" />
+            )}
+            Gerar novo link
+          </Button>
+
+          {/* Links gerados recentemente */}
+          {tokens && tokens.length > 0 && (
+            <div className="space-y-2">
+              <Label className="font-bold text-xs uppercase tracking-widest text-slate-500">
+                Links recentes
+              </Label>
+              {tokens.map((t) => {
+                const url = buildAnamneseUrl(t.token);
+                const isUsed = !!t.used_at;
+                const isExpired = !isUsed && new Date(t.expires_at) <= new Date();
+                const isActive = !isUsed && !isExpired;
+                return (
+                  <div
+                    key={t.token}
+                    className="flex items-center gap-2 p-3 rounded-xl border bg-slate-50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-mono text-slate-600 truncate">{url}</p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        {isUsed && (
+                          <span className="flex items-center gap-1 text-xs text-green-600 font-bold">
+                            <CheckCircle2 className="w-3 h-3" /> Preenchido
+                          </span>
+                        )}
+                        {isExpired && (
+                          <span className="flex items-center gap-1 text-xs text-amber-600 font-bold">
+                            <Clock className="w-3 h-3" /> Expirado
+                          </span>
+                        )}
+                        {isActive && (
+                          <span className="flex items-center gap-1 text-xs text-blue-600 font-bold">
+                            <Link2 className="w-3 h-3" /> Ativo
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(url)}
+                          title="Copiar link"
+                          className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
+                        >
+                          <Copy className="w-4 h-4 text-slate-500" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleWhatsApp(url)}
+                          title="Compartilhar no WhatsApp"
+                          className="p-1.5 rounded-lg hover:bg-green-100 transition-colors"
+                        >
+                          <MessageCircle className="w-4 h-4 text-green-600" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

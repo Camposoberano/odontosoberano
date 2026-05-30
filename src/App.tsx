@@ -65,6 +65,7 @@ const CategoriasConfig = React.lazy(() => import("@/pages/configuracoes/Categori
 const ContasFinanceirasConfig = React.lazy(() => import("@/pages/configuracoes/ContasFinanceiras"));
 const ComunicacaoConfig = React.lazy(() => import("@/pages/configuracoes/Comunicacao"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
+const AnamnesePublica = React.lazy(() => import("@/pages/anamnese/AnamnesePublica"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,6 +99,7 @@ const AnimatedRoutes = () => {
       }>
         <Routes location={location} key={location.pathname}>
         <Route path="/auth" element={<AnimatedRoute><Auth /></AnimatedRoute>} />
+        <Route path="/anamnese/:token" element={<AnamnesePublica />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<ProtectedRoute><AnimatedRoute><Dashboard /></AnimatedRoute></ProtectedRoute>} />
         <Route path="/patients" element={<ProtectedRoute><AnimatedRoute><Patients /></AnimatedRoute></ProtectedRoute>} />
