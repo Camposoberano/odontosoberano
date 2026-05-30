@@ -182,7 +182,101 @@ function ErrorScreen({ title, message, icon }: { title: string; message: string;
   );
 }
 
-function SuccessScreen({ nome, alertas }: { nome: string; alertas: string[] }) {
+function SuccessScreen({ nome, alertas, respostas, detalhes }: {
+  nome: string;
+  alertas: string[];
+  respostas: Record<string, string>;
+  detalhes: Record<string, string>;
+}) {
+  const handleImprimir = () => {
+    const data = new Date().toLocaleDateString('pt-BR');
+    const logoUrl = `${window.location.origin}/belem/logo-ib.jpg`;
+
+    const secoes = SECOES.map(sec => {
+      const pergsPreenchidas = sec.perguntas.filter(p => respostas[p.id]);
+      if (!pergsPreenchidas.length) return '';
+      const linhas = pergsPreenchidas.map(p => {
+        const resp = respostas[p.id];
+        const det = detalhes[p.id];
+        const isSim = resp === 'Sim';
+        const isNao = resp === 'Não';
+        const cor = isSim ? '#15803d' : isNao ? '#6b7280' : '#374151';
+        const bg = isSim ? '#f0fdf4' : '#f9fafb';
+        const icon = isSim ? '✓' : isNao ? '✗' : '?';
+        const badge = (resp === 'Sim' || resp === 'Não' || resp === 'Não sei')
+          ? `<span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${bg};color:${cor};border:1px solid ${isSim ? '#86efac' : '#d1d5db'}">${icon} ${resp}</span>${det ? `<br/><span style="font-size:10px;color:#d97706;font-style:italic;padding-left:8px">↳ ${det}</span>` : ''}`
+          : `<span style="font-size:11px;color:#111;font-weight:600">${resp}</span>`;
+        return `<div style="margin-bottom:7px"><div style="font-size:10px;color:#9ca3af;margin-bottom:2px">${p.texto}</div>${badge}</div>`;
+      }).join('');
+      const hasAlerta = sec.perguntas.some(p => p.alerta && respostas[p.id] === 'Sim');
+      const headerBg = hasAlerta ? '#fef2f2' : '#f9fafb';
+      const headerColor = hasAlerta ? '#dc2626' : '#111';
+      return `<div style="margin-bottom:12px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+        <div style="background:${headerBg};padding:6px 12px;border-bottom:1px solid #e5e7eb">
+          <span style="font-size:10px;font-weight:800;color:${headerColor};text-transform:uppercase;letter-spacing:0.5px">${hasAlerta ? '⚠ ' : ''}${sec.titulo}</span>
+        </div>
+        <div style="padding:10px 12px;columns:2;column-gap:16px">${linhas}</div>
+      </div>`;
+    }).join('');
+
+    const alertaHtml = alertas.length > 0
+      ? `<div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:10px 14px;margin-bottom:14px">
+          <div style="font-size:10px;font-weight:800;color:#dc2626;text-transform:uppercase;margin-bottom:6px">⚠ Alertas Médicos</div>
+          ${alertas.map(a => `<div style="font-size:10px;color:#dc2626">• ${a}</div>`).join('')}
+        </div>` : '';
+
+    const html = `<!DOCTYPE html><html><head><title>Anamnese — ${nome}</title>
+    <style>
+      body{margin:0;font-family:Arial,sans-serif;background:#fff}
+      @media print{@page{margin:15mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body>
+    <div style="background:#010101;padding:16px 24px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="${logoUrl}" style="height:44px;object-fit:contain" onerror="this.style.display='none'"/>
+        <div>
+          <div style="font-size:10px;color:#f8cc72;font-weight:800;text-transform:uppercase;letter-spacing:1px">Instituto Belém de Odontologia</div>
+          <div style="font-size:16px;color:#fff;font-weight:900">FICHA DE ANAMNESE</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:9px;color:#9ca3af">Data do preenchimento</div>
+        <div style="font-size:13px;color:#fff;font-weight:700">${data}</div>
+      </div>
+    </div>
+    <div style="height:4px;background:linear-gradient(90deg,#f8cc72,#fde68a)"></div>
+    <div style="background:#fffbee;border-bottom:1.5px solid #f8cc72;padding:8px 24px">
+      <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px">Paciente</div>
+      <div style="font-size:13px;font-weight:800;color:#010101">${nome}</div>
+    </div>
+    <div style="padding:16px 24px">
+      ${alertaHtml}
+      ${secoes}
+      <div style="border-top:1.5px dashed #e5e7eb;margin-top:16px;padding-top:12px">
+        <div style="font-size:9.5px;text-align:center;color:#6b7280;font-style:italic;margin-bottom:16px">
+          Declaro que as informações acima são verdadeiras e foram prestadas de forma voluntária. ${data}
+        </div>
+        <div style="display:flex;gap:32px">
+          <div style="flex:1;text-align:center">
+            <div style="border-bottom:1.5px solid #9ca3af;height:32px;margin-bottom:6px"></div>
+            <div style="font-size:10px;font-weight:700">${nome}</div>
+            <div style="font-size:9px;color:#6b7280">Paciente ou Responsável</div>
+          </div>
+          <div style="flex:1;text-align:center">
+            <div style="border-bottom:1.5px solid #9ca3af;height:32px;margin-bottom:6px"></div>
+            <div style="font-size:10px;font-weight:700">Cirurgião(ã)-Dentista</div>
+            <div style="font-size:9px;color:#6b7280">Instituto Belém de Odontologia</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>setTimeout(()=>{window.print()},400)</script>
+    </body></html>`;
+
+    const w = window.open('', '_blank')!;
+    w.document.write(html);
+    w.document.close();
+  };
+
   return (
     <Shell>
       <div className="flex flex-col gap-6 py-4">
@@ -207,12 +301,12 @@ function SuccessScreen({ nome, alertas }: { nome: string; alertas: string[] }) {
 
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={handleImprimir}
           className="flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base border-2 w-full"
           style={{ borderColor: "#e5e3df", background: "white", color: "#010101" }}
         >
           <Printer className="w-5 h-5" />
-          Salvar / Imprimir uma cópia
+          Salvar / Imprimir minha cópia
         </button>
 
         <p className="text-gray-400 text-sm text-center">A clínica recebeu sua ficha. Pode fechar esta página.</p>
@@ -367,7 +461,7 @@ export default function AnamnesePublica() {
 
   const nome = tokenInfo.paciente_nome ?? "Paciente";
 
-  if (submitted) return <SuccessScreen nome={nome} alertas={alertasMedicos} />;
+  if (submitted) return <SuccessScreen nome={nome} alertas={alertasMedicos} respostas={respostas} detalhes={detalhes} />;
 
   const setResposta = (id: string, v: string) => setRespostas(r => ({ ...r, [id]: v }));
   const setDetalhe = (id: string, v: string) => setDetalhes(d => ({ ...d, [id]: v }));
