@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Send, AlertTriangle, Download, Printer, MessageCircle, Link2, Copy, CheckCircle2, Clock } from "lucide-react";
+import { ChevronRight, ChevronLeft, Send, AlertTriangle, Download, Printer, MessageCircle, Link2, Copy, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useGenerateAnamneseToken, useActiveTokens, buildAnamneseUrl } from "@/hooks/useAnamneseToken";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -438,17 +438,23 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
     logo_url: clinica.logo_base64,
   } : undefined);
 
+  // Fallback para dados diretos do banco quando respostas ainda não foram populadas
+  const ex = anamneseExistente;
   const anamneseParaPDF = {
-    queixa_principal: respostas.queixa_principal,
-    alergias: respostas.alergia === 'Sim' ? (detalhes.alergia || 'Sim') : undefined,
-    medicamentos_uso: respostas.medicacao === 'Sim' ? (detalhes.medicacao || 'Sim') : undefined,
-    gestante: respostas.gravida === 'Sim',
-    fumante: respostas.fumante === 'Sim',
-    alcool: respostas.drogas === 'Sim',
-    pressao_arterial: respostas.media_pressao || respostas.pressao_arterial,
-    historico_cirurgias: respostas.cirurgia === 'Sim' ? (detalhes.cirurgia || 'Sim') : undefined,
-    frequencia_respiratoria: respostas.freq_respiratoria ? Number(respostas.freq_respiratoria) : undefined,
-    fc_bpm: respostas.freq_cardiaca ? Number(respostas.freq_cardiaca) : undefined,
+    queixa_principal: respostas.queixa_principal || ex?.queixa_principal || undefined,
+    alergias: respostas.alergia === 'Sim' ? (detalhes.alergia || 'Sim') : (ex?.alergias || undefined),
+    medicamentos_uso: respostas.medicacao === 'Sim' ? (detalhes.medicacao || 'Sim') : (ex?.medicamentos_uso || undefined),
+    gestante: respostas.gravida === 'Sim' || ex?.gestante || false,
+    fumante: respostas.fumante === 'Sim' || ex?.fumante || false,
+    alcool: respostas.drogas === 'Sim' || ex?.alcool || false,
+    pressao_arterial: respostas.media_pressao || respostas.pressao_arterial || ex?.pressao_arterial || undefined,
+    historico_cirurgias: respostas.cirurgia === 'Sim' ? (detalhes.cirurgia || 'Sim') : (ex?.historico_cirurgias || undefined),
+    observacoes: ex?.observacoes || undefined,
+    doencas_sistemicas: (ex?.doencas_sistemicas as string[] | undefined) ?? [],
+    habitos: (ex?.habitos as Record<string, boolean> | undefined) ?? {},
+    historico_dental: (ex?.historico_dental as Record<string, boolean> | undefined) ?? {},
+    frequencia_respiratoria: respostas.freq_respiratoria ? Number(respostas.freq_respiratoria) : (ex?.frequencia_respiratoria ?? undefined),
+    fc_bpm: respostas.freq_cardiaca ? Number(respostas.freq_cardiaca) : (ex?.fc_bpm ?? undefined),
   };
 
   const handleBaixarPDF = async () => {
@@ -462,11 +468,13 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
   const handleImprimir = () => {
     const el = document.getElementById('anamnese-pdf-export');
     if (!el) return;
+    const clone = el.cloneNode(true) as HTMLElement;
+    clone.style.cssText = 'position:static;width:100%;background:#fff;';
     const w = window.open('', '_blank')!;
-    w.document.write(`<html><head><title>Anamnese</title></head><body>${el.outerHTML}</body></html>`);
+    w.document.write(`<html><head><title>Anamnese</title><style>body{margin:20px;font-family:Arial,sans-serif;background:#fff}*{-webkit-print-color-adjust:exact}</style></head><body>${clone.outerHTML}</body></html>`);
     w.document.close();
     w.focus();
-    w.print();
+    setTimeout(() => { w.print(); }, 500);
   };
 
   const handleWhatsApp = () => {
