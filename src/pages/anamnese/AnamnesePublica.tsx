@@ -4,110 +4,153 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTokenInfo } from "@/hooks/useAnamneseToken";
 import { Loader2, CheckCircle2, XCircle, Clock, ChevronRight, ChevronLeft, Printer } from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface HabitosOrtodontia {
-  bruxismo: boolean;
-  roer_unhas: boolean;
-  chupeta: boolean;
-  succao_dedo: boolean;
+interface Pergunta {
+  id: string;
+  texto: string;
+  tipo: "input" | "text" | "radio" | "radio_text";
+  alerta?: string;
+  detalheLabel?: string;
+  detalhePlaceholder?: string;
+  opcional?: boolean;
 }
 
-interface HistoricoDental {
-  periodontia: boolean;
-  cirurgias: boolean;
-  endodontia: boolean;
-  profilaxia: boolean;
-  ortodontia_previa: boolean;
+interface Secao {
+  titulo: string;
+  perguntas: Pergunta[];
 }
 
-interface FormData {
-  queixa_principal: string;
-  alergias: string;
-  medicamentos_uso: string;
-  historico_cirurgias: string;
-  doencas_sistemicas: string[];
-  gestante: boolean;
-  fumante: boolean;
-  alcool: boolean;
-  pressao_arterial: string;
-  habitos: HabitosOrtodontia;
-  historico_dental: HistoricoDental;
-  observacoes: string;
-}
+// ─── Mesmas seções do AnamneseFormulario (painel da clínica) ──────────────────
 
-const EMPTY_FORM: FormData = {
-  queixa_principal: "",
-  alergias: "",
-  medicamentos_uso: "",
-  historico_cirurgias: "",
-  doencas_sistemicas: [],
-  gestante: false,
-  fumante: false,
-  alcool: false,
-  pressao_arterial: "",
-  habitos: { bruxismo: false, roer_unhas: false, chupeta: false, succao_dedo: false },
-  historico_dental: { periodontia: false, cirurgias: false, endodontia: false, profilaxia: false, ortodontia_previa: false },
-  observacoes: "",
-};
-
-const DOENCAS = [
-  { id: "diabetes", label: "Diabetes" },
-  { id: "hipertensao", label: "Hipertensão" },
-  { id: "cardiopatia", label: "Cardiopatia" },
-  { id: "cancer", label: "Câncer" },
-  { id: "hiv", label: "HIV/AIDS" },
-  { id: "hepatite", label: "Hepatite" },
-  { id: "artrite", label: "Artrite / Reumatismo" },
-  { id: "asma", label: "Asma / Bronquite" },
-  { id: "epilepsia", label: "Epilepsia" },
-  { id: "osteoporose", label: "Osteoporose" },
-  { id: "coagulacao", label: "Problema de coagulação" },
-  { id: "renal", label: "Doença renal" },
+const SECOES: Secao[] = [
+  {
+    titulo: "Dados Pessoais e Emergência",
+    perguntas: [
+      { id: "data_nascimento", texto: "Data de Nascimento (DD/MM/AAAA)", tipo: "input" },
+      { id: "cpf", texto: "CPF", tipo: "input" },
+      { id: "telefone", texto: "Telefone / WhatsApp", tipo: "input" },
+      { id: "contato_emergencia", texto: "Contato de Emergência (Nome e Telefone)", tipo: "input" },
+    ],
+  },
+  {
+    titulo: "Motivo da Consulta",
+    perguntas: [
+      { id: "queixa_principal", texto: "Qual a sua queixa principal?", tipo: "text" },
+      { id: "ultima_visita", texto: "Quando foi sua última vez no dentista? Como foi o atendimento?", tipo: "text" },
+    ],
+  },
+  {
+    titulo: "Histórico Odontológico",
+    perguntas: [
+      { id: "freq_escovacao", texto: "Quantas vezes por dia escova os dentes?", tipo: "input" },
+      { id: "fio_dental", texto: "Usa fio dental?", tipo: "radio_text" },
+      { id: "sangramento", texto: "Apresenta sangramento na escovação?", tipo: "radio" },
+      { id: "doces", texto: "Come muitos doces ou balas?", tipo: "radio_text" },
+      { id: "bruxismo", texto: "Range ou aperta os dentes (Bruxismo)?", tipo: "radio", alerta: "Bruxismo/Apertamento" },
+      { id: "dor_atm", texto: "Sente dor de cabeça frequente ou ao abrir/fechar a boca?", tipo: "radio", alerta: "Possível DTM" },
+    ],
+  },
+  {
+    titulo: "Procedimentos Anteriores",
+    perguntas: [
+      { id: "internado", texto: "Já esteve internado(a)?", tipo: "radio_text" },
+      { id: "cirurgia", texto: "Já fez alguma cirurgia médica geral?", tipo: "radio_text" },
+      { id: "cirurgia_oral", texto: "Já fez Cirurgia Oral (extração, etc.)?", tipo: "radio_text" },
+      { id: "reacao_anestesia", texto: "Já teve reação alérgica à anestesia?", tipo: "radio_text", alerta: "Alérgico ao anestésico" },
+      {
+        id: "sedacao", texto: "Já passou por sedação?", tipo: "radio_text", alerta: "Já foi sedado",
+        detalheLabel: "Qual tipo: geral, medicação ou inalatória?",
+        detalhePlaceholder: "Ex: Medicação...",
+      },
+    ],
+  },
+  {
+    titulo: "Medicação e Alergias",
+    perguntas: [
+      {
+        id: "medico", texto: "Faz acompanhamento médico regular?", tipo: "radio_text",
+        detalheLabel: "Qual a especialidade e telefone do médico?",
+        detalhePlaceholder: "Ex: Cardiologista, Dr. Silva (11) 9999-9999",
+      },
+      { id: "medicacao", texto: "Está usando alguma medicação?", tipo: "radio_text", alerta: "Toma medicação" },
+      { id: "alergia", texto: "Possui alguma alergia? (Penicilina, AAS, etc.)", tipo: "radio_text", alerta: "Alérgico a" },
+    ],
+  },
+  {
+    titulo: "Cardiovascular e Sangue",
+    perguntas: [
+      { id: "hemorragia", texto: "Já teve hemorragia diagnosticada?", tipo: "radio", alerta: "Risco de hemorragia" },
+      { id: "cicatrizacao", texto: "Tem dificuldades de cicatrização?", tipo: "radio", alerta: "Problema de cicatrização" },
+      { id: "alt_sanguinea", texto: "Possui alguma alteração sanguínea?", tipo: "radio_text", alerta: "Alteração sanguínea" },
+      { id: "anemia", texto: "Possui anemia?", tipo: "radio", alerta: "Anêmico" },
+      { id: "cardiovascular", texto: "Possui alteração cardiovascular?", tipo: "radio_text", alerta: "Alteração cardíaca" },
+      { id: "pressao_alta", texto: "Tem pressão alta?", tipo: "radio_text", alerta: "Hipertenso" },
+      { id: "media_pressao", texto: "Qual a média da sua pressão? (Ex: 12/8, sempre baixa, sempre alta)", tipo: "input", opcional: true },
+    ],
+  },
+  {
+    titulo: "Condições Sistêmicas",
+    perguntas: [
+      {
+        id: "diabetes", texto: "Possui diabetes?", tipo: "radio_text", alerta: "Diabético",
+        detalheLabel: "Está controlada? Quais medicações faz uso?",
+        detalhePlaceholder: "Ex: Controlada. Uso Metformina...",
+      },
+      { id: "asma", texto: "Possui asma?", tipo: "radio", alerta: "Asmático" },
+      { id: "respiratoria", texto: "Possui disfunção respiratória?", tipo: "radio_text", alerta: "Problema respiratório" },
+      { id: "hepatica", texto: "Possui disfunção hepática?", tipo: "radio_text", alerta: "Disfunção hepática" },
+      { id: "renal", texto: "Apresenta disfunção renal?", tipo: "radio_text", alerta: "Problema renal" },
+      { id: "gastro", texto: "Possui gastrite, úlcera ou refluxo?", tipo: "radio_text", alerta: "Problema gástrico" },
+    ],
+  },
+  {
+    titulo: "Outras Condições",
+    perguntas: [
+      { id: "neurologico", texto: "Tem histórico de desmaios, convulsões ou epilepsia?", tipo: "radio_text", alerta: "Neurológico/Convulsão" },
+      { id: "ossea", texto: "Possui alteração óssea?", tipo: "radio_text", alerta: "Alteração óssea" },
+      { id: "transmissivel", texto: "Possui doença transmissível? (HIV, Hepatite)", tipo: "radio_text", alerta: "Doença transmissível" },
+      { id: "febre", texto: "Teve febre nos últimos 14 dias?", tipo: "radio" },
+      { id: "outra_doenca", texto: "Outra doença ou síndrome não mencionada?", tipo: "radio_text", alerta: "Outra doença" },
+    ],
+  },
+  {
+    titulo: "Saúde Mental e Hábitos",
+    perguntas: [
+      { id: "depressao", texto: "Possui depressão?", tipo: "radio" },
+      { id: "psicologico", texto: "Está em tratamento psicológico?", tipo: "radio" },
+      { id: "fumante", texto: "É Fumante?", tipo: "radio_text", alerta: "Fumante" },
+      { id: "drogas", texto: "Consome álcool ou usa drogas?", tipo: "radio_text" },
+    ],
+  },
+  {
+    titulo: "Condição Feminina",
+    subtitulo: "Se aplicável — pule se não for o caso",
+    perguntas: [
+      { id: "gravida", texto: "Está grávida?", tipo: "radio_text", alerta: "Grávida", opcional: true },
+      { id: "amamentando", texto: "Está amamentando?", tipo: "radio", opcional: true },
+    ],
+  },
 ];
 
-const HISTORICO_DENTAL_OPTIONS = [
-  { id: "periodontia", label: "Tratamento periodontal (gengiva)" },
-  { id: "cirurgias", label: "Cirurgias dentárias" },
-  { id: "endodontia", label: "Canal (endodontia)" },
-  { id: "profilaxia", label: "Limpeza / Profilaxia" },
-  { id: "ortodontia_previa", label: "Aparelho ortodôntico" },
-];
-
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = SECOES.length; // 10 seções
 
 // ─── Layout shell ─────────────────────────────────────────────────────────────
 
 function Shell({ children, step }: { children: React.ReactNode; step?: number }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#f9f7f4" }}>
-      <header
-        className="flex items-center gap-3 px-5 py-4 sticky top-0 z-10 shadow-sm"
-        style={{ background: "#010101" }}
-      >
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black"
-          style={{ background: "#f8cc72", color: "#010101" }}
-        >
-          IB
-        </div>
+      <header className="flex items-center gap-3 px-5 py-4 sticky top-0 z-10 shadow-sm" style={{ background: "#010101" }}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black" style={{ background: "#f8cc72", color: "#010101" }}>IB</div>
         <span className="font-black text-white text-sm tracking-wider">Instituto Belém</span>
       </header>
-
       {step !== undefined && (
         <div className="h-1.5 w-full" style={{ background: "#e5e3df" }}>
-          <div
-            className="h-full transition-all duration-500"
-            style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%`, background: "#f8cc72" }}
-          />
+          <div className="h-full transition-all duration-500" style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%`, background: "#f8cc72" }} />
         </div>
       )}
-
       <main className="flex-1 px-5 py-8 max-w-lg mx-auto w-full">{children}</main>
-
-      <footer className="py-4 text-center text-xs text-gray-400">
-        Formulário seguro · Instituto Belém
-      </footer>
+      <footer className="py-4 text-center text-xs text-gray-400">Formulário seguro · Instituto Belém</footer>
     </div>
   );
 }
@@ -139,51 +182,28 @@ function ErrorScreen({ title, message, icon }: { title: string; message: string;
   );
 }
 
-function SuccessScreen({ nome, form }: { nome: string; form: FormData }) {
-  const doencasLabel = form.doencas_sistemicas.length > 0
-    ? DOENCAS.filter(d => form.doencas_sistemicas.includes(d.id)).map(d => d.label).join(", ")
-    : "Nenhuma";
-  const habitosLabel = [
-    form.fumante && "Fumante",
-    form.alcool && "Álcool",
-    form.gestante && "Gestante",
-    form.habitos.bruxismo && "Bruxismo",
-    form.habitos.roer_unhas && "Rói unhas",
-    form.habitos.chupeta && "Chupeta",
-    form.habitos.succao_dedo && "Sucção de dedo",
-  ].filter(Boolean).join(", ") || "Nenhum";
-
+function SuccessScreen({ nome, alertas }: { nome: string; alertas: string[] }) {
   return (
     <Shell>
       <div className="flex flex-col gap-6 py-4">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center"
-            style={{ background: "#f8cc72" }}
-          >
+          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: "#f8cc72" }}>
             <CheckCircle2 className="w-10 h-10" style={{ color: "#010101" }} />
           </div>
           <div>
             <h1 className="text-2xl font-black text-gray-800">Ficha enviada!</h1>
-            <p className="text-gray-500 mt-1">
-              Obrigado, {nome.split(" ")[0]}. Suas informações foram recebidas com sucesso.
-            </p>
+            <p className="text-gray-500 mt-1">Obrigado, {nome.split(" ")[0]}. Suas informações foram recebidas com sucesso.</p>
           </div>
         </div>
 
-        {/* Resumo para impressão */}
-        <div className="border-2 rounded-2xl p-4 space-y-2.5" style={{ borderColor: "#e5e3df", background: "white" }}>
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Resumo da ficha</p>
-          <SummaryLine label="Paciente" value={nome} />
-          <SummaryLine label="Motivo" value={form.queixa_principal} />
-          <SummaryLine label="Alergias" value={form.alergias} />
-          <SummaryLine label="Medicamentos" value={form.medicamentos_uso} />
-          <SummaryLine label="Cirurgias" value={form.historico_cirurgias} />
-          <SummaryLine label="Doenças" value={doencasLabel} />
-          <SummaryLine label="Pressão" value={form.pressao_arterial} />
-          <SummaryLine label="Hábitos" value={habitosLabel} />
-          <SummaryLine label="Observações" value={form.observacoes} />
-        </div>
+        {alertas.length > 0 && (
+          <div className="border-2 rounded-2xl p-4" style={{ borderColor: "#f8cc72", background: "#fffbee" }}>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Informações registradas</p>
+            {alertas.map((a, i) => (
+              <p key={i} className="text-sm text-gray-700">• {a}</p>
+            ))}
+          </div>
+        )}
 
         <button
           type="button"
@@ -192,64 +212,117 @@ function SuccessScreen({ nome, form }: { nome: string; form: FormData }) {
           style={{ borderColor: "#e5e3df", background: "white", color: "#010101" }}
         >
           <Printer className="w-5 h-5" />
-          Salvar / Imprimir PDF
+          Salvar / Imprimir uma cópia
         </button>
 
-        <p className="text-gray-400 text-sm text-center">Pode fechar esta página após salvar.</p>
+        <p className="text-gray-400 text-sm text-center">A clínica recebeu sua ficha. Pode fechar esta página.</p>
       </div>
     </Shell>
   );
 }
 
-// ─── Shared components ─────────────────────────────────────────────────────────
+// ─── Pergunta components ───────────────────────────────────────────────────────
 
-function ToggleCard({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function RadioCard({ valor, selecionado, onSelect }: { valor: string; selecionado: boolean; onSelect: () => void }) {
+  const config: Record<string, { icon: string; activeColor: string; activeBg: string }> = {
+    "Sim":    { icon: "✓", activeColor: "#16a34a", activeBg: "#f0fdf4" },
+    "Não":    { icon: "✗", activeColor: "#dc2626", activeBg: "#fef2f2" },
+    "Não sei": { icon: "?", activeColor: "#9ca3af", activeBg: "#f9fafb" },
+  };
+  const c = config[valor] ?? { icon: "·", activeColor: "#010101", activeBg: "#fffbee" };
   return (
     <button
       type="button"
-      onClick={() => onChange(!checked)}
-      className="flex items-center justify-between w-full px-4 py-4 rounded-2xl border-2 transition-all text-left"
-      style={{ borderColor: checked ? "#f8cc72" : "#e5e3df", background: checked ? "#fffbee" : "white" }}
+      onClick={onSelect}
+      className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-5 font-bold text-base transition-all"
+      style={{
+        borderColor: selecionado ? c.activeColor : "#e5e3df",
+        background: selecionado ? c.activeBg : "white",
+        color: selecionado ? c.activeColor : "#9ca3af",
+      }}
     >
-      <span className="text-base font-semibold text-gray-800">{label}</span>
-      <div className="w-12 h-7 rounded-full flex items-center transition-all px-1" style={{ background: checked ? "#f8cc72" : "#d1d5db" }}>
-        <div className="w-5 h-5 rounded-full bg-white transition-all shadow-sm" style={{ marginLeft: checked ? "auto" : undefined }} />
-      </div>
+      <span className="text-2xl font-black">{c.icon}</span>
+      {valor}
     </button>
   );
 }
 
-function CheckCard({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function PerguntaMobile({
+  pergunta, resposta, detalhe, onChange, onDetalhe,
+}: {
+  pergunta: Pergunta; resposta: string; detalhe: string;
+  onChange: (id: string, v: string) => void; onDetalhe: (id: string, v: string) => void;
+}) {
+  const { id, texto, tipo, detalheLabel, detalhePlaceholder, opcional } = pergunta;
+  const mostrarDetalhe = tipo === "radio_text" && resposta === "Sim";
+
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl border-2 transition-all text-left"
-      style={{ borderColor: checked ? "#f8cc72" : "#e5e3df", background: checked ? "#fffbee" : "white" }}
-    >
-      <div
-        className="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center border-2 transition-all"
-        style={{ borderColor: checked ? "#f8cc72" : "#d1d5db", background: checked ? "#f8cc72" : "white" }}
-      >
-        {checked && <span className="text-black font-black text-xs">✓</span>}
-      </div>
-      <span className="text-base font-medium text-gray-800">{label}</span>
-    </button>
+    <div className="space-y-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+      <p className="text-lg font-bold text-gray-800 leading-snug">
+        {texto}
+        {opcional && <span className="ml-2 text-xs font-normal text-gray-400">(opcional)</span>}
+      </p>
+
+      {tipo === "input" && (
+        <input
+          type="text"
+          value={resposta}
+          onChange={e => onChange(id, e.target.value)}
+          placeholder="Sua resposta..."
+          className="w-full rounded-xl border-2 p-3.5 text-base text-gray-800 focus:outline-none transition-colors"
+          style={{ borderColor: resposta ? "#f8cc72" : "#e5e3df" }}
+        />
+      )}
+
+      {tipo === "text" && (
+        <textarea
+          value={resposta}
+          onChange={e => onChange(id, e.target.value)}
+          placeholder="Sua resposta..."
+          rows={3}
+          className="w-full rounded-xl border-2 p-3.5 text-base text-gray-800 resize-none focus:outline-none transition-colors"
+          style={{ borderColor: resposta ? "#f8cc72" : "#e5e3df" }}
+        />
+      )}
+
+      {(tipo === "radio" || tipo === "radio_text") && (
+        <div className="grid grid-cols-3 gap-2">
+          {["Sim", "Não", "Não sei"].map(op => (
+            <RadioCard key={op} valor={op} selecionado={resposta === op} onSelect={() => onChange(id, op)} />
+          ))}
+        </div>
+      )}
+
+      {mostrarDetalhe && (
+        <div className="space-y-1 pt-1">
+          <p className="text-sm font-bold text-gray-600">{detalheLabel ?? "Poderia especificar?"}</p>
+          <input
+            type="text"
+            value={detalhe}
+            onChange={e => onDetalhe(id, e.target.value)}
+            placeholder={detalhePlaceholder ?? "Digite os detalhes..."}
+            className="w-full rounded-xl border-2 p-3 text-sm text-gray-800 focus:outline-none"
+            style={{ borderColor: "#f8cc72", background: "#fffbee" }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
+
+// ─── Navigation buttons ────────────────────────────────────────────────────────
 
 function NavButtons({
-  step, onBack, onNext, nextLabel = "Continuar", nextDisabled = false, loading = false,
+  step, onBack, onNext, nextLabel = "Continuar", loading = false,
 }: {
   step: number; onBack: () => void; onNext: () => void;
-  nextLabel?: string; nextDisabled?: boolean; loading?: boolean;
+  nextLabel?: string; loading?: boolean;
 }) {
   return (
-    <div className="flex gap-3 pt-4">
+    <div className="flex gap-3 pt-6">
       {step > 0 && (
         <button
-          type="button"
-          onClick={onBack}
+          type="button" onClick={onBack}
           className="flex items-center gap-1 px-5 py-4 rounded-2xl border-2 font-bold text-gray-600 transition-colors hover:bg-gray-50"
           style={{ borderColor: "#e5e3df" }}
         >
@@ -257,99 +330,100 @@ function NavButtons({
         </button>
       )}
       <button
-        type="button"
-        onClick={onNext}
-        disabled={nextDisabled || loading}
+        type="button" onClick={onNext} disabled={loading}
         className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-base transition-all disabled:opacity-50"
         style={{ background: "#010101", color: "#f8cc72" }}
       >
-        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{nextLabel}<ChevronRight className="w-5 h-5" /></>}
+        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{nextLabel} <ChevronRight className="w-5 h-5" /></>}
       </button>
     </div>
   );
 }
 
-function StepHeader({ step, title, subtitle }: { step: number; title: string; subtitle?: string }) {
-  return (
-    <div className="mb-8">
-      <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: "#f8cc72" }}>
-        Passo {step} de {TOTAL_STEPS}
-      </p>
-      <h2 className="text-2xl font-black text-gray-900 leading-tight">{title}</h2>
-      {subtitle && <p className="text-gray-500 mt-1 text-base">{subtitle}</p>}
-    </div>
-  );
-}
-
-function SummaryLine({ label, value }: { label: string; value: string }) {
-  if (!value) return null;
-  return (
-    <div className="flex gap-2">
-      <span className="text-sm font-bold text-gray-500 min-w-[100px]">{label}:</span>
-      <span className="text-sm text-gray-800">{value}</span>
-    </div>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main component ────────────────────────────────────────────────────────────
 
 export default function AnamnesePublica() {
   const { token } = useParams<{ token: string }>();
   const { data: tokenInfo, isLoading } = useTokenInfo(token);
 
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormData>(EMPTY_FORM);
+  const [step, setStep] = useState(0); // 0=welcome, 1..N=secoes, N+1=success
+  const [respostas, setRespostas] = useState<Record<string, string>>({});
+  const [detalhes, setDetalhes] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [alertasMedicos, setAlertasMedicos] = useState<string[]>([]);
 
   if (isLoading) return <LoadingScreen />;
 
   if (!tokenInfo || (!tokenInfo.valid && !tokenInfo.used && !tokenInfo.expired)) {
-    return (
-      <ErrorScreen
-        icon={<XCircle className="w-16 h-16 text-red-400" />}
-        title="Link inválido"
-        message="Este link não existe ou já foi removido. Solicite um novo link à clínica."
-      />
-    );
+    return <ErrorScreen icon={<XCircle className="w-16 h-16 text-red-400" />} title="Link inválido" message="Este link não existe ou já foi removido. Solicite um novo link à clínica." />;
   }
-
   if (tokenInfo.used) {
-    return (
-      <ErrorScreen
-        icon={<CheckCircle2 className="w-16 h-16 text-green-500" />}
-        title="Ficha já preenchida"
-        message="Este link já foi utilizado. Sua ficha médica foi enviada com sucesso."
-      />
-    );
+    return <ErrorScreen icon={<CheckCircle2 className="w-16 h-16 text-green-500" />} title="Ficha já preenchida" message="Este link já foi utilizado. Sua ficha médica foi enviada com sucesso." />;
   }
-
   if (tokenInfo.expired) {
-    return (
-      <ErrorScreen
-        icon={<Clock className="w-16 h-16 text-amber-400" />}
-        title="Link expirado"
-        message="Este link expirou. Solicite um novo link à clínica."
-      />
-    );
+    return <ErrorScreen icon={<Clock className="w-16 h-16 text-amber-400" />} title="Link expirado" message="Este link expirou. Solicite um novo link à clínica." />;
   }
 
   const nome = tokenInfo.paciente_nome ?? "Paciente";
 
-  if (submitted) return <SuccessScreen nome={nome} form={form} />;
+  if (submitted) return <SuccessScreen nome={nome} alertas={alertasMedicos} />;
 
-  const toggleDoenca = (id: string, checked: boolean) =>
-    setForm(f => ({
-      ...f,
-      doencas_sistemicas: checked ? [...f.doencas_sistemicas, id] : f.doencas_sistemicas.filter(d => d !== id),
+  const setResposta = (id: string, v: string) => setRespostas(r => ({ ...r, [id]: v }));
+  const setDetalhe = (id: string, v: string) => setDetalhes(d => ({ ...d, [id]: v }));
+
+  const gerarAlertas = (): string[] => {
+    const out: string[] = [];
+    SECOES.forEach(sec => sec.perguntas.forEach(p => {
+      if (p.alerta && respostas[p.id] === "Sim") {
+        let txt = p.alerta;
+        if (detalhes[p.id]?.trim()) txt += `: ${detalhes[p.id]}`;
+        out.push(txt);
+      }
     }));
+    return out;
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      // Build dados_completos (same format as AnamneseFormulario)
+      const dadosCompletos: Record<string, string> = {};
+      SECOES.forEach(sec => sec.perguntas.forEach(p => {
+        if (respostas[p.id]) dadosCompletos[p.id] = respostas[p.id];
+        if (detalhes[p.id]) dadosCompletos[`${p.id}_detalhe`] = detalhes[p.id];
+      }));
+
+      const alertas = gerarAlertas();
+      setAlertasMedicos(alertas);
+
+      // Map to individual columns (same as AnamneseFormulario.submeter)
+      const pData = {
+        dados_completos: dadosCompletos,
+        alertas_medicos: alertas,
+        queixa_principal: respostas.queixa_principal ?? null,
+        alergias: respostas.alergia === "Sim" ? (detalhes.alergia || "Sim") : null,
+        medicamentos_uso: respostas.medicacao === "Sim" ? (detalhes.medicacao || "Sim") : null,
+        gestante: respostas.gravida === "Sim",
+        fumante: respostas.fumante === "Sim",
+        alcool: respostas.drogas === "Sim",
+        pressao_arterial: respostas.media_pressao || respostas.pressao_arterial || null,
+        historico_cirurgias: respostas.cirurgia === "Sim" ? (detalhes.cirurgia || "Sim") : null,
+        observacoes: [
+          respostas.ultima_visita && `Última visita: ${respostas.ultima_visita}`,
+          respostas.contato_emergencia && `Emergência: ${respostas.contato_emergencia}`,
+          respostas.bruxismo === "Sim" && "Bruxismo",
+          respostas.dor_atm === "Sim" && "Dor ATM",
+          alertas.length > 0 && `ALERTAS: ${alertas.join(" | ")}`,
+        ].filter(Boolean).join("\n") || null,
+        doencas_sistemicas: [],
+        habitos: {},
+        historico_dental: {},
+      };
+
       const { data, error } = await supabase.rpc("submit_anamnese_publica", {
         p_token: token!,
-        p_data: form as any,
+        p_data: pData as any,
       });
       if (error) throw error;
       const result = data as { success: boolean; error?: string };
@@ -367,17 +441,17 @@ export default function AnamnesePublica() {
     return (
       <Shell>
         <div className="flex flex-col gap-8 py-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black" style={{ background: "#f8cc72", color: "#010101" }}>
-            IB
-          </div>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black" style={{ background: "#f8cc72", color: "#010101" }}>IB</div>
           <div>
-            <h1 className="text-3xl font-black text-gray-900 leading-tight">Olá, {nome.split(" ")[0]}!</h1>
+            <h1 className="text-3xl font-black text-gray-900 leading-tight">
+              Sua saúde em<br />primeiro lugar.
+            </h1>
             <p className="text-gray-600 text-lg mt-3 leading-relaxed">
-              Preencha sua ficha médica antes da consulta. Leva poucos minutos.
+              Olá, {nome.split(" ")[0]}! Preencha sua ficha médica antes da consulta. Suas respostas são sigilosas.
             </p>
           </div>
           <div className="space-y-3">
-            {["Suas informações são confidenciais", "Formulário simples e rápido", "Ajuda o dentista a cuidar melhor de você"].map(item => (
+            {["Informações confidenciais", "Ajuda o dentista a cuidar melhor de você", "Formulário seguro e sem cadastro"].map(item => (
               <div key={item} className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "#f8cc72" }}>
                   <span className="text-xs font-black" style={{ color: "#010101" }}>✓</span>
@@ -387,8 +461,7 @@ export default function AnamnesePublica() {
             ))}
           </div>
           <button
-            type="button"
-            onClick={() => setStep(1)}
+            type="button" onClick={() => setStep(1)}
             className="flex items-center justify-center gap-2 py-5 rounded-2xl font-black text-lg w-full mt-4"
             style={{ background: "#010101", color: "#f8cc72" }}
           >
@@ -399,200 +472,48 @@ export default function AnamnesePublica() {
     );
   }
 
-  // ── Step 1: Motivo da consulta ──
-  if (step === 1) {
-    return (
-      <Shell step={0}>
-        <StepHeader step={1} title="Motivo da Consulta" subtitle="O que te trouxe ao dentista?" />
-        <textarea
-          value={form.queixa_principal}
-          onChange={e => setForm(f => ({ ...f, queixa_principal: e.target.value }))}
-          placeholder="Ex: Dor de dente, quero aparelho, consulta de rotina..."
-          className="w-full min-h-[140px] rounded-2xl border-2 p-4 text-lg text-gray-800 resize-none focus:outline-none transition-colors"
-          style={{ borderColor: form.queixa_principal ? "#f8cc72" : "#e5e3df" }}
-        />
-        <div className="mt-6">
-          <NavButtons step={step} onBack={() => setStep(0)} onNext={() => setStep(2)} />
-        </div>
-      </Shell>
-    );
-  }
+  // ── Steps 1..N: Sections ──
+  if (step >= 1 && step <= TOTAL_STEPS) {
+    const secao = SECOES[step - 1];
+    const isLast = step === TOTAL_STEPS;
 
-  // ── Step 2: Alergias, Medicamentos, Histórico cirurgias ──
-  if (step === 2) {
     return (
-      <Shell step={1}>
-        <StepHeader step={2} title="Saúde Geral" subtitle="Alergias, medicamentos e histórico" />
-        <div className="space-y-5">
-          <div>
-            <label className="block text-sm font-black uppercase tracking-wider text-gray-500 mb-2">Tem alguma alergia?</label>
-            <textarea
-              value={form.alergias}
-              onChange={e => setForm(f => ({ ...f, alergias: e.target.value }))}
-              placeholder="Ex: Penicilina, dipirona, látex... (deixe em branco se não tiver)"
-              className="w-full min-h-[90px] rounded-2xl border-2 p-4 text-base text-gray-800 resize-none focus:outline-none transition-colors"
-              style={{ borderColor: form.alergias ? "#f8cc72" : "#e5e3df" }}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-black uppercase tracking-wider text-gray-500 mb-2">Usa algum medicamento?</label>
-            <textarea
-              value={form.medicamentos_uso}
-              onChange={e => setForm(f => ({ ...f, medicamentos_uso: e.target.value }))}
-              placeholder="Ex: Losartana, Metformina, Rivotril... (deixe em branco se não usar)"
-              className="w-full min-h-[90px] rounded-2xl border-2 p-4 text-base text-gray-800 resize-none focus:outline-none transition-colors"
-              style={{ borderColor: form.medicamentos_uso ? "#f8cc72" : "#e5e3df" }}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-black uppercase tracking-wider text-gray-500 mb-2">Já fez alguma cirurgia?</label>
-            <textarea
-              value={form.historico_cirurgias}
-              onChange={e => setForm(f => ({ ...f, historico_cirurgias: e.target.value }))}
-              placeholder="Ex: Apêndice, joelho, coração... (deixe em branco se não fez)"
-              className="w-full min-h-[80px] rounded-2xl border-2 p-4 text-base text-gray-800 resize-none focus:outline-none transition-colors"
-              style={{ borderColor: form.historico_cirurgias ? "#f8cc72" : "#e5e3df" }}
-            />
-          </div>
+      <Shell step={step - 1}>
+        <div className="mb-8">
+          <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: "#f8cc72" }}>
+            {step} de {TOTAL_STEPS}
+          </p>
+          <h2 className="text-2xl font-black text-gray-900 leading-tight">{secao.titulo}</h2>
+          {(secao as any).subtitulo && <p className="text-gray-400 text-sm mt-1">{(secao as any).subtitulo}</p>}
         </div>
-        <div className="mt-6">
-          <NavButtons step={step} onBack={() => setStep(1)} onNext={() => setStep(3)} />
-        </div>
-      </Shell>
-    );
-  }
 
-  // ── Step 3: Doenças sistêmicas ──
-  if (step === 3) {
-    return (
-      <Shell step={2}>
-        <StepHeader step={3} title="Histórico de Saúde" subtitle="Tem ou já teve alguma dessas condições?" />
-        <div className="space-y-2.5">
-          {DOENCAS.map(d => (
-            <CheckCard
-              key={d.id}
-              label={d.label}
-              checked={form.doencas_sistemicas.includes(d.id)}
-              onChange={v => toggleDoenca(d.id, v)}
+        <div className="space-y-6">
+          {secao.perguntas.map(pergunta => (
+            <PerguntaMobile
+              key={pergunta.id}
+              pergunta={pergunta}
+              resposta={respostas[pergunta.id] ?? ""}
+              detalhe={detalhes[pergunta.id] ?? ""}
+              onChange={setResposta}
+              onDetalhe={setDetalhe}
             />
           ))}
         </div>
-        {form.doencas_sistemicas.length === 0 && (
-          <p className="text-sm text-gray-400 mt-3 text-center">Nenhuma selecionada — tudo bem!</p>
-        )}
-        <div className="mt-6">
-          <NavButtons step={step} onBack={() => setStep(2)} onNext={() => setStep(4)} />
-        </div>
-      </Shell>
-    );
-  }
 
-  // ── Step 4: Condições pessoais + pressão ──
-  if (step === 4) {
-    return (
-      <Shell step={3}>
-        <StepHeader step={4} title="Condições Pessoais" subtitle="Responda com sinceridade — ajuda o tratamento!" />
-        <div className="space-y-3">
-          <ToggleCard label="Gestante" checked={form.gestante} onChange={v => setForm(f => ({ ...f, gestante: v }))} />
-          <ToggleCard label="Fumante" checked={form.fumante} onChange={v => setForm(f => ({ ...f, fumante: v }))} />
-          <ToggleCard label="Consome bebidas alcoólicas" checked={form.alcool} onChange={v => setForm(f => ({ ...f, alcool: v }))} />
-        </div>
-        <div className="mt-5">
-          <label className="block text-sm font-black uppercase tracking-wider text-gray-500 mb-2">Pressão arterial (se souber)</label>
-          <input
-            type="text"
-            value={form.pressao_arterial}
-            onChange={e => setForm(f => ({ ...f, pressao_arterial: e.target.value }))}
-            placeholder="Ex: 120/80"
-            className="w-full rounded-2xl border-2 p-4 text-lg text-gray-800 focus:outline-none transition-colors"
-            style={{ borderColor: form.pressao_arterial ? "#f8cc72" : "#e5e3df" }}
-          />
-        </div>
-        <div className="mt-6">
-          <NavButtons step={step} onBack={() => setStep(3)} onNext={() => setStep(5)} />
-        </div>
-      </Shell>
-    );
-  }
-
-  // ── Step 5: Hábitos + Histórico dental ──
-  if (step === 5) {
-    return (
-      <Shell step={4}>
-        <StepHeader step={5} title="Hábitos e Histórico Dental" />
-        <div className="space-y-4">
-          <p className="text-sm font-black uppercase tracking-wider text-gray-500">Hábitos</p>
-          <div className="space-y-2.5">
-            <CheckCard label="Range os dentes (bruxismo)" checked={form.habitos.bruxismo} onChange={v => setForm(f => ({ ...f, habitos: { ...f.habitos, bruxismo: v } }))} />
-            <CheckCard label="Rói as unhas" checked={form.habitos.roer_unhas} onChange={v => setForm(f => ({ ...f, habitos: { ...f.habitos, roer_unhas: v } }))} />
-            <CheckCard label="Usa / usou chupeta" checked={form.habitos.chupeta} onChange={v => setForm(f => ({ ...f, habitos: { ...f.habitos, chupeta: v } }))} />
-            <CheckCard label="Sucção de dedo" checked={form.habitos.succao_dedo} onChange={v => setForm(f => ({ ...f, habitos: { ...f.habitos, succao_dedo: v } }))} />
-          </div>
-
-          <p className="text-sm font-black uppercase tracking-wider text-gray-500 pt-2">Já fez algum tratamento dental?</p>
-          <div className="space-y-2.5">
-            {HISTORICO_DENTAL_OPTIONS.map(opt => (
-              <CheckCard
-                key={opt.id}
-                label={opt.label}
-                checked={form.historico_dental[opt.id as keyof HistoricoDental]}
-                onChange={v => setForm(f => ({ ...f, historico_dental: { ...f.historico_dental, [opt.id]: v } }))}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="mt-6">
-          <NavButtons step={step} onBack={() => setStep(4)} onNext={() => setStep(6)} />
-        </div>
-      </Shell>
-    );
-  }
-
-  // ── Step 6: Observações + Confirmação ──
-  if (step === 6) {
-    const doencasLabel = form.doencas_sistemicas.length > 0
-      ? DOENCAS.filter(d => form.doencas_sistemicas.includes(d.id)).map(d => d.label).join(", ")
-      : "Nenhuma";
-
-    return (
-      <Shell step={5}>
-        <StepHeader step={6} title="Observações" subtitle="Algo mais que o dentista precisa saber?" />
-        <textarea
-          value={form.observacoes}
-          onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))}
-          placeholder="Ex: Ansiedade no dentista, gravidez de risco, cirurgia recente... (opcional)"
-          className="w-full min-h-[120px] rounded-2xl border-2 p-4 text-lg text-gray-800 resize-none focus:outline-none transition-colors"
-          style={{ borderColor: form.observacoes ? "#f8cc72" : "#e5e3df" }}
+        <NavButtons
+          step={step}
+          onBack={() => { setStep(s => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onNext={() => {
+            if (isLast) {
+              handleSubmit();
+            } else {
+              setStep(s => s + 1);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
+          nextLabel={isLast ? "Enviar Ficha" : "Continuar"}
+          loading={submitting && isLast}
         />
-
-        <div className="mt-6 p-4 rounded-2xl border-2 space-y-2" style={{ borderColor: "#e5e3df", background: "white" }}>
-          <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Resumo</p>
-          <SummaryLine label="Motivo" value={form.queixa_principal} />
-          <SummaryLine label="Alergias" value={form.alergias} />
-          <SummaryLine label="Medicamentos" value={form.medicamentos_uso} />
-          <SummaryLine label="Cirurgias" value={form.historico_cirurgias} />
-          <SummaryLine label="Doenças" value={doencasLabel} />
-          <SummaryLine label="Pressão" value={form.pressao_arterial} />
-          <SummaryLine
-            label="Hábitos"
-            value={[
-              form.fumante && "Fumante",
-              form.alcool && "Álcool",
-              form.gestante && "Gestante",
-              form.habitos.bruxismo && "Bruxismo",
-            ].filter(Boolean).join(", ") || "Nenhum"}
-          />
-        </div>
-
-        <div className="mt-6">
-          <NavButtons
-            step={step}
-            onBack={() => setStep(5)}
-            onNext={handleSubmit}
-            nextLabel="Enviar Ficha"
-            loading={submitting}
-          />
-        </div>
       </Shell>
     );
   }

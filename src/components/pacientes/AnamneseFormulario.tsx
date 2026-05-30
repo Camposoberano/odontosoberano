@@ -547,6 +547,30 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
                 >
                   {anamneseExistente ? "Atualizar Ficha" : "Iniciar Ficha"} <ChevronRight className="w-5 h-5" />
                 </Button>
+
+                {anamneseExistente && (
+                  <div className="flex gap-2 max-w-sm mx-auto w-full">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBaixarPDF}
+                      disabled={gerandoPDF}
+                      className="flex-1 rounded-2xl h-12 font-bold gap-2 border-2"
+                    >
+                      {gerandoPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      Baixar PDF
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleImprimir}
+                      className="flex-1 rounded-2xl h-12 font-bold gap-2 border-2"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Imprimir
+                    </Button>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -735,8 +759,8 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
         })()}
       </div>
 
-      {/* Template oculto para captura PDF da anamnese */}
-      {step > TOTAL_STEPS && (
+      {/* Template oculto para captura PDF — disponível sempre que há anamnese */}
+      {(step > TOTAL_STEPS || !!anamneseExistente) && (
         <div
           id="anamnese-pdf-export"
           style={{ position: 'absolute', left: '-9999px', top: 0, width: '800px', visibility: 'hidden' }}
