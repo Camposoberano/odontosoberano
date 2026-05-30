@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AnamnesePDFTemplate } from "@/components/documentos/AnamnesePDFTemplate";
+import { AnamneseRespostasPDF } from "@/components/documentos/AnamneseRespostasPDF";
 import { buildVars, exportarDocumentoPDF } from "@/utils/documentoUtils";
 import { useInformacoesClinica } from "@/hooks/useInformacoesClinica";
 import { supabase } from "@/integrations/supabase/client";
@@ -457,21 +458,24 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
     fc_bpm: respostas.freq_cardiaca ? Number(respostas.freq_cardiaca) : (ex?.fc_bpm ?? undefined),
   };
 
+  // Usa template de respostas preenchidas quando dados_completos existe, senão usa o template em branco
+  const pdfElementId = anamneseExistente?.dados_completos ? 'anamnese-respostas-pdf' : 'anamnese-pdf-export';
+
   const handleBaixarPDF = async () => {
     setGerandoPDF(true);
     try {
-      await exportarDocumentoPDF('anamnese-pdf-export', `Anamnese — ${nomePaciente ?? 'Paciente'}.pdf`);
+      await exportarDocumentoPDF(pdfElementId, `Anamnese — ${nomePaciente ?? 'Paciente'}.pdf`);
     } catch { toast.error('Erro ao gerar PDF'); }
     finally { setGerandoPDF(false); }
   };
 
   const handleImprimir = () => {
-    const el = document.getElementById('anamnese-pdf-export');
+    const el = document.getElementById(pdfElementId);
     if (!el) return;
     const clone = el.cloneNode(true) as HTMLElement;
     clone.style.cssText = 'position:static;width:100%;background:#fff;';
     const w = window.open('', '_blank')!;
-    w.document.write(`<html><head><title>Anamnese</title><style>body{margin:20px;font-family:Arial,sans-serif;background:#fff}*{-webkit-print-color-adjust:exact}</style></head><body>${clone.outerHTML}</body></html>`);
+    w.document.write(`<html><head><title>Anamnese — ${nomePaciente ?? 'Paciente'}</title><style>body{margin:0;font-family:Arial,sans-serif;background:#fff}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${clone.outerHTML}</body></html>`);
     w.document.close();
     w.focus();
     setTimeout(() => { w.print(); }, 500);
@@ -767,8 +771,19 @@ export function AnamneseFormulario({ pacienteId, nomePaciente, paciente }: Props
         })()}
       </div>
 
-      {/* Template oculto para captura PDF — disponível sempre que há anamnese */}
-      {(step > TOTAL_STEPS || !!anamneseExistente) && (
+      {/* Template de respostas preenchidas (dados_completos do paciente) */}
+      {anamneseExistente?.dados_completos && (
+        <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '800px', visibility: 'hidden' }}>
+          <AnamneseRespostasPDF
+            vars={vars}
+            dadosCompletos={anamneseExistente.dados_completos as Record<string, string>}
+            alertasMedicos={anamneseExistente.alertas_medicos ?? []}
+          />
+        </div>
+      )}
+
+      {/* Template em branco (para quando não há dados_completos — anamnese antiga) */}
+      {(step > TOTAL_STEPS || (!!anamneseExistente && !anamneseExistente.dados_completos)) && (
         <div
           id="anamnese-pdf-export"
           style={{ position: 'absolute', left: '-9999px', top: 0, width: '800px', visibility: 'hidden' }}
