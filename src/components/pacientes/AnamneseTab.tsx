@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, ClipboardList, ChevronDown, ChevronRight, Link2, Copy, MessageCircle, CheckCircle2, Clock } from "lucide-react";
+import { Loader2, Save, ClipboardList, ChevronDown, ChevronRight, Link2, Copy, MessageCircle, CheckCircle2, Clock, Download } from "lucide-react";
 import { useGenerateAnamneseToken, useActiveTokens, buildAnamneseUrl } from "@/hooks/useAnamneseToken";
 
 const DOENCAS_OPTIONS = [
@@ -563,108 +563,72 @@ export function AnamneseTab({ pacienteId, pacienteNome = "" }: AnamneseTabProps)
         )}
       </div>
 
-      <Button
-        onClick={() => saveMutation.mutate(form)}
-        disabled={saveMutation.isPending}
-        className="rounded-xl font-black text-xs uppercase tracking-widest px-6 h-11"
-      >
-        {saveMutation.isPending ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <Save className="w-4 h-4 mr-2" />
-        )}
-        Salvar Anamnese
-      </Button>
-
-      {/* Seção: Enviar link ao paciente */}
-      <div className="border-2 rounded-2xl overflow-hidden mt-2">
-        <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50">
-          <Link2 className="w-4 h-4 text-emerald-600" />
-          <span className="font-black text-xs uppercase tracking-widest text-emerald-700">
-            Enviar link de anamnese ao paciente
-          </span>
-        </div>
-        <div className="p-4 space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Gere um link único para o paciente preencher a anamnese no celular — sem precisar de login.
-          </p>
+      <div className="flex gap-2">
+        <Button
+          onClick={() => saveMutation.mutate(form)}
+          disabled={saveMutation.isPending}
+          className="rounded-xl font-black text-xs uppercase tracking-widest px-6 h-11"
+        >
+          {saveMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          Salvar Anamnese
+        </Button>
+        {data && (
           <Button
             type="button"
             variant="outline"
+            onClick={() => window.print()}
+            className="rounded-xl font-black text-xs uppercase tracking-widest px-4 h-11"
+            title="Imprimir / Salvar como PDF"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Link de Anamnese — compacto */}
+      <div className="border-2 rounded-xl overflow-hidden mt-1">
+        <div className="flex items-center justify-between px-3 py-2 bg-emerald-50">
+          <div className="flex items-center gap-1.5 text-emerald-700">
+            <Link2 className="w-3.5 h-3.5" />
+            <span className="font-black text-xs uppercase tracking-widest">Link de Anamnese</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={handleGenerateLink}
             disabled={generateToken.isPending}
-            className="rounded-xl font-bold text-xs uppercase tracking-widest h-10"
+            className="h-7 text-xs font-bold px-2 gap-1"
           >
-            {generateToken.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Link2 className="w-4 h-4 mr-2" />
-            )}
-            Gerar novo link
+            {generateToken.isPending
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <><Link2 className="w-3 h-3" />Gerar</>}
           </Button>
-
-          {/* Links gerados recentemente */}
-          {tokens && tokens.length > 0 && (
-            <div className="space-y-2">
-              <Label className="font-bold text-xs uppercase tracking-widest text-slate-500">
-                Links recentes
-              </Label>
-              {tokens.map((t) => {
-                const url = buildAnamneseUrl(t.token);
-                const isUsed = !!t.used_at;
-                const isExpired = !isUsed && new Date(t.expires_at) <= new Date();
-                const isActive = !isUsed && !isExpired;
-                return (
-                  <div
-                    key={t.token}
-                    className="flex items-center gap-2 p-3 rounded-xl border bg-slate-50"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-mono text-slate-600 truncate">{url}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        {isUsed && (
-                          <span className="flex items-center gap-1 text-xs text-green-600 font-bold">
-                            <CheckCircle2 className="w-3 h-3" /> Preenchido
-                          </span>
-                        )}
-                        {isExpired && (
-                          <span className="flex items-center gap-1 text-xs text-amber-600 font-bold">
-                            <Clock className="w-3 h-3" /> Expirado
-                          </span>
-                        )}
-                        {isActive && (
-                          <span className="flex items-center gap-1 text-xs text-blue-600 font-bold">
-                            <Link2 className="w-3 h-3" /> Ativo
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {isActive && (
-                      <div className="flex gap-1 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(url)}
-                          title="Copiar link"
-                          className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
-                        >
-                          <Copy className="w-4 h-4 text-slate-500" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleWhatsApp(url)}
-                          title="Compartilhar no WhatsApp"
-                          className="p-1.5 rounded-lg hover:bg-green-100 transition-colors"
-                        >
-                          <MessageCircle className="w-4 h-4 text-green-600" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
+        {tokens && tokens.length > 0 && (() => {
+          const t = tokens[0];
+          const url = buildAnamneseUrl(t.token);
+          const isUsed = !!t.used_at;
+          const isExpired = !isUsed && new Date(t.expires_at) <= new Date();
+          const isActive = !isUsed && !isExpired;
+          return (
+            <div className="flex items-center gap-2 px-3 py-2">
+              <span className="text-xs font-mono text-slate-500 flex-1 truncate">{url}</span>
+              {isUsed && <span className="flex items-center gap-1 text-xs text-green-600 font-bold"><CheckCircle2 className="w-3 h-3" />Preenchido</span>}
+              {isExpired && <span className="flex items-center gap-1 text-xs text-amber-500 font-bold"><Clock className="w-3 h-3" />Expirado</span>}
+              {isActive && (
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => handleCopy(url)} title="Copiar" className="p-1 rounded hover:bg-slate-100 transition-colors">
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
+                  <button type="button" onClick={() => handleWhatsApp(url)} title="WhatsApp" className="p-1 rounded hover:bg-green-50 transition-colors">
+                    <MessageCircle className="w-3.5 h-3.5 text-green-500" />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
