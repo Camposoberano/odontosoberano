@@ -429,8 +429,10 @@ export default function AnamnesePublica() {
       const result = data as { success: boolean; error?: string };
       if (!result.success) throw new Error(result.error ?? "Erro desconhecido");
       setSubmitted(true);
-    } catch {
-      alert("Erro ao enviar. Tente novamente ou contate a clínica.");
+    } catch (err: any) {
+      const msg = err?.message || err?.error_description || JSON.stringify(err) || "desconhecido";
+      console.error("[AnamnesePublica] submit error:", err);
+      alert(`Erro ao enviar: ${msg}`);
     } finally {
       setSubmitting(false);
     }
