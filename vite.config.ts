@@ -19,53 +19,8 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       securityHeadersPlugin(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        injectRegister: 'auto',
-        workbox: {
-          globPatterns: ['**/*.{js,css,ico,png,svg,webp}'],
-          cleanupOutdatedCaches: true,
-          skipWaiting: true,
-          clientsClaim: true,
-          navigateFallback: `${base}index.html`,
-          navigateFallbackDenylist: [/\/assets\//],
-          runtimeCaching: [
-            {
-              urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
-              handler: 'NetworkFirst' as const,
-              options: {
-                cacheName: 'html-cache',
-                networkTimeoutSeconds: 5,
-              },
-            },
-          ],
-        },
-        manifest: {
-          name: 'Instituto Belém - Sistema de Gestão',
-          short_name: 'Inst. Belém',
-          description: 'Gerenciamento completo e inteligente para o Inst. Belém.',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
-          display: 'standalone',
-          scope: base,
-          start_url: base,
-          id: base,
-          categories: ['medical', 'business', 'productivity'],
-          icons: [
-            {
-              src: `${base}pwa-192x192.png`,
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: `${base}pwa-512x512.png`,
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable'
-            }
-          ]
-        }
-      }),
+      // SW desativado — selfDestroying limpa caches antigos nos browsers dos usuários
+      VitePWA({ selfDestroying: true }),
       mode === 'development' && componentTagger(),
     ].filter(Boolean),
     build: {
