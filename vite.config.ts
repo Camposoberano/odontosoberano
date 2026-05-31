@@ -23,12 +23,22 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         injectRegister: 'auto',
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+          globPatterns: ['**/*.{js,css,ico,png,svg,webp}'],
           cleanupOutdatedCaches: true,
           skipWaiting: true,
           clientsClaim: true,
           navigateFallback: `${base}index.html`,
           navigateFallbackDenylist: [/\/assets\//],
+          runtimeCaching: [
+            {
+              urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
+              handler: 'NetworkFirst' as const,
+              options: {
+                cacheName: 'html-cache',
+                networkTimeoutSeconds: 5,
+              },
+            },
+          ],
         },
         manifest: {
           name: 'Instituto Belém - Sistema de Gestão',

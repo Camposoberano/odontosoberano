@@ -21,15 +21,22 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error,
-    };
+    const isChunkError =
+      error.message?.includes('Failed to fetch dynamically imported module') ||
+      error.message?.includes('Importing a module script failed') ||
+      error.message?.includes('dynamically imported module') ||
+      error.name === 'ChunkLoadError';
+
+    if (isChunkError) {
+      // SW servindo chunks velhos após deploy — recarrega para pegar versão nova
+      window.location.reload();
+      return { hasError: false, error: null };
+    }
+
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // TODO: Enviar erro para serviço de monitoramento (Sentry, LogRocket)
-    // Em produção, não mostrar detalhes do erro ao usuário
     if (process.env.NODE_ENV === 'development') {
       console.error('Error caught by boundary:', error, errorInfo);
     }
