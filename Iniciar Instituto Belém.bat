@@ -26,9 +26,9 @@ echo [4/4] Aguardando (6s)...
 timeout /t 6 /nobreak >nul
 echo.
 echo Sistema pronto! Abrindo navegador...
-echo URL: http://localhost:8081/belem/
+echo URL: http://localhost:8081/inst.belem/
 echo.
 echo [ATENCAO] NAO feche a janela preta minimizada!
 echo.
-start http://localhost:8081/belem/
+start http://localhost:8081/inst.belem/
 pause >nul
