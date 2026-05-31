@@ -202,50 +202,164 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
     );
 
     if (tipo === 'atestado') return (
-      <div className="space-y-3">
+      <div className="space-y-4">
+        {/* Dados do Paciente — revisar/corrigir */}
         <div>
-          <Label>Procedimento realizado</Label>
-          <Input
-            value={extras.procedimento ?? ''}
-            onChange={e => setExtra('procedimento', e.target.value)}
-            placeholder="Ex: Extração do elemento 38 sob anestesia local"
-          />
-        </div>
-        <div>
-          <Label>Período de repouso</Label>
-          <Input
-            value={extras.horas ?? ''}
-            onChange={e => setExtra('horas', e.target.value)}
-            placeholder="Ex: 24 horas / 2 dias"
-          />
-        </div>
-        <div>
-          <Label>Tipo de afastamento</Label>
-          <Select value={extras.tipo_afastamento ?? 'integral'} onValueChange={v => setExtra('tipo_afastamento', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="integral">Integral</SelectItem>
-              <SelectItem value="parcial">Parcial</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {extras.tipo_afastamento === 'parcial' && (
-          <div>
-            <Label>Horário de afastamento</Label>
-            <Input
-              value={extras.horario_afastamento ?? ''}
-              onChange={e => setExtra('horario_afastamento', e.target.value)}
-              placeholder="Ex: das 08h às 12h"
-            />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Dados do Paciente — confira e corrija se necessário</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label>Nome</Label>
+              <Input
+                value={extras.pac_nome ?? paciente.nome ?? ''}
+                onChange={e => setExtra('pac_nome', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>CPF</Label>
+              <Input
+                value={extras.pac_cpf ?? paciente.cpf ?? ''}
+                onChange={e => setExtra('pac_cpf', e.target.value)}
+                placeholder="000.000.000-00"
+              />
+            </div>
+            <div>
+              <Label>Data de Nascimento</Label>
+              <Input
+                value={extras.pac_nascimento ?? vars.PACIENTE_NASCIMENTO ?? ''}
+                onChange={e => setExtra('pac_nascimento', e.target.value)}
+                placeholder="DD/MM/AAAA"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label>Celular / WhatsApp</Label>
+              <Input
+                value={extras.pac_telefone ?? paciente.telefone ?? ''}
+                onChange={e => setExtra('pac_telefone', e.target.value)}
+                placeholder="(91) 99999-9999"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label>Endereço do local de trabalho (opcional)</Label>
+              <Input
+                value={extras.pac_local_trabalho ?? ''}
+                onChange={e => setExtra('pac_local_trabalho', e.target.value)}
+                placeholder="Ex: Av. Nazaré, 1000 — Nazaré, Belém/PA"
+              />
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Dados da Clínica — revisar/corrigir */}
         <div>
-          <Label>CID-10 (opcional)</Label>
-          <Input
-            value={extras.cid10 ?? ''}
-            onChange={e => setExtra('cid10', e.target.value)}
-            placeholder="Ex: K04.1"
-          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Dados da Clínica — confira e corrija se necessário</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label>Nome da Clínica</Label>
+              <Input
+                value={extras.cli_nome ?? clinica?.nome_clinica ?? 'Instituto Belém de Odontologia'}
+                onChange={e => setExtra('cli_nome', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>CEP</Label>
+              <Input
+                value={extras.cli_cep ?? clinica?.cep ?? ''}
+                onChange={e => setExtra('cli_cep', e.target.value)}
+                placeholder="00000-000"
+              />
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <Input
+                value={extras.cli_estado ?? clinica?.estado ?? ''}
+                onChange={e => setExtra('cli_estado', e.target.value)}
+                placeholder="PA"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label>Rua / Avenida</Label>
+              <Input
+                value={extras.cli_rua ?? clinica?.endereco ?? ''}
+                onChange={e => setExtra('cli_rua', e.target.value)}
+                placeholder="Ex: Av. Nazaré"
+              />
+            </div>
+            <div>
+              <Label>Número</Label>
+              <Input
+                value={extras.cli_numero ?? clinica?.numero ?? ''}
+                onChange={e => setExtra('cli_numero', e.target.value)}
+                placeholder="1000"
+              />
+            </div>
+            <div>
+              <Label>Bairro</Label>
+              <Input
+                value={extras.cli_bairro ?? clinica?.bairro ?? ''}
+                onChange={e => setExtra('cli_bairro', e.target.value)}
+                placeholder="Nazaré"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label>Cidade</Label>
+              <Input
+                value={extras.cli_cidade ?? clinica?.cidade ?? ''}
+                onChange={e => setExtra('cli_cidade', e.target.value)}
+                placeholder="Belém"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Dados do atestado */}
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Dados do Atestado</p>
+          <div className="space-y-2">
+            <div>
+              <Label>Procedimento realizado</Label>
+              <Input
+                value={extras.procedimento ?? ''}
+                onChange={e => setExtra('procedimento', e.target.value)}
+                placeholder="Ex: Extração do elemento 38 sob anestesia local"
+              />
+            </div>
+            <div>
+              <Label>Período de repouso</Label>
+              <Input
+                value={extras.horas ?? ''}
+                onChange={e => setExtra('horas', e.target.value)}
+                placeholder="Ex: 24 horas / 2 dias"
+              />
+            </div>
+            <div>
+              <Label>Tipo de afastamento</Label>
+              <Select value={extras.tipo_afastamento ?? 'integral'} onValueChange={v => setExtra('tipo_afastamento', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="integral">Integral</SelectItem>
+                  <SelectItem value="parcial">Parcial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {extras.tipo_afastamento === 'parcial' && (
+              <div>
+                <Label>Horário de afastamento</Label>
+                <Input
+                  value={extras.horario_afastamento ?? ''}
+                  onChange={e => setExtra('horario_afastamento', e.target.value)}
+                  placeholder="Ex: das 08h às 12h"
+                />
+              </div>
+            )}
+            <div>
+              <Label>CID-10 (opcional)</Label>
+              <Input
+                value={extras.cid10 ?? ''}
+                onChange={e => setExtra('cid10', e.target.value)}
+                placeholder="Ex: K04.1"
+              />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -260,17 +374,36 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
     const isAnamnese = tipo.startsWith('anamnese_');
     if (tipo === 'contrato') return <ContratoTemplate ref={templateRef} vars={vars} />;
     if (isTCLE) return <TCLETemplate ref={templateRef} vars={vars} tipo={tipo} extras={extras} />;
-    if (tipo === 'atestado') return (
-      <AtestadoTemplate
-        ref={templateRef}
-        vars={vars}
-        procedimentoRealizado={extras.procedimento}
-        horas={extras.horas}
-        tipoAfastamento={(extras.tipo_afastamento as 'integral' | 'parcial') ?? 'integral'}
-        horarioAfastamento={extras.horario_afastamento}
-        cid10={extras.cid10}
-      />
-    );
+    if (tipo === 'atestado') {
+      const enderecoClinica = [
+        extras.cli_rua ?? clinica?.endereco,
+        extras.cli_numero ?? clinica?.numero,
+        extras.cli_bairro ?? clinica?.bairro,
+      ].filter(Boolean).join(', ');
+      const atestadoVars = {
+        ...vars,
+        PACIENTE_NOME: extras.pac_nome || vars.PACIENTE_NOME,
+        PACIENTE_CPF: extras.pac_cpf || vars.PACIENTE_CPF,
+        PACIENTE_NASCIMENTO: extras.pac_nascimento || vars.PACIENTE_NASCIMENTO,
+        PACIENTE_TELEFONE: extras.pac_telefone || vars.PACIENTE_TELEFONE,
+        PACIENTE_LOCAL_TRABALHO: extras.pac_local_trabalho || '',
+        CLINICA_NOME: extras.cli_nome || vars.CLINICA_NOME,
+        CLINICA_ENDERECO: enderecoClinica || vars.CLINICA_ENDERECO,
+        CLINICA_CIDADE: extras.cli_cidade || vars.CLINICA_CIDADE,
+        CLINICA_ESTADO: extras.cli_estado || vars.CLINICA_ESTADO,
+      };
+      return (
+        <AtestadoTemplate
+          ref={templateRef}
+          vars={atestadoVars}
+          procedimentoRealizado={extras.procedimento}
+          horas={extras.horas}
+          tipoAfastamento={(extras.tipo_afastamento as 'integral' | 'parcial') ?? 'integral'}
+          horarioAfastamento={extras.horario_afastamento}
+          cid10={extras.cid10}
+        />
+      );
+    }
     if (tipo === 'receituario_pdf') return <ReceituarioPDFTemplate ref={templateRef} vars={vars} medicamentos={[]} />;
     if (isAnamnese) return (
       <AnamnesePDFTemplate

@@ -37,9 +37,15 @@ export const AtestadoTemplate = forwardRef<HTMLDivElement, Props>(
             backgroundColor: BRAND.fundo, border: `1.5px solid ${BRAND.dourado}`,
             borderRadius: 8, padding: '12px 18px', marginBottom: 20, fontSize: 11,
           }}>
-            <p style={{ fontWeight: 800, fontSize: 14, margin: '0 0 4px', color: BRAND.preto }}>{vars.PACIENTE_NOME || '________________________________'}</p>
+            <p style={{ fontWeight: 800, fontSize: 14, margin: '0 0 6px', color: BRAND.preto }}>{vars.PACIENTE_NOME || '________________________________'}</p>
             <p style={{ margin: '0 0 2px' }}>CPF: <strong>{vars.PACIENTE_CPF || '___.___.___-__'}</strong></p>
-            <p style={{ margin: 0 }}>Data de Nascimento: <strong>{vars.PACIENTE_NASCIMENTO || '___/___/______'}</strong></p>
+            <p style={{ margin: '0 0 2px' }}>Data de Nascimento: <strong>{vars.PACIENTE_NASCIMENTO || '___/___/______'}</strong></p>
+            {vars.PACIENTE_TELEFONE && (
+              <p style={{ margin: '0 0 2px' }}>Celular/WhatsApp: <strong>{vars.PACIENTE_TELEFONE}</strong></p>
+            )}
+            {vars.PACIENTE_LOCAL_TRABALHO && (
+              <p style={{ margin: 0 }}>Local de Trabalho: <strong>{vars.PACIENTE_LOCAL_TRABALHO}</strong></p>
+            )}
           </div>
 
           <p style={{ fontSize: 11, lineHeight: 1.8, marginBottom: 8 }}>
