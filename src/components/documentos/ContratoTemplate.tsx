@@ -213,7 +213,7 @@ export const ContratoTemplate = forwardRef<HTMLDivElement, Props>(({ vars }, ref
         <div style={{ borderTop: `1px dashed #d1d5db`, margin: '16px 0 8px' }} />
 
         <p style={{ fontSize: 10.5, textAlign: 'center', color: '#4b5563', fontStyle: 'italic', margin: '0 0 24px' }}>
-          {vars.CLINICA_CIDADE || 'Belém'}, {vars.DATA_HOJE_EXTENSO || vars.DATA_HOJE}
+          {vars.CLINICA_NOME || 'Instituto Belém de Odontologia'}, {vars.DATA_HOJE_EXTENSO || vars.DATA_HOJE}
         </p>
 
         {/* Assinaturas */}
