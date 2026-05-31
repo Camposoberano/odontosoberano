@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Mobile — layout responsivo', () => {
   test('login responsivo no mobile', async ({ page }) => {
-    await page.goto('/auth');
+    await page.goto('auth');
     // Botão e campos visíveis sem scroll horizontal
     await expect(page.getByPlaceholder(/e-mail/i)).toBeInViewport();
     await expect(page.getByRole('button', { name: /entrar/i })).toBeInViewport();
@@ -15,7 +15,7 @@ test.describe('Mobile — layout responsivo', () => {
 
   test('anamnese pública abre sem login', async ({ page }) => {
     // Rota pública — deve carregar sem redirect para /auth
-    await page.goto('/anamnese/token-teste');
+    await page.goto('anamnese/token-teste');
     await expect(page).not.toHaveURL(/auth/);
   });
 });

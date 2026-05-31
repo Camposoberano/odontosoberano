@@ -14,7 +14,7 @@ test.beforeAll(() => {
 test('login', async ({ page }, testInfo) => {
   test.skip(!GRID_PROJECTS.includes(testInfo.project.name), 'Apenas grid visual');
 
-  await page.goto('/auth');
+  await page.goto('auth');
   await page.waitForLoadState('networkidle');
   await page.screenshot({
     path: path.join(OUT_DIR, `${testInfo.project.name}-login.png`),
@@ -26,7 +26,7 @@ test('dashboard', async ({ page }, testInfo) => {
   test.skip(!GRID_PROJECTS.includes(testInfo.project.name), 'Apenas grid visual');
   test.skip(!EMAIL || !PASSWORD, 'TEST_EMAIL e TEST_PASSWORD nao definidos');
 
-  await page.goto('/auth');
+  await page.goto('auth');
   await page.waitForLoadState('networkidle');
   await page.getByPlaceholder(/e-mail/i).fill(EMAIL);
   await page.getByPlaceholder(/senha/i).fill(PASSWORD);

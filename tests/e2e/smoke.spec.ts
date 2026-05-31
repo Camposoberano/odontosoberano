@@ -6,7 +6,7 @@ const PASSWORD = process.env.TEST_PASSWORD || '';
 test.describe('Smoke — páginas principais carregam', () => {
   test.beforeEach(async ({ page }) => {
     if (!EMAIL || !PASSWORD) test.skip();
-    await page.goto('/auth');
+    await page.goto('auth');
     await page.getByPlaceholder(/e-mail/i).fill(EMAIL);
     await page.getByPlaceholder(/senha/i).fill(PASSWORD);
     await page.getByRole('button', { name: /entrar/i }).click();
@@ -18,19 +18,19 @@ test.describe('Smoke — páginas principais carregam', () => {
   });
 
   test('lista de pacientes carrega', async ({ page }) => {
-    await page.goto('/patients');
+    await page.goto('patients');
     await expect(page.getByRole('heading', { name: /pacientes/i })).toBeVisible({ timeout: 8000 });
   });
 
   test('agenda carrega', async ({ page }) => {
-    await page.goto('/appointments');
+    await page.goto('appointments');
     await expect(page.getByRole('heading', { name: /agenda/i })).toBeVisible({ timeout: 8000 });
   });
 
   test('sem erros de console críticos', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
-    await page.goto('/dashboard');
+    await page.goto('dashboard');
     await page.waitForTimeout(2000);
     const critical = errors.filter(e =>
       !e.includes('ResizeObserver') && !e.includes('Non-Error')
