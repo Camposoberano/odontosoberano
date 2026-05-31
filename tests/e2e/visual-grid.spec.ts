@@ -16,6 +16,9 @@ test('login', async ({ page }, testInfo) => {
 
   await page.goto('auth');
   await page.waitForLoadState('networkidle');
+  // Aguarda elemento real — garante que React montou (crítico no WebKit/iPhone)
+  await page.waitForSelector('input[type="email"], input[placeholder*="mail"], button', { timeout: 15000 });
+  await page.waitForTimeout(500);
   await page.screenshot({
     path: path.join(OUT_DIR, `${testInfo.project.name}-login.png`),
     fullPage: false,
