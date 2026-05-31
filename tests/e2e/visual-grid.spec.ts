@@ -14,6 +14,10 @@ test.beforeAll(() => {
 test('login', async ({ page }, testInfo) => {
   test.skip(!GRID_PROJECTS.includes(testInfo.project.name), 'Apenas grid visual');
 
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+
   await page.goto('auth');
   await page.waitForLoadState('networkidle');
   // Aguarda elemento real — garante que React montou (crítico no WebKit/iPhone)
@@ -23,6 +27,10 @@ test('login', async ({ page }, testInfo) => {
     path: path.join(OUT_DIR, `${testInfo.project.name}-login.png`),
     fullPage: false,
   });
+
+  // Salva erros JS em arquivo para o viewer exibir
+  const errFile = path.join(OUT_DIR, `${testInfo.project.name}-errors.json`);
+  fs.writeFileSync(errFile, JSON.stringify(errors, null, 2));
 });
 
 test('dashboard', async ({ page }, testInfo) => {

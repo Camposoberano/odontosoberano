@@ -40,9 +40,29 @@ foreach ($pg in $pages) {
         $img_html
       </div>"
   }
+  # Monta lista de erros por device para a linha de login
+  $errors_html = ""
+  if ($pg.key -eq "login") {
+    $err_items = ""
+    foreach ($dev in $devices) {
+      $errfile = "$screenshots_dir\${dev}-errors.json"
+      if (Test-Path $errfile) {
+        $errs = Get-Content $errfile -Raw | ConvertFrom-Json
+        if ($errs -and $errs.Count -gt 0) {
+          $list = ($errs | ForEach-Object { "<li>$_</li>" }) -join ""
+          $err_items += "<div class=`"err-device`"><strong>$($labels[$dev]):</strong><ul>$list</ul></div>"
+        }
+      }
+    }
+    if ($err_items) {
+      $errors_html = "<div class=`"err-box`"><span class=`"err-title`">Erros JS detectados</span>$err_items</div>"
+    }
+  }
+
   $sections_html += "
     <h2>$($pg.title)</h2>
-    <div class=`"grid`">$cells_html</div>"
+    <div class=`"grid`">$cells_html</div>
+    $errors_html"
 }
 
 $html = @"
@@ -68,6 +88,11 @@ $html = @"
   .card img{width:100%;display:block}
   .empty{height:130px;display:flex;align-items:center;justify-content:center;color:#444;font-size:.75rem}
   footer{text-align:center;margin-top:28px;color:#333;font-size:.7rem}
+  .err-box{max-width:1360px;margin:12px auto 0;background:#1a0a0a;border:1px solid #7f1d1d;border-radius:8px;padding:14px 18px}
+  .err-title{display:block;color:#f87171;font-weight:700;font-size:.8rem;margin-bottom:10px;text-transform:uppercase;letter-spacing:.08em}
+  .err-device{margin-bottom:10px;font-size:.78rem;color:#fca5a5}
+  .err-device strong{color:#ef4444}
+  .err-device ul{margin:4px 0 0 16px;color:#fca5a5;line-height:1.6}
 </style>
 </head>
 <body>
