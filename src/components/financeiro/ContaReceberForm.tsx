@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ const formasPagamento = [
 
 export function ContaReceberForm({ open, onOpenChange, onSubmit, conta }: ContaReceberFormProps) {
   const { pacientes } = usePacientes();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     paciente_id: "",
@@ -88,6 +90,15 @@ export function ContaReceberForm({ open, onOpenChange, onSubmit, conta }: ContaR
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.categoria) {
+      toast({ title: "Selecione uma categoria", variant: "destructive" });
+      return;
+    }
+    if (!formData.status) {
+      toast({ title: "Selecione o status", variant: "destructive" });
+      return;
+    }
 
     const submitData = {
       ...formData,

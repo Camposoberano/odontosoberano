@@ -55,13 +55,17 @@ export default function ContasPagar() {
   const { contas, loading, createConta, updateConta, deleteConta, pagarConta } = useContasPagar();
 
   const handleSubmit = async (data: any) => {
-    if (editingConta) {
-      await updateConta((editingConta as any).id, data);
-    } else {
-      await createConta(data);
+    try {
+      if (editingConta) {
+        await updateConta((editingConta as any).id, data);
+      } else {
+        await createConta(data);
+      }
+      setDialogOpen(false);
+      setEditingConta(null);
+    } catch {
+      // erro já tratado pelo hook (toast)
     }
-    setDialogOpen(false);
-    setEditingConta(null);
   };
 
   const handleEdit = (conta: any) => {
@@ -71,8 +75,12 @@ export default function ContasPagar() {
 
   const handleDelete = async () => {
     if (deleteId) {
-      await deleteConta(deleteId);
-      setDeleteId(null);
+      try {
+        await deleteConta(deleteId);
+        setDeleteId(null);
+      } catch {
+        // erro já tratado pelo hook (toast)
+      }
     }
   };
 
@@ -82,13 +90,17 @@ export default function ContasPagar() {
 
   const confirmarPagamento = async () => {
     if (contaParaPagar && formaPagamento) {
-      await pagarConta(
-        contaParaPagar.id, 
-        format(dataPagamento, 'yyyy-MM-dd'),
-        formaPagamento
-      );
-      setPagarDialogOpen(false);
-      setContaParaPagar(null);
+      try {
+        await pagarConta(
+          contaParaPagar.id,
+          format(dataPagamento, 'yyyy-MM-dd'),
+          formaPagamento
+        );
+        setPagarDialogOpen(false);
+        setContaParaPagar(null);
+      } catch {
+        // erro já tratado pelo hook (toast)
+      }
     }
   };
 

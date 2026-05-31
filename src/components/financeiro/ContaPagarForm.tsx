@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ const formasPagamento = [
 
 export function ContaPagarForm({ open, onOpenChange, onSubmit, conta }: ContaPagarFormProps) {
   const { fornecedores } = useFornecedores();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     fornecedor_id: "",
@@ -98,6 +100,15 @@ export function ContaPagarForm({ open, onOpenChange, onSubmit, conta }: ContaPag
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.categoria) {
+      toast({ title: "Selecione uma categoria", variant: "destructive" });
+      return;
+    }
+    if (!formData.status) {
+      toast({ title: "Selecione o status", variant: "destructive" });
+      return;
+    }
 
     const submitData = {
       ...formData,

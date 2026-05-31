@@ -44,17 +44,18 @@ export function useContasReceber() {
   const { user } = useAuth();
 
   const { data: contasReceber = [], isLoading } = useQuery({
-    queryKey: ["contas_receber"],
+    queryKey: ["contas_receber", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contas_receber")
         .select("*, orcamento:orcamentos(id, numero_orcamento)")
+        .eq("user_id", user!.id)
         .order("data_vencimento", { ascending: false });
 
       if (error) throw error;
       return data as ContaReceber[];
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
 
   const createMutation = useMutation({
@@ -122,6 +123,7 @@ export function useContasReceber() {
         await supabase
           .from("fluxo_caixa")
           .delete()
+          .eq("user_id", user!.id)
           .eq("conta_receber_id", id);
       }
 
@@ -150,7 +152,8 @@ export function useContasReceber() {
       const { error } = await supabase
         .from("contas_receber")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user!.id);
 
       if (error) throw error;
     },

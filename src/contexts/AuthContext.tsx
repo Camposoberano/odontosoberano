@@ -48,15 +48,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       })
       .catch(() => {
         // Rede bloqueada (tracking prevention, offline, etc.) — trata como deslogado
+        setUser(null);
         setLoading(false);
       });
 
-    // Fallback: se nem callback disparar em 6s, desbloqueia o app
-    const timeout = setTimeout(() => setLoading(false), 6000);
-
     return () => {
       subscription.unsubscribe();
-      clearTimeout(timeout);
     };
   }, []);
 

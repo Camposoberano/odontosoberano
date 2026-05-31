@@ -48,12 +48,17 @@ export default function ContasReceber() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const handleSubmit = async (data: any) => {
-    if (selectedConta) {
-      await updateConta({ id: selectedConta.id, ...data });
-    } else {
-      await createConta(data);
+    try {
+      if (selectedConta) {
+        await updateConta({ id: selectedConta.id, ...data });
+      } else {
+        await createConta(data);
+      }
+      setFormOpen(false);
+      setSelectedConta(null);
+    } catch {
+      // erro já tratado pelo hook (toast)
     }
-    setSelectedConta(null);
   };
 
   const handleEdit = (conta: ContaReceber) => {
@@ -68,10 +73,14 @@ export default function ContasReceber() {
 
   const confirmDelete = async () => {
     if (contaToDelete) {
-      await deleteConta(contaToDelete);
-      setContaToDelete(null);
+      try {
+        await deleteConta(contaToDelete);
+        setContaToDelete(null);
+        setDeleteDialogOpen(false);
+      } catch {
+        // erro já tratado pelo hook (toast)
+      }
     }
-    setDeleteDialogOpen(false);
   };
 
   const getStatusIcon = (status: string) => {
