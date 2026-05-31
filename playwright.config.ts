@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8081/belem/';
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8081/inst.belem/';
 
 export default defineConfig({
   testDir: './tests/e2e',

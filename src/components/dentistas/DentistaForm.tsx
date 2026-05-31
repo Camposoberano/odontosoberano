@@ -29,8 +29,6 @@ const especialidades = [
 ];
 
 export function DentistaForm({ open, onOpenChange, onSubmit, dentista, title }: DentistaFormProps) {
-  console.log('DentistaForm render:', { open, dentista, title });
-  
   const [formData, setFormData] = useState<CreateDentistaData>({
     nome: dentista?.nome || '',
     cro: dentista?.cro || '',
@@ -46,7 +44,6 @@ export function DentistaForm({ open, onOpenChange, onSubmit, dentista, title }: 
   
   // Update form data when dentista prop changes
   useEffect(() => {
-    console.log('useEffect in DentistaForm - dentista changed:', dentista);
     if (dentista) {
       setFormData({
         nome: dentista.nome || '',
@@ -59,9 +56,7 @@ export function DentistaForm({ open, onOpenChange, onSubmit, dentista, title }: 
         data_nascimento: dentista.data_nascimento || '',
         status: dentista.status || 'Ativo'
       });
-      console.log('Form data updated with dentista data');
     } else {
-      console.log('Resetting form data - no dentista');
       setFormData({
         nome: '',
         cro: '',
