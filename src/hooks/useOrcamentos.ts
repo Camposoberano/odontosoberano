@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type StatusOrcamento =
   | "rascunho"
@@ -79,9 +80,11 @@ const QUERY_KEY = "orcamentos";
 export function useOrcamentos() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const lista = useQuery({
-    queryKey: [QUERY_KEY],
+    queryKey: [QUERY_KEY, user?.id],
+    enabled: !!user?.id,
     queryFn: async (): Promise<Orcamento[]> => {
       const { data, error } = await supabase
         .from("orcamentos")
@@ -91,6 +94,7 @@ export function useOrcamentos() {
           dentista:dentistas(id, nome, cro),
           orcamento_itens(*)
         `)
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

@@ -235,7 +235,8 @@ export const useDashboardStats = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("status");
+        .select("status")
+        .eq("user_id", user!.id);
       if (error) throw error;
       return {
         aprovados: data?.filter(o => o.status === "aprovado").length || 0,
@@ -253,6 +254,7 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("status, created_at")
+        .eq("user_id", user!.id)
         .gte("created_at", subMonths(new Date(), 6).toISOString());
       if (error) throw error;
       const meses: Record<string, { mes: string; aprovados: number; reprovados: number; emAberto: number }> = {};
@@ -330,8 +332,8 @@ export const useDashboardStats = () => {
     enabled: !!user?.id,
     queryFn: async () => {
       const [{ data: orcData }, { data: agData }] = await Promise.all([
-        supabase.from("orcamentos").select("paciente_id").eq("status", "aprovado"),
-        supabase.from("agendamentos").select("paciente_id").gte("data_agendamento", new Date().toISOString()).neq("status", "cancelado"),
+        supabase.from("orcamentos").select("paciente_id").eq("user_id", user!.id).eq("status", "aprovado"),
+        supabase.from("agendamentos").select("paciente_id").eq("user_id", user!.id).gte("data_agendamento", new Date().toISOString()).neq("status", "cancelado"),
       ]);
       const comAgend = new Set((agData || []).map(a => a.paciente_id));
       const pacsSemAgend = new Set((orcData || []).filter(o => o.paciente_id && !comAgend.has(o.paciente_id)).map(o => o.paciente_id));
