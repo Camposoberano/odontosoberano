@@ -109,7 +109,7 @@ function OdontogramaVisualizacao({
 export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTemplateProps>(
   ({
     orcamento,
-    clinicaNome = "Instituto Belém",
+    clinicaNome = "Instituto Belém de Odontologia",
     clinicaEndereco,
     clinicaTelefone,
     clinicaCNPJ,
@@ -347,10 +347,11 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
           <table style={s.table}>
             <thead style={s.thead}>
               <tr style={s.thRow}>
-                <th style={s.th}>Procedimentos</th>
+                <th style={s.th}>Procedimento</th>
                 <th style={{ ...s.th, textAlign: "center", width: 60 }}>Dente</th>
-                <th style={{ ...s.th, textAlign: "center", width: 140 }}>Dentista</th>
-                <th style={{ ...s.thRight, width: 90 }}>Valor</th>
+                <th style={{ ...s.th, textAlign: "center", width: 50 }}>Qtd</th>
+                <th style={{ ...s.thRight, width: 100 }}>Valor Unit.</th>
+                <th style={{ ...s.thRight, width: 100 }}>Total</th>
               </tr>
             </thead>
             <tbody>
@@ -360,10 +361,9 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
                   <tr key={item.id}>
                     <td style={td}>{item.nome_procedimento}</td>
                     <td style={{ ...td, ...s.tdCenter }}>{item.dente_numero ?? "—"}</td>
-                    <td style={{ ...td, ...s.tdCenter }}>{orcamento.dentista?.nome ?? "—"}</td>
-                    <td style={{ ...td, ...s.tdRight }}>
-                      {fmt(item.preco_total)}
-                    </td>
+                    <td style={{ ...td, ...s.tdCenter }}>{item.quantidade}</td>
+                    <td style={{ ...td, ...s.tdRight }}>{fmt(item.preco_unitario)}</td>
+                    <td style={{ ...td, ...s.tdRight }}>{fmt(item.preco_total)}</td>
                   </tr>
                 );
               })}
@@ -448,7 +448,7 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
           {/* ── RODAPÉ ── */}
           <div style={s.rodape}>
             <span style={s.rodapeLeft}>
-              Documento gerado em {new Date().toLocaleDateString("pt-BR")} — {clinicaNome}
+              {clinicaNome} — Documento gerado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
             </span>
             <span style={s.rodapeRight}>Página 1 de 1</span>
           </div>
