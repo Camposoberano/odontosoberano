@@ -4,7 +4,20 @@ import {
   pageStyle, DocumentoHeader, DocumentoFooter, BRAND, InfoBar, InfoRow,
 } from './DocumentoBase';
 
-interface Props { vars: DocumentoVars; }
+interface ItemContrato {
+  nome_procedimento: string;
+  dente_numero?: string | null;
+  quantidade?: number | string;
+  preco_unitario?: number | string;
+  preco_total?: number | string;
+}
+
+interface Props { vars: DocumentoVars; itens?: ItemContrato[]; }
+
+const fmtMoeda = (v?: number | string | null) => {
+  const n = typeof v === 'string' ? parseFloat(v) : (v ?? 0);
+  return (isNaN(n) ? 0 : n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
 
 function P({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return <p style={{ fontSize: 10.5, lineHeight: 1.7, margin: '0 0 6px', color: '#374151', ...style }}>{children}</p>;
@@ -34,7 +47,7 @@ function Cl({ num, titulo, children }: { num: string; titulo?: string; children:
   );
 }
 
-export const ContratoTemplate = forwardRef<HTMLDivElement, Props>(({ vars }, ref) => {
+export const ContratoTemplate = forwardRef<HTMLDivElement, Props>(({ vars, itens }, ref) => {
   const pacEndereco = [vars.PACIENTE_RUA, vars.PACIENTE_NUMERO].filter(Boolean).join(', ');
 
   return (
@@ -86,14 +99,47 @@ export const ContratoTemplate = forwardRef<HTMLDivElement, Props>(({ vars }, ref
 
         <Cl num="CLÁUSULA 1ª">
           <P>O presente instrumento tem por objeto a prestação de serviços pela CONTRATADA apta e habilitada à realização plena e segura do(s) procedimento(s) abaixo discriminado(s) no(a) paciente <strong>{vars.PACIENTE_NOME || '[Nome do Paciente]'}</strong>:</P>
-          <div style={{
-            border: `1px solid ${BRAND.dourado}`, borderRadius: 6,
-            padding: '8px 12px', margin: '6px 0 8px',
-            fontSize: 10.5, minHeight: 32, background: BRAND.fundo,
-            whiteSpace: 'pre-line',
-          }}>
-            {vars.CONTRATO_TRATAMENTO || vars.ORCAMENTO_PROCEDIMENTOS || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>[Descrição do tratamento]</span>}
-          </div>
+          {itens && itens.length > 0 ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0', fontSize: 10.5 }}>
+              <thead>
+                <tr style={{ backgroundColor: BRAND.preto }}>
+                  <th style={{ padding: '7px 10px', color: '#fff', textAlign: 'left', fontWeight: 700, letterSpacing: 0.4 }}>Procedimento</th>
+                  <th style={{ padding: '7px 10px', color: '#fff', textAlign: 'center', width: 60, fontWeight: 700 }}>Dente</th>
+                  <th style={{ padding: '7px 10px', color: '#fff', textAlign: 'center', width: 45, fontWeight: 700 }}>Qtd</th>
+                  <th style={{ padding: '7px 10px', color: '#fff', textAlign: 'right', width: 100, fontWeight: 700 }}>Valor Unit.</th>
+                  <th style={{ padding: '7px 10px', color: '#fff', textAlign: 'right', width: 100, fontWeight: 700 }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itens.map((item, idx) => (
+                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? BRAND.fundo : '#fff', borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '7px 10px', color: '#374151' }}>{item.nome_procedimento}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: '#374151' }}>{item.dente_numero ?? '—'}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: '#374151' }}>{item.quantidade ?? 1}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'right', color: '#374151' }}>{fmtMoeda(item.preco_unitario)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: BRAND.preto }}>{fmtMoeda(item.preco_total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ borderTop: `2px solid ${BRAND.dourado}` }}>
+                  <td colSpan={4} style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, fontSize: 11, color: BRAND.preto }}>TOTAL:</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, fontSize: 12, color: BRAND.preto }}>
+                    {vars.CONTRATO_VALOR_TOTAL || vars.ORCAMENTO_VALOR_TOTAL || fmtMoeda(itens.reduce((s, i) => s + (parseFloat(String(i.preco_total || 0))), 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : (
+            <div style={{
+              border: `1px solid ${BRAND.dourado}`, borderRadius: 6,
+              padding: '8px 12px', margin: '6px 0 8px',
+              fontSize: 10.5, minHeight: 32, background: BRAND.fundo,
+              whiteSpace: 'pre-line',
+            }}>
+              {vars.CONTRATO_TRATAMENTO || vars.ORCAMENTO_PROCEDIMENTOS || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>[Descrição do tratamento]</span>}
+            </div>
+          )}
           <P><strong>Parágrafo Primeiro:</strong> Os serviços odontológicos contratados compreendem a realização dos procedimentos contratados nas datas e horários de acordo com agendamento prévio.</P>
           <P><strong>Parágrafo Segundo:</strong> A CONTRATADA resta também autorizada a realizar procedimentos não referidos na Cláusula Primeira, desde que no decorrer do ato odontológico verifique-se a sua viabilidade, desde que haja anuência do(a) CONTRATANTE.</P>
           <P><strong>Parágrafo Terceiro:</strong> A CONTRATANTE declara-se ciente dos produtos e materiais utilizados, bem como tem plena consciência de que a durabilidade pode sofrer oscilações em razão de vetores imponderáveis, especialmente a conduta do(a) CONTRATANTE frente aos serviços prestados.</P>

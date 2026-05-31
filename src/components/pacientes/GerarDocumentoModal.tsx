@@ -506,7 +506,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
         CONTRATO_VALOR_TOTAL: extras.valor_total || vars.ORCAMENTO_VALOR_TOTAL || '',
         CONTRATO_VALOR_SERVICOS: extras.valor_servicos || '',
       };
-      return <ContratoTemplate ref={templateRef} vars={contratoVars} />;
+      return <ContratoTemplate ref={templateRef} vars={contratoVars} itens={orcamento?.orcamento_itens ?? []} />;
     }
     if (isTCLE) return <TCLETemplate ref={templateRef} vars={vars} tipo={tipo} extras={extras} />;
     if (tipo === 'atestado') {
