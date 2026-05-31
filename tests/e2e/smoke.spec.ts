@@ -7,7 +7,7 @@ test.describe('Smoke — páginas principais carregam', () => {
   test.beforeEach(async ({ page }) => {
     if (!EMAIL || !PASSWORD) test.skip();
     await page.goto('auth');
-    await page.getByPlaceholder(/e-mail/i).fill(EMAIL);
+    await page.getByPlaceholder("seu@email.com").fill(EMAIL);
     await page.getByPlaceholder(/senha/i).fill(PASSWORD);
     await page.getByRole('button', { name: /entrar/i }).click();
     await expect(page).toHaveURL(/dashboard/, { timeout: 10000 });

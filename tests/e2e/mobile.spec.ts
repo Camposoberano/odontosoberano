@@ -4,7 +4,7 @@ test.describe('Mobile — layout responsivo', () => {
   test('login responsivo no mobile', async ({ page }) => {
     await page.goto('auth');
     // Botão e campos visíveis sem scroll horizontal
-    await expect(page.getByPlaceholder(/e-mail/i)).toBeInViewport();
+    await expect(page.getByPlaceholder("seu@email.com")).toBeInViewport();
     await expect(page.getByRole('button', { name: /entrar/i })).toBeInViewport();
 
     // Sem overflow horizontal
