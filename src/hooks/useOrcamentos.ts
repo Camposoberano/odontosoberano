@@ -94,7 +94,6 @@ export function useOrcamentos() {
           dentista:dentistas(id, nome, cro),
           orcamento_itens(*)
         `)
-        .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
