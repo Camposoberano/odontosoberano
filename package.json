@@ -17,7 +17,9 @@
     "test:safari": "playwright test --project=Safari",
     "test:firefox": "playwright test --project=Firefox",
     "test:mobile": "playwright test --project=\"iPhone 14\" --project=\"Pixel 7\"",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "test:visual": "powershell -ExecutionPolicy Bypass -File tests/run-visual.ps1",
+    "test:visual:prod": "powershell -ExecutionPolicy Bypass -File tests/run-visual.ps1 -Url https://soberano.pro/belem/"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -17,16 +17,17 @@ export default defineConfig({
     video: 'on-first-retry',
   },
   projects: [
-    // Desktop
-    { name: 'Chrome',  use: { ...devices['Desktop Chrome'] } },
-    { name: 'Firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'Safari',  use: { ...devices['Desktop Safari'] } },  // WebKit
-    { name: 'Edge',    use: { ...devices['Desktop Edge'] } },
+    // Os 6 que o usuário quer ver lado a lado
+    { name: 'iPhone',   use: { ...devices['iPhone 14'] } },
+    { name: 'Android',  use: { ...devices['Pixel 7'] } },
+    { name: 'Safari',   use: { ...devices['Desktop Safari'] } },
+    { name: 'Opera',    use: { ...devices['Desktop Chrome'], userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 OPR/110.0.0.0' } },
+    { name: 'Chrome',   use: { ...devices['Desktop Chrome'] } },
+    { name: 'MacBook',  use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } } },
 
-    // Mobile
-    { name: 'iPhone 14',      use: { ...devices['iPhone 14'] } },
-    { name: 'Pixel 7',        use: { ...devices['Pixel 7'] } },
-    { name: 'iPad Pro',       use: { ...devices['iPad Pro 11'] } },
+    // Extra (smoke tests completos)
+    { name: 'Firefox',  use: { ...devices['Desktop Firefox'] } },
+    { name: 'Edge',     use: { ...devices['Desktop Edge'] } },
   ],
 
   // Sobe o dev server automaticamente antes dos testes
