@@ -767,7 +767,7 @@ export default function OrcamentoDetalhe() {
           clinicaEndereco={clinica ? [clinica.endereco, clinica.numero, clinica.bairro, clinica.cidade, clinica.estado].filter(Boolean).join(', ') : "Belém, PA"}
           clinicaTelefone={clinica?.telefone ?? clinica?.celular ?? ""}
           clinicaCNPJ={clinica?.cnpj ?? ""}
-          logoUrl={clinica?.logo_base64 ?? "/belem/logo-ib.jpg"}
+          logoUrl={clinica?.logo_base64 ?? `${import.meta.env.BASE_URL}logo-ib.jpg`}
         />
       </div>
     </DashboardLayout>

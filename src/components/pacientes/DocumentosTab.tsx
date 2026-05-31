@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Loader2, FilePlus, FileText, Download, Trash2 } from 'lucide-react';
 import { useDocumentos, Documento } from '@/hooks/useDocumentos';
 import { useDentistas } from '@/hooks/useDentistas';
 import { useInformacoesClinica } from '@/hooks/useInformacoesClinica';
+import { useAnamnese } from '@/hooks/useAnamnese';
 import { Paciente } from '@/hooks/usePacientes';
 import { TIPOS_DOCUMENTO, TipoDocumento, exportarDocumentoPDF, buildVars } from '@/utils/documentoUtils';
 import { GerarDocumentoModal } from './GerarDocumentoModal';
@@ -13,6 +14,7 @@ import { ContratoTemplate } from '@/components/documentos/ContratoTemplate';
 import { TCLETemplate } from '@/components/documentos/TCLETemplate';
 import { AtestadoTemplate } from '@/components/documentos/AtestadoTemplate';
 import { ReceituarioPDFTemplate } from '@/components/documentos/ReceituarioPDFTemplate';
+import { AnamnesePDFTemplate, TipoAnamnese } from '@/components/documentos/AnamnesePDFTemplate';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -54,18 +56,40 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
   const { documentos, loading, deleteDocumento } = useDocumentos(pacienteId);
   const { dentistas } = useDentistas();
   const { informacoes: clinica } = useInformacoesClinica();
+  const { data: anamneseData } = useAnamnese(pacienteId);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Documento | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadDoc, setDownloadDoc] = useState<Documento | null>(null);
 
-  const handleDownload = async (doc: Documento) => {
-    const { vars, extras, dentistaId } = doc.conteudo_json as any;
-    if (!vars) { toast.error('Dados do documento inválidos'); return; }
+  // Dispara export após o template renderizar no DOM
+  useEffect(() => {
+    if (!downloadDoc) return;
+    const t = setTimeout(async () => {
+      try {
+        await exportarDocumentoPDF('documento-pdf', `${downloadDoc.titulo}.pdf`);
+      } catch {
+        toast.error('Erro ao baixar PDF');
+      } finally {
+        setDownloadDoc(null);
+        setDownloadingId(null);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [downloadDoc]);
 
+  const handleDownload = (doc: Documento) => {
     setDownloadingId(doc.id);
-    try {
-      const dentista = dentistas.find((d: any) => d.id === dentistaId);
-      const fullVars = buildVars(paciente, clinica ? {
+    setDownloadDoc(doc);
+  };
+
+  const renderDownloadTemplate = () => {
+    if (!downloadDoc) return null;
+    const { vars: savedVars = {}, extras = {}, dentistaId } = downloadDoc.conteudo_json as any;
+    const dentista = dentistas.find((d: any) => d.id === dentistaId);
+    const freshVars = buildVars(
+      paciente,
+      clinica ? {
         nome: clinica.nome_clinica,
         cnpj: clinica.cnpj,
         cidade: clinica.cidade,
@@ -75,15 +99,34 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
         cro_responsavel: clinica.cro_clinica,
         dentista_responsavel: dentista?.nome,
         logo_url: clinica.logo_base64,
-      } : undefined, undefined, dentista);
+      } : undefined,
+      undefined,
+      dentista,
+    );
+    const vars = { ...savedVars, ...freshVars };
+    const tipo = downloadDoc.tipo;
 
-      // Render no div oculto já montado
-      await exportarDocumentoPDF('documento-pdf-download', `${doc.titulo}.pdf`);
-    } catch {
-      toast.error('Erro ao baixar PDF');
-    } finally {
-      setDownloadingId(null);
-    }
+    if (tipo === 'contrato') return <ContratoTemplate vars={vars} />;
+    if (tipo.startsWith('tcle_')) return <TCLETemplate vars={vars} tipo={tipo as any} extras={extras} />;
+    if (tipo === 'atestado') return (
+      <AtestadoTemplate
+        vars={vars}
+        procedimentoRealizado={extras.procedimento}
+        horas={extras.horas}
+        tipoAfastamento={(extras.tipo_afastamento as 'integral' | 'parcial') ?? 'integral'}
+        horarioAfastamento={extras.horario_afastamento}
+        cid10={extras.cid10}
+      />
+    );
+    if (tipo === 'receituario_pdf') return <ReceituarioPDFTemplate vars={vars} medicamentos={[]} />;
+    if (tipo.startsWith('anamnese_')) return (
+      <AnamnesePDFTemplate
+        vars={vars}
+        tipo={tipo as TipoAnamnese}
+        anamnese={anamneseData ?? undefined}
+      />
+    );
+    return null;
   };
 
   if (loading) {
@@ -209,6 +252,11 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Template oculto renderizado antes do export PDF */}
+      <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
+        {renderDownloadTemplate()}
+      </div>
     </div>
   );
 }

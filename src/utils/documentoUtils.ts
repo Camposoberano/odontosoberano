@@ -90,7 +90,7 @@ export function buildVars(
     CLINICA_TELEFONE: clinicaConfig?.telefone ?? '',
     CLINICA_CRO_RESPONSAVEL: clinicaConfig?.cro_responsavel ?? dentista?.cro ?? '',
     CLINICA_DENTISTA_NOME: clinicaConfig?.dentista_responsavel ?? dentista?.nome ?? '',
-    CLINICA_LOGO_URL: clinicaConfig?.logo_url ?? '/belem/logo-ib.jpg',
+    CLINICA_LOGO_URL: clinicaConfig?.logo_url ?? `${import.meta.env.BASE_URL}logo-ib.jpg`,
 
     DENTISTA_NOME: dentista?.nome ?? clinicaConfig?.dentista_responsavel ?? '',
     DENTISTA_CRO: dentista?.cro ?? clinicaConfig?.cro_responsavel ?? '',

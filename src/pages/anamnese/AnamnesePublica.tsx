@@ -190,7 +190,7 @@ function SuccessScreen({ nome, alertas, respostas, detalhes }: {
 }) {
   const handleImprimir = () => {
     const data = new Date().toLocaleDateString('pt-BR');
-    const logoUrl = `${window.location.origin}/belem/logo-ib.jpg`;
+    const logoUrl = `${window.location.origin}${import.meta.env.BASE_URL}logo-ib.jpg`;
 
     const secoes = SECOES.map(sec => {
       const pergsPreenchidas = sec.perguntas.filter(p => respostas[p.id]);
@@ -225,7 +225,7 @@ function SuccessScreen({ nome, alertas, respostas, detalhes }: {
           ${alertas.map(a => `<div style="font-size:10px;color:#dc2626">• ${a}</div>`).join('')}
         </div>` : '';
 
-    const html = `<!DOCTYPE html><html><head><title>Anamnese — ${nome}</title>
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Anamnese - ${nome}</title>
     <style>
       body{margin:0;font-family:Arial,sans-serif;background:#fff}
       @media print{@page{margin:15mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
@@ -272,9 +272,16 @@ function SuccessScreen({ nome, alertas, respostas, detalhes }: {
     <script>setTimeout(()=>{window.print()},400)</script>
     </body></html>`;
 
-    const w = window.open('', '_blank')!;
-    w.document.write(html);
-    w.document.close();
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+    const w = window.open(blobUrl, '_blank');
+    if (!w) {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `anamnese-${nome.replace(/\s+/g, '-').toLowerCase()}.html`;
+      a.click();
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   };
 
   return (

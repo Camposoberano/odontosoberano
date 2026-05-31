@@ -2,7 +2,7 @@ import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { get, set, del } from "idb-keyval";
@@ -76,13 +76,20 @@ const queryClient = new QueryClient({
   },
 });
 
-const persister = createAsyncStoragePersister({
-  storage: {
-    getItem: async (key) => await get(key),
-    setItem: async (key, value) => await set(key, value),
-    removeItem: async (key) => await del(key),
-  },
-});
+function createPersister() {
+  try {
+    return createAsyncStoragePersister({
+      storage: {
+        getItem: async (key) => await get(key),
+        setItem: async (key, value) => await set(key, value),
+        removeItem: async (key) => await del(key),
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+const persister = createPersister();
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -177,18 +184,24 @@ const AppContent = () => {
   useRealTimeSync();
 
   return (
-    <BrowserRouter basename="/belem/">
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AnimatedRoutes />
     </BrowserRouter>
   );
 };
 
+const Providers = ({ children }: { children: React.ReactNode }) =>
+  persister ? (
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+      {children}
+    </PersistQueryClientProvider>
+  ) : (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+
 const App = () => (
   <ErrorBoundary>
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister }}
-    >
+    <Providers>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
@@ -196,7 +209,7 @@ const App = () => (
           <AppContent />
         </TooltipProvider>
       </AuthProvider>
-    </PersistQueryClientProvider>
+    </Providers>
   </ErrorBoundary>
 );
 

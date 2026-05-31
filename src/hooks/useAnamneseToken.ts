@@ -17,7 +17,7 @@ export interface AnamneseToken {
 }
 
 export function buildAnamneseUrl(token: string): string {
-  return `${window.location.origin}/belem/anamnese/${token}`;
+  return `${window.location.origin}${import.meta.env.BASE_URL}anamnese/${token}`;
 }
 
 export function useTokenInfo(token: string | undefined) {
