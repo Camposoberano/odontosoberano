@@ -139,13 +139,23 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
         ).toLocaleDateString("pt-BR")
       : null;
 
-    const descontoValor = orcamento.desconto_valor > 0
+    const totalBruto = parseFloat(String(orcamento.total_bruto)) || 0;
+    const totalLiquido = parseFloat(String(orcamento.total_liquido)) || 0;
+    const descontoValorRaw = parseFloat(String(orcamento.desconto_valor)) || 0;
+    const descontoValor = descontoValorRaw > 0
       ? orcamento.desconto_tipo === "percentual"
-        ? (orcamento.total_bruto * orcamento.desconto_valor) / 100
-        : orcamento.desconto_valor
+        ? (totalBruto * descontoValorRaw) / 100
+        : descontoValorRaw
       : 0;
 
-    const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const fmt = (v: number | string | null | undefined) => {
+      const n = typeof v === "string" ? parseFloat(v) : (v ?? 0);
+      return (isNaN(n) ? 0 : n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    };
+    const qty = (v: number | string | null | undefined) => {
+      const n = typeof v === "string" ? parseInt(v, 10) : (v ?? 1);
+      return isNaN(n as number) ? 1 : n;
+    };
 
     const s: Record<string, React.CSSProperties> = {
       page: {
@@ -361,7 +371,7 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
                   <tr key={item.id}>
                     <td style={td}>{item.nome_procedimento}</td>
                     <td style={{ ...td, ...s.tdCenter }}>{item.dente_numero ?? "—"}</td>
-                    <td style={{ ...td, ...s.tdCenter }}>{item.quantidade}</td>
+                    <td style={{ ...td, ...s.tdCenter }}>{qty(item.quantidade)}</td>
                     <td style={{ ...td, ...s.tdRight }}>{fmt(item.preco_unitario)}</td>
                     <td style={{ ...td, ...s.tdRight }}>{fmt(item.preco_total)}</td>
                   </tr>
@@ -373,21 +383,21 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
           {/* ── TOTAIS ── */}
           <div style={s.totaisBox}>
             <div style={s.totaisInner}>
-              {orcamento.total_bruto !== orcamento.total_liquido && (
+              {totalBruto !== totalLiquido && (
                 <div style={s.totaisRow}>
                   <span style={s.totaisLabel}>Subtotal</span>
-                  <span>{fmt(orcamento.total_bruto)}</span>
+                  <span>{fmt(totalBruto)}</span>
                 </div>
               )}
               {descontoValor > 0 && (
                 <div style={s.descontoRow}>
-                  <span>Desconto{orcamento.desconto_tipo === "percentual" ? ` (${orcamento.desconto_valor}%)` : ""}</span>
+                  <span>Desconto{orcamento.desconto_tipo === "percentual" ? ` (${descontoValorRaw}%)` : ""}</span>
                   <span>- {fmt(descontoValor)}</span>
                 </div>
               )}
               <div style={s.totalRow}>
                 <span>Valor Total:</span>
-                <span>{fmt(orcamento.total_liquido)}</span>
+                <span>{fmt(totalLiquido)}</span>
               </div>
               {orcamento.forma_pagamento && (
                 <div style={s.pagamentoRow}>
