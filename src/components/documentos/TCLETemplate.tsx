@@ -41,14 +41,31 @@ function TcleCirurgia({ vars, extras }: { vars: DocumentoVars; extras?: Record<s
       <Section titulo="2. RISCOS E COMPLICAÇÕES POSSÍVEIS">
         <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.7 }}>
           <li>Dor, inchaço e sangramento nos primeiros dias</li>
-          <li>Infecção pós-operatória (risco baixo com cuidados adequados)</li>
-          <li>Parestesia temporária (dormência) na região operada</li>
-          <li>Alveolite (inflamação do alvéolo — "dry socket")</li>
+          <li>Hemorragia persistente após o procedimento — pode requerer hemostasia cirúrgica especializada</li>
+          <li>Edema excessivo com dificuldade temporária de alimentação e fala</li>
+          <li>Infecção pós-operatória local (risco baixo com cuidados adequados)</li>
+          <li>Infecções cervicofaciais extensas (celulite difusa com comprometimento dos espaços fasciais — raro)</li>
+          <li>Parestesia temporária ou permanente (dormência) em lábio, língua ou mento</li>
+          <li>Alveolite (inflamação do alvéolo — "dry socket" — entre o 2º e 5º dia pós-op)</li>
           <li>Comunicação bucosinusal (em extrações de molares superiores)</li>
           <li>Fratura radicular residual (raramente necessitando nova intervenção)</li>
-          <li>Reação à anestesia (rara, tratável imediatamente)</li>
+          <li>Reação à anestesia ou a materiais utilizados (rara, tratável imediatamente)</li>
           <li>Sutura: pode ser necessária e deverá ser removida em {extras?.sutura_dias || '7'} dias</li>
         </ul>
+      </Section>
+
+      <Section titulo="2A. COMPLICAÇÕES DE EMERGÊNCIA (RARAS, MAS POSSÍVEIS)">
+        <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.7 }}>
+          <li><strong>Obstrução das vias aéreas</strong> — por edema severo, hematoma extenso, sangramento ou deslocamento de corpo estranho; constitui emergência médica grave</li>
+          <li><strong>Reação anafilática</strong> — reação alérgica grave a medicamentos, látex ou materiais (sinais: dispneia, edema de face e língua, urticária, hipotensão)</li>
+          <li><strong>Hemorragia grave</strong> — sangramento intenso não responsivo às medidas locais, com risco de choque hipovolêmico</li>
+          <li><strong>Aspiração ou deglutição de instrumentos/fragmentos</strong> — brocas, fragmentos dentários ou corpos estranhos; aspiração para o trato respiratório constitui emergência imediata</li>
+          <li><strong>Perfuração de estruturas anatômicas</strong> — seio maxilar, cavidade nasal ou canal mandibular (lesão do nervo alveolar inferior)</li>
+          <li><strong>Emergências médicas sistêmicas no consultório</strong> — síncope, crise convulsiva, hipoglicemia, crise hipertensiva, angina ou infarto agudo do miocárdio, acidente vascular cerebral (AVC)</li>
+        </ul>
+        <p style={{ margin: '6px 0 0', fontSize: 10, color: '#6b7280' }}>
+          Em qualquer das situações acima, o serviço médico de emergência será acionado imediatamente e o paciente encaminhado ao ambiente hospitalar quando indicado.
+        </p>
       </Section>
 
       <Section titulo="3. BENEFÍCIOS ESPERADOS">
@@ -104,12 +121,36 @@ function TcleImplante({ vars, extras }: { vars: DocumentoVars; extras?: Record<s
       <Section titulo="3. RISCOS E COMPLICAÇÕES">
         <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.7 }}>
           <li>Dor e edema pós-operatório (esperados e controláveis)</li>
-          <li>Infecção (peri-implantite)</li>
-          <li>Falha na osseointegração (necessidade de remoção e nova tentativa)</li>
-          <li>Parestesia temporária ou permanente (rara)</li>
-          <li>Perfuração do seio maxilar em implantes superiores posteriores</li>
+          <li>Hemorragia pós-operatória persistente — pode requerer hemostasia especializada</li>
+          <li>Edema excessivo com dificuldade temporária de alimentação e fala</li>
+          <li>Infecção local ao redor do implante ou sítio cirúrgico</li>
+          <li>Mucosite peri-implantar (inflamação reversível dos tecidos moles peri-implantares)</li>
+          <li>Peri-implantite (infecção com perda óssea ao redor do implante — pode levar à remoção)</li>
+          <li>Exposição de membrana ou material de enxerto — necessita avaliação para evitar contaminação</li>
+          <li>Mobilidade precoce do implante — falha inicial da osseointegração, exige reavaliação do tratamento</li>
+          <li>Falha definitiva na osseointegração (necessidade de remoção e nova tentativa)</li>
+          <li>Parestesia temporária ou permanente em lábio, língua ou mento</li>
+          <li>Lesão do nervo alveolar inferior (parestesia de lábio inferior e mento)</li>
+          <li>Afrouxamento de parafusos protéticos</li>
           <li>Fratura do implante (rara)</li>
+          <li>Perfuração do seio maxilar em implantes superiores posteriores</li>
+          <li>Comunicação buco-sinusal</li>
+          <li>Deslocamento do implante para o interior do seio maxilar (raro)</li>
         </ul>
+      </Section>
+
+      <Section titulo="3A. COMPLICAÇÕES DE EMERGÊNCIA (RARAS, MAS POSSÍVEIS)">
+        <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.7 }}>
+          <li><strong>Obstrução das vias aéreas</strong> — por edema severo, hematoma extenso ou sangramento; emergência médica grave</li>
+          <li><strong>Reação anafilática</strong> — reação alérgica grave a medicamentos, látex, titânio ou materiais utilizados (dispneia, edema de face e língua, urticária, hipotensão)</li>
+          <li><strong>Hemorragia grave</strong> — sangramento intenso não responsivo às medidas locais, com risco de choque hipovolêmico</li>
+          <li><strong>Aspiração ou deglutição de componentes</strong> — parafusos, componentes protéticos ou instrumentos; aspiração constitui emergência imediata</li>
+          <li><strong>Infecções cervicofaciais extensas</strong> — celulite difusa com comprometimento dos espaços fasciais; podem evoluir para comprometimento respiratório</li>
+          <li><strong>Emergências médicas sistêmicas no consultório</strong> — síncope, crise convulsiva, hipoglicemia, crise hipertensiva, angina ou infarto agudo do miocárdio, acidente vascular cerebral (AVC)</li>
+        </ul>
+        <p style={{ margin: '6px 0 0', fontSize: 10, color: '#6b7280' }}>
+          Em qualquer das situações acima, o serviço médico de emergência será acionado imediatamente e o paciente encaminhado ao ambiente hospitalar quando indicado.
+        </p>
       </Section>
 
       <Section titulo="4. ENXERTO ÓSSEO (SE APLICÁVEL)">
