@@ -142,7 +142,8 @@ export function useContasPagar() {
       const { error } = await supabase
         .from('contas_pagar')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user!.id);
 
       if (error) throw error;
 

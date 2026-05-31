@@ -138,7 +138,8 @@ export function useFluxoCaixa() {
       const { error } = await supabase
         .from("fluxo_caixa")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user!.id);
 
       if (error) throw error;
     },

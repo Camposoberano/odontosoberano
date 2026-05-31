@@ -100,7 +100,8 @@ export function useComissoes() {
       const { error } = await supabase
         .from("comissoes")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user!.id);
 
       if (error) throw error;
     },

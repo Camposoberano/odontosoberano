@@ -8,12 +8,16 @@
  */
 export function getBrasiliaDateTime(): string {
   const now = new Date();
-  
-  // Obter timestamp em UTC e subtrair 3 horas para Brasília (GMT-3)
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const brasiliaTime = new Date(utc - (3 * 3600000));
 
-  return brasiliaTime.toISOString();
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    fractionalSecondDigits: 3,
+  }).formatToParts(now);
+
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '00';
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}.${get('fractionalSecond')}`;
 }
 
 /**
@@ -22,15 +26,14 @@ export function getBrasiliaDateTime(): string {
  */
 export function getBrasiliaDate(): string {
   const now = new Date();
-  
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const brasiliaDate = new Date(utc - (3 * 3600000));
 
-  const year = brasiliaDate.getFullYear();
-  const month = String(brasiliaDate.getMonth() + 1).padStart(2, '0');
-  const day = String(brasiliaDate.getDate()).padStart(2, '0');
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now);
 
-  return `${year}-${month}-${day}`;
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '00';
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
 /**

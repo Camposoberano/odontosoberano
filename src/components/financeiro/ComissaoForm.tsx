@@ -81,7 +81,7 @@ export function ComissaoForm({ open, onOpenChange, onSubmit, comissao }: Comissa
 
   // Calcular valor da comissão automaticamente
   useEffect(() => {
-    const valorComissao = (formData.valor_total_procedimentos * formData.percentual_comissao) / 100;
+    const valorComissao = parseFloat(((formData.valor_total_procedimentos * formData.percentual_comissao) / 100).toFixed(2));
     setFormData(prev => ({ ...prev, valor_comissao: valorComissao }));
   }, [formData.valor_total_procedimentos, formData.percentual_comissao]);
 
@@ -200,7 +200,7 @@ export function ComissaoForm({ open, onOpenChange, onSubmit, comissao }: Comissa
                 step="0.01"
                 min="0"
                 value={formData.valor_total_procedimentos}
-                onChange={(e) => setFormData({ ...formData, valor_total_procedimentos: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, valor_total_procedimentos: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                 required
               />
             </div>
@@ -214,7 +214,7 @@ export function ComissaoForm({ open, onOpenChange, onSubmit, comissao }: Comissa
                 min="0"
                 max="100"
                 value={formData.percentual_comissao}
-                onChange={(e) => setFormData({ ...formData, percentual_comissao: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, percentual_comissao: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                 required
               />
             </div>
