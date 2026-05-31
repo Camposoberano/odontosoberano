@@ -25,6 +25,10 @@ export default defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
           cleanupOutdatedCaches: true,
+          skipWaiting: true,
+          clientsClaim: true,
+          navigateFallback: `${base}index.html`,
+          navigateFallbackDenylist: [/\/assets\//],
         },
         manifest: {
           name: 'Instituto Belém - Sistema de Gestão',
@@ -54,6 +58,9 @@ export default defineConfig(({ mode }) => {
       }),
       mode === 'development' && componentTagger(),
     ].filter(Boolean),
+    build: {
+      target: ['es2020', 'safari14'],
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
