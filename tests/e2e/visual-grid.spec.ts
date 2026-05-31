@@ -3,18 +3,17 @@ import fs from 'fs';
 import path from 'path';
 
 const OUT_DIR = path.join(process.cwd(), 'tests', 'screenshots');
+const GRID_PROJECTS = ['iPhone', 'Android', 'Safari', 'Opera', 'Chrome', 'MacBook'];
 
 test.beforeAll(() => {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 });
 
-// Só roda nos 6 projetos do grid visual
-test.skip(({ projectName }) =>
-  !['iPhone', 'Android', 'Safari', 'Opera', 'Chrome', 'MacBook'].includes(projectName),
-  'Apenas projetos do grid visual'
-);
+test('captura tela de login', async ({ page }, testInfo) => {
+  const projectName = testInfo.project.name;
 
-test('captura tela de login', async ({ page, projectName }) => {
+  test.skip(!GRID_PROJECTS.includes(projectName), 'Apenas projetos do grid visual');
+
   await page.goto('/auth');
   await page.waitForLoadState('networkidle');
   await page.screenshot({
