@@ -106,6 +106,7 @@ export function buildVars(
       : '',
 
     DATA_HOJE: now.toLocaleDateString('pt-BR'),
+    DATA_HOJE_EXTENSO: now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }),
     HORA_ATUAL: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     DOCUMENTO_NUMERO: documentoNumero ?? '',
     ASSINATURA_DIGITAL: '',

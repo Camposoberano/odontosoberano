@@ -99,6 +99,24 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
 
   const setExtra = (k: string, v: string) => setExtras(prev => ({ ...prev, [k]: v }));
 
+  const buscarCEP = useCallback(async (cep: string) => {
+    const clean = cep.replace(/\D/g, '');
+    if (clean.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setExtras(prev => ({
+          ...prev,
+          pac_rua: prev.pac_rua || data.logradouro || '',
+          pac_bairro: prev.pac_bairro || data.bairro || '',
+          pac_cidade: prev.pac_cidade || data.localidade || '',
+          pac_estado: prev.pac_estado || data.uf || '',
+        }));
+      }
+    } catch {}
+  }, []);
+
   const renderExtras = () => {
     if (!tipo) return null;
 
@@ -183,6 +201,102 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
         <div>
           <Label>Número de sessões</Label>
           <Input type="number" value={extras.sessoes ?? ''} onChange={e => setExtra('sessoes', e.target.value)} />
+        </div>
+      </div>
+    );
+
+    if (tipo === 'contrato') return (
+      <div className="space-y-4">
+        {/* Dados do Paciente */}
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Dados do Paciente — confira e corrija se necessário</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label>Nome</Label>
+              <Input value={extras.pac_nome ?? paciente.nome ?? ''} onChange={e => setExtra('pac_nome', e.target.value)} />
+            </div>
+            <div>
+              <Label>CPF</Label>
+              <Input value={extras.pac_cpf ?? paciente.cpf ?? ''} onChange={e => setExtra('pac_cpf', e.target.value)} placeholder="000.000.000-00" />
+            </div>
+            <div>
+              <Label>Data de Nascimento</Label>
+              <Input value={extras.pac_nascimento ?? vars.PACIENTE_NASCIMENTO ?? ''} onChange={e => setExtra('pac_nascimento', e.target.value)} placeholder="DD/MM/AAAA" />
+            </div>
+            <div>
+              <Label>CEP <span className="text-[10px] text-slate-400">(auto-preenche endereço)</span></Label>
+              <Input
+                value={extras.pac_cep ?? paciente.cep ?? ''}
+                onChange={e => {
+                  setExtra('pac_cep', e.target.value);
+                  buscarCEP(e.target.value);
+                }}
+                placeholder="00000-000"
+              />
+            </div>
+            <div>
+              <Label>Número</Label>
+              <Input value={extras.pac_numero ?? paciente.numero ?? ''} onChange={e => setExtra('pac_numero', e.target.value)} placeholder="Nº" />
+            </div>
+            <div className="col-span-2">
+              <Label>Rua / Avenida</Label>
+              <Input value={extras.pac_rua ?? paciente.rua ?? ''} onChange={e => setExtra('pac_rua', e.target.value)} placeholder="Preenchido pelo CEP" />
+            </div>
+            <div>
+              <Label>Bairro</Label>
+              <Input value={extras.pac_bairro ?? paciente.bairro ?? ''} onChange={e => setExtra('pac_bairro', e.target.value)} />
+            </div>
+            <div>
+              <Label>Cidade</Label>
+              <Input value={extras.pac_cidade ?? paciente.cidade ?? ''} onChange={e => setExtra('pac_cidade', e.target.value)} />
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <Input value={extras.pac_estado ?? paciente.estado ?? ''} onChange={e => setExtra('pac_estado', e.target.value)} placeholder="PA" />
+            </div>
+          </div>
+        </div>
+
+        {/* Dados da Clínica */}
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Dados da Clínica (Contratada)</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label>Nome / Razão Social</Label>
+              <Input value={extras.cli_nome ?? clinica?.nome_clinica ?? 'Instituto Belém de Odontologia'} onChange={e => setExtra('cli_nome', e.target.value)} />
+            </div>
+            <div>
+              <Label>CNPJ</Label>
+              <Input value={extras.cli_cnpj ?? clinica?.cnpj ?? ''} onChange={e => setExtra('cli_cnpj', e.target.value)} placeholder="00.000.000/0001-00" />
+            </div>
+            <div>
+              <Label>Cidade</Label>
+              <Input value={extras.cli_cidade ?? clinica?.cidade ?? ''} onChange={e => setExtra('cli_cidade', e.target.value)} />
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <Input value={extras.cli_estado ?? clinica?.estado ?? ''} onChange={e => setExtra('cli_estado', e.target.value)} placeholder="PA" />
+            </div>
+          </div>
+        </div>
+
+        {/* Dados do Contrato */}
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Dados do Contrato</p>
+          <div className="space-y-2">
+            <div>
+              <Label>Descrição do Tratamento</Label>
+              <Input value={extras.tratamento ?? vars.ORCAMENTO_PROCEDIMENTOS ?? ''} onChange={e => setExtra('tratamento', e.target.value)} placeholder="Ex: Implante osseointegrado + coroa unitária" />
+            </div>
+            <div>
+              <Label>Valor Total do Contrato</Label>
+              <Input value={extras.valor_total ?? vars.ORCAMENTO_VALOR_TOTAL ?? ''} onChange={e => setExtra('valor_total', e.target.value)} placeholder="Ex: R$ 3.500,00" />
+            </div>
+            <div>
+              <Label>Valor por Serviço (opcional)</Label>
+              <Input value={extras.valor_servicos ?? ''} onChange={e => setExtra('valor_servicos', e.target.value)} placeholder="Ex: R$ 700,00 por sessão" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -372,7 +486,28 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
     const isTCLE = tipo.startsWith('tcle_');
 
     const isAnamnese = tipo.startsWith('anamnese_');
-    if (tipo === 'contrato') return <ContratoTemplate ref={templateRef} vars={vars} />;
+    if (tipo === 'contrato') {
+      const contratoVars = {
+        ...vars,
+        PACIENTE_NOME: extras.pac_nome || vars.PACIENTE_NOME,
+        PACIENTE_CPF: extras.pac_cpf || vars.PACIENTE_CPF,
+        PACIENTE_NASCIMENTO: extras.pac_nascimento || vars.PACIENTE_NASCIMENTO,
+        PACIENTE_CEP: extras.pac_cep || vars.PACIENTE_CEP,
+        PACIENTE_RUA: extras.pac_rua || vars.PACIENTE_RUA,
+        PACIENTE_NUMERO: extras.pac_numero || vars.PACIENTE_NUMERO,
+        PACIENTE_BAIRRO: extras.pac_bairro || vars.PACIENTE_BAIRRO,
+        PACIENTE_CIDADE: extras.pac_cidade || vars.PACIENTE_CIDADE,
+        PACIENTE_ESTADO: extras.pac_estado || vars.PACIENTE_ESTADO,
+        CLINICA_NOME: extras.cli_nome || vars.CLINICA_NOME,
+        CLINICA_CNPJ: extras.cli_cnpj || vars.CLINICA_CNPJ,
+        CLINICA_CIDADE: extras.cli_cidade || vars.CLINICA_CIDADE,
+        CLINICA_ESTADO: extras.cli_estado || vars.CLINICA_ESTADO,
+        CONTRATO_TRATAMENTO: extras.tratamento || vars.ORCAMENTO_PROCEDIMENTOS || '',
+        CONTRATO_VALOR_TOTAL: extras.valor_total || vars.ORCAMENTO_VALOR_TOTAL || '',
+        CONTRATO_VALOR_SERVICOS: extras.valor_servicos || '',
+      };
+      return <ContratoTemplate ref={templateRef} vars={contratoVars} />;
+    }
     if (isTCLE) return <TCLETemplate ref={templateRef} vars={vars} tipo={tipo} extras={extras} />;
     if (tipo === 'atestado') {
       const enderecoClinica = [
