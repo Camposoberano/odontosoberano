@@ -586,7 +586,7 @@ export const TCLETemplate = forwardRef<HTMLDivElement, Props>(({ vars, tipo, ext
         </div>
 
         <p style={{ fontSize: 10.5, textAlign: 'center', color: '#4b5563', fontStyle: 'italic', margin: '0 0 12px' }}>
-          {vars.CLINICA_CIDADE || 'Belém'}, {vars.DATA_HOJE}
+          {vars.CLINICA_NOME || 'Instituto Belém de Odontologia'}, {vars.DATA_HOJE} às {vars.HORA_ATUAL}
         </p>
 
         <BlocoAssinaturas vars={vars} />

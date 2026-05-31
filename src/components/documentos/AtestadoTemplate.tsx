@@ -84,7 +84,7 @@ export const AtestadoTemplate = forwardRef<HTMLDivElement, Props>(
           <div style={{ borderTop: `1px dashed #d1d5db`, margin: '24px 0 16px' }} />
 
           <p style={{ fontSize: 10.5, textAlign: 'center', color: '#4b5563', fontStyle: 'italic', marginBottom: 24 }}>
-            {vars.CLINICA_CIDADE || 'Belém'}, {vars.DATA_HOJE}
+            {vars.CLINICA_NOME || 'Instituto Belém de Odontologia'}, {vars.DATA_HOJE} às {vars.HORA_ATUAL}
           </p>
 
           <div style={{ textAlign: 'center', marginTop: 40 }}>

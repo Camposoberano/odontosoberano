@@ -635,7 +635,7 @@ export const AnamnesePDFTemplate = forwardRef<HTMLDivElement, Props>(({ vars, ti
         {conteudo[tipo]}
         <div style={{ borderTop: '1px dashed #d1d5db', margin: '20px 0 12px' }} />
         <p style={{ fontSize: 10, textAlign: 'center', color: '#4b5563', fontStyle: 'italic', marginBottom: 12 }}>
-          Declaro que as informações acima são verdadeiras. {vars.CLINICA_CIDADE || 'Belém'}, {vars.DATA_HOJE}
+          Declaro que as informações acima são verdadeiras. {vars.CLINICA_NOME || 'Instituto Belém de Odontologia'}, {vars.DATA_HOJE} às {vars.HORA_ATUAL}
         </p>
         <BlocoAssinaturaAnamnese vars={vars} />
         <DocumentoFooter vars={vars} />

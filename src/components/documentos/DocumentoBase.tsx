@@ -102,7 +102,7 @@ export function DocumentoFooter({ vars }: FooterProps) {
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     }}>
       <span style={{ fontSize: 8.5, color: '#9ca3af' }}>
-        Gerado em {vars.DATA_HOJE} — {vars.CLINICA_NOME ?? 'Instituto Belém de Odontologia'}
+        Gerado em {vars.DATA_HOJE} às {vars.HORA_ATUAL} — {vars.CLINICA_NOME ?? 'Instituto Belém de Odontologia'}
       </span>
       <span style={{ fontSize: 8.5, color: '#9ca3af' }}>Documento válido com assinatura</span>
     </div>
