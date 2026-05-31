@@ -5,10 +5,11 @@
 ALTER TABLE orcamentos
   ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- 2. Backfill via pacientes (relação já existe)
+-- 2. Backfill via pacientes — só onde user_id existe em auth.users
 UPDATE orcamentos o
 SET user_id = p.user_id
 FROM pacientes p
+JOIN auth.users u ON u.id = p.user_id
 WHERE o.paciente_id = p.id
   AND o.user_id IS NULL;
 
