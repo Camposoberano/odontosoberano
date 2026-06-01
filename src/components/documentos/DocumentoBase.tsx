@@ -40,52 +40,131 @@ interface HeaderProps {
 }
 
 export function DocumentoHeader({ vars, titulo, subtitulo, numero }: HeaderProps) {
+  const clinicaNome = vars.CLINICA_NOME ?? 'Instituto Belém de Odontologia';
   return (
     <>
-      {/* Stripe superior */}
+      {/* Barra superior gradiente — marca */}
       <div style={{
-        height: 5,
-        background: `linear-gradient(90deg, ${BRAND.preto}, ${BRAND.douradoEscuro}, ${BRAND.dourado})`,
-        borderRadius: '4px 4px 0 0',
+        height: 8,
+        background: `linear-gradient(90deg, ${BRAND.preto} 0%, ${BRAND.douradoEscuro} 55%, ${BRAND.dourado} 100%)`,
       }} />
-      <div style={{ padding: '28px 44px 0' }}>
+
+      {/* Área principal do cabeçalho */}
+      <div style={{
+        padding: '22px 44px 0',
+        background: '#fff',
+      }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          paddingBottom: 18,
-          marginBottom: 20,
-          borderBottom: `3px solid ${BRAND.dourado}`,
+          gap: 24,
         }}>
-          {/* Esquerda: Logo + Clínica */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+
+          {/* ESQUERDA — Identidade visual da clínica */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            {/* Logo ou monograma */}
             {vars.CLINICA_LOGO_URL ? (
-              <img src={vars.CLINICA_LOGO_URL} alt={vars.CLINICA_NOME} style={{ height: 56, objectFit: 'contain', marginBottom: 4 }} />
+              <img
+                src={vars.CLINICA_LOGO_URL}
+                alt={clinicaNome}
+                style={{ height: 72, width: 72, objectFit: 'contain', flexShrink: 0 }}
+              />
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                <div style={{
-                  width: 42, height: 42, borderRadius: 10,
-                  background: `linear-gradient(135deg, ${BRAND.preto}, ${BRAND.douradoEscuro})`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ color: BRAND.dourado, fontSize: 16, fontWeight: 900 }}>IB</span>
-                </div>
-                <span style={{ fontSize: 16, fontWeight: 800, color: BRAND.preto }}>{vars.CLINICA_NOME ?? 'Instituto Belém de Odontologia'}</span>
+              <div style={{
+                width: 64, height: 64, borderRadius: 14, flexShrink: 0,
+                background: `linear-gradient(145deg, ${BRAND.preto} 30%, #2a1f00 100%)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: `2px solid ${BRAND.dourado}`,
+                boxShadow: `0 2px 8px rgba(200,160,40,0.25)`,
+              }}>
+                <span style={{ color: BRAND.dourado, fontSize: 22, fontWeight: 900, letterSpacing: -1 }}>IB</span>
               </div>
             )}
-            {vars.CLINICA_ENDERECO && <span style={{ fontSize: 9.5, color: BRAND.cinza }}>{vars.CLINICA_ENDERECO}</span>}
-            {vars.CLINICA_TELEFONE && <span style={{ fontSize: 9.5, color: BRAND.cinza }}>Tel.: {vars.CLINICA_TELEFONE}</span>}
-            {vars.CLINICA_CNPJ && <span style={{ fontSize: 9.5, color: BRAND.cinza }}>CNPJ: {vars.CLINICA_CNPJ}</span>}
+
+            {/* Nome e dados da clínica */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 2 }}>
+              <span style={{
+                fontSize: 18, fontWeight: 900, color: BRAND.preto,
+                letterSpacing: -0.5, lineHeight: 1.1,
+              }}>{clinicaNome}</span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, color: BRAND.douradoEscuro,
+                textTransform: 'uppercase', letterSpacing: 2,
+              }}>Odontologia Especializada</span>
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {vars.CLINICA_ENDERECO && (
+                  <span style={{ fontSize: 9, color: BRAND.cinza }}>
+                    {[vars.CLINICA_ENDERECO, vars.CLINICA_CIDADE, vars.CLINICA_ESTADO].filter(Boolean).join(' — ')}
+                  </span>
+                )}
+                {vars.CLINICA_TELEFONE && (
+                  <span style={{ fontSize: 9, color: BRAND.cinza }}>Tel.: {vars.CLINICA_TELEFONE}</span>
+                )}
+                {vars.CLINICA_CNPJ && (
+                  <span style={{ fontSize: 9, color: BRAND.cinza }}>CNPJ: {vars.CLINICA_CNPJ}</span>
+                )}
+                {vars.CLINICA_CRO_RESPONSAVEL && (
+                  <span style={{ fontSize: 9, color: BRAND.cinza }}>Resp. Técnico: {vars.CLINICA_DENTISTA_NOME} — CRO {vars.CLINICA_CRO_RESPONSAVEL}</span>
+                )}
+              </div>
+            </div>
           </div>
-          {/* Direita: Tipo de documento + número */}
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: 8, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, margin: 0 }}>Documento Clínico</p>
-            <p style={{ fontSize: 15, fontWeight: 800, color: BRAND.preto, margin: '2px 0 4px' }}>{titulo}</p>
-            {subtitulo && <p style={{ fontSize: 10, color: BRAND.cinza, margin: 0 }}>{subtitulo}</p>}
-            {numero && <p style={{ fontSize: 12, fontWeight: 700, color: BRAND.douradoEscuro, margin: '2px 0 0' }}>Nº {numero}</p>}
-            <p style={{ fontSize: 9.5, color: BRAND.cinza, margin: '4px 0 0' }}>Data: {vars.DATA_HOJE}</p>
+
+          {/* DIREITA — Badge do documento */}
+          <div style={{
+            flexShrink: 0,
+            border: `1.5px solid ${BRAND.dourado}`,
+            borderRadius: 10,
+            padding: '10px 18px',
+            textAlign: 'right',
+            background: BRAND.fundo,
+            minWidth: 150,
+          }}>
+            <p style={{
+              fontSize: 7.5, fontWeight: 800, color: BRAND.douradoEscuro,
+              textTransform: 'uppercase', letterSpacing: 1.5, margin: '0 0 3px',
+            }}>Documento Clínico</p>
+            {numero && (
+              <p style={{ fontSize: 13, fontWeight: 900, color: BRAND.preto, margin: '0 0 4px', letterSpacing: -0.3 }}>
+                Nº {numero}
+              </p>
+            )}
+            <p style={{ fontSize: 9, color: BRAND.cinza, margin: 0 }}>
+              Emitido em<br />
+              <strong style={{ color: BRAND.preto, fontSize: 10 }}>{vars.DATA_HOJE}</strong>
+            </p>
+            {subtitulo && (
+              <p style={{ fontSize: 8.5, color: BRAND.cinza, margin: '4px 0 0', fontStyle: 'italic' }}>{subtitulo}</p>
+            )}
           </div>
         </div>
+
+        {/* Título do documento — faixa elegante */}
+        <div style={{
+          marginTop: 18,
+          marginBottom: 0,
+          background: BRAND.preto,
+          borderRadius: '6px 6px 0 0',
+          padding: '10px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+        }}>
+          {/* Ornamento esquerdo */}
+          <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${BRAND.dourado}55)` }} />
+          <p style={{
+            fontSize: 11.5, fontWeight: 900, color: BRAND.dourado,
+            textTransform: 'uppercase', letterSpacing: 2, margin: 0,
+            textAlign: 'center', whiteSpace: 'nowrap',
+          }}>{titulo}</p>
+          {/* Ornamento direito */}
+          <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${BRAND.dourado}55, transparent)` }} />
+        </div>
+
+        {/* Linha dourada embaixo do título */}
+        <div style={{ height: 3, background: `linear-gradient(90deg, ${BRAND.douradoEscuro}, ${BRAND.dourado}, ${BRAND.douradoEscuro})`, marginBottom: 0 }} />
       </div>
     </>
   );
@@ -96,15 +175,50 @@ interface FooterProps {
 }
 
 export function DocumentoFooter({ vars }: FooterProps) {
+  const clinicaNome = vars.CLINICA_NOME ?? 'Instituto Belém de Odontologia';
   return (
-    <div style={{
-      borderTop: `2px solid ${BRAND.dourado}`, paddingTop: 10, marginTop: 24,
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    }}>
-      <span style={{ fontSize: 8.5, color: '#9ca3af' }}>
-        Gerado em {vars.DATA_HOJE} às {vars.HORA_ATUAL} — {vars.CLINICA_NOME ?? 'Instituto Belém de Odontologia'}
-      </span>
-      <span style={{ fontSize: 8.5, color: '#9ca3af' }}>Documento válido com assinatura</span>
+    <div style={{ marginTop: 28 }}>
+      {/* Linha dupla decorativa */}
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${BRAND.douradoEscuro}, ${BRAND.dourado}, ${BRAND.douradoEscuro})` }} />
+      <div style={{ height: 1, background: BRAND.preto, marginTop: 2, marginBottom: 10 }} />
+
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        padding: '0 2px',
+      }}>
+        {/* Esquerda — clínica + timestamp */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <span style={{ fontSize: 8.5, fontWeight: 700, color: BRAND.preto }}>{clinicaNome}</span>
+          {vars.CLINICA_TELEFONE && (
+            <span style={{ fontSize: 8, color: BRAND.cinza }}>Tel.: {vars.CLINICA_TELEFONE}</span>
+          )}
+          {vars.CLINICA_CNPJ && (
+            <span style={{ fontSize: 8, color: BRAND.cinza }}>CNPJ: {vars.CLINICA_CNPJ}</span>
+          )}
+        </div>
+
+        {/* Centro — CRO / Responsável */}
+        {vars.CLINICA_CRO_RESPONSAVEL && (
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: 8, color: BRAND.cinza }}>
+              Resp. Técnico: {vars.CLINICA_DENTISTA_NOME}<br />
+              CRO {vars.CLINICA_CRO_RESPONSAVEL}
+            </span>
+          </div>
+        )}
+
+        {/* Direita — geração + validade */}
+        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <span style={{ fontSize: 8, color: BRAND.cinza }}>
+            Gerado em {vars.DATA_HOJE} às {vars.HORA_ATUAL}
+          </span>
+          <span style={{ fontSize: 8, color: BRAND.cinza }}>Documento válido com assinatura</span>
+          <span style={{
+            fontSize: 7.5, fontWeight: 700, color: BRAND.douradoEscuro,
+            textTransform: 'uppercase', letterSpacing: 0.8,
+          }}>Odontologia Especializada</span>
+        </div>
+      </div>
     </div>
   );
 }

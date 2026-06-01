@@ -54,7 +54,7 @@ export const ContratoTemplate = forwardRef<HTMLDivElement, Props>(({ vars, itens
     <div ref={ref} id="documento-pdf" style={{ background: '#fff' }}>
       <DocumentoHeader vars={vars} titulo="CONTRATO DE PRESTAÇÃO DE SERVIÇOS ODONTOLÓGICOS" numero={vars.DOCUMENTO_NUMERO} />
 
-      <div style={{ ...pageStyle, paddingTop: 0 }}>
+      <div style={{ ...pageStyle, paddingTop: 20 }}>
 
         {/* Resumo rápido das partes */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
