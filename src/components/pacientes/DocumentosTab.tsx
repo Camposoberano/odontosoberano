@@ -68,7 +68,8 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
     const t = setTimeout(async () => {
       try {
         await exportarDocumentoPDF('documento-pdf', `${downloadDoc.titulo}.pdf`);
-      } catch {
+      } catch (err) {
+        console.error('PDF download error:', err);
         toast.error('Erro ao baixar PDF');
       } finally {
         setDownloadDoc(null);

@@ -134,7 +134,19 @@ async function _renderPDF(elementId: string): Promise<any> {
       img.complete ? Promise.resolve() : new Promise<void>(r => { img.onload = r; img.onerror = r; })
     )
   );
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 400));
+
+  // Força reflow para garantir dimensões calculadas
+  void clone.offsetHeight;
+
+  // Esconde imagens com dimensão zero — evita createPattern crash no html2canvas
+  (clone.querySelectorAll('img') as NodeListOf<HTMLImageElement>).forEach(img => {
+    if (!img.naturalWidth || !img.naturalHeight) {
+      img.style.visibility = 'hidden';
+      img.style.width = '0';
+      img.style.height = '0';
+    }
+  });
 
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import('jspdf') as any,
@@ -147,9 +159,19 @@ async function _renderPDF(elementId: string): Promise<any> {
     allowTaint: true,
     backgroundColor: '#ffffff',
     logging: false,
-    width: clone.scrollWidth,
-    height: clone.scrollHeight,
-  });
+    width: Math.max(clone.scrollWidth, 800),
+    height: Math.max(clone.scrollHeight, 100),
+    // Garante que elementos com gradient não tenham dimensão zero
+    onclone: (_doc: Document, el: HTMLElement) => {
+      el.querySelectorAll<HTMLElement>('*').forEach(child => {
+        const bg = child.style.background || child.style.backgroundImage || '';
+        if (bg.includes('gradient') || bg.includes('url')) {
+          if (child.offsetWidth === 0) child.style.minWidth = '1px';
+          if (child.offsetHeight === 0) child.style.minHeight = '1px';
+        }
+      });
+    },
+  } as any);
 
   document.body.removeChild(clone);
 

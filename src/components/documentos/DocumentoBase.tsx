@@ -68,7 +68,7 @@ export function DocumentoHeader({ vars, titulo, subtitulo, numero }: HeaderProps
               <img
                 src={vars.CLINICA_LOGO_URL}
                 alt={clinicaNome}
-                style={{ height: 72, width: 72, objectFit: 'contain', flexShrink: 0 }}
+                style={{ maxHeight: 72, maxWidth: 72, height: 'auto', width: 'auto', flexShrink: 0, display: 'block' }}
               />
             ) : (
               <div style={{
@@ -147,20 +147,12 @@ export function DocumentoHeader({ vars, titulo, subtitulo, numero }: HeaderProps
           background: BRAND.preto,
           borderRadius: '6px 6px 0 0',
           padding: '10px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 12,
+          textAlign: 'center',
         }}>
-          {/* Ornamento esquerdo */}
-          <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${BRAND.dourado}55)` }} />
           <p style={{
             fontSize: 11.5, fontWeight: 900, color: BRAND.dourado,
             textTransform: 'uppercase', letterSpacing: 2, margin: 0,
-            textAlign: 'center', whiteSpace: 'nowrap',
           }}>{titulo}</p>
-          {/* Ornamento direito */}
-          <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${BRAND.dourado}55, transparent)` }} />
         </div>
 
         {/* Linha dourada embaixo do título */}
