@@ -89,7 +89,9 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
 
   const renderDownloadTemplate = () => {
     if (!downloadDoc) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { vars: savedVars = {}, extras = {}, dentistaId } = downloadDoc.conteudo_json as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dentista = dentistas.find((d: any) => d.id === dentistaId);
     const freshVars = buildVars(
       paciente,
@@ -111,6 +113,7 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
     const tipo = downloadDoc.tipo;
 
     if (tipo === 'contrato') return <ContratoTemplate vars={vars} />;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (tipo.startsWith('tcle_')) return <TCLETemplate vars={vars} tipo={tipo as any} extras={extras} />;
     if (tipo === 'atestado') return (
       <AtestadoTemplate

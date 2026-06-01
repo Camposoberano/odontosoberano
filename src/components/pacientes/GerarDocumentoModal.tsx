@@ -27,6 +27,7 @@ interface Props {
   paciente: Paciente;
   dentistas: Dentista[];
   clinica?: InformacoesClinica | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   orcamento?: Record<string, any> | null;
   tipoInicial?: TipoDocumento;
 }
@@ -98,8 +99,8 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
             .createSignedUrl(path, 365 * 24 * 3600);
           pdf_url = signed?.signedUrl ?? undefined;
         }
-      } catch {
-        // upload falhou — salva registro sem URL
+      } catch (upEx) {
+        console.warn('PDF upload falhou, salvando sem URL:', upEx);
       }
       await createDocumento({
         paciente_id: paciente.id,
@@ -134,6 +135,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
           pac_estado: prev.pac_estado || data.uf || '',
         }));
       }
+    // eslint-disable-next-line no-empty
     } catch {}
   }, []);
 
