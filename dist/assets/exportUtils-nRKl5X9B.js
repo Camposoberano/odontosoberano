@@ -1,0 +1,2 @@
+function a(n,o="relatorio.csv"){if(!n||n.length===0)return;const s=Object.keys(n[0]),i=n.map(c=>s.map(e=>c[e])),r=[s.join(";"),...i.map(c=>c.map(e=>`"${(e==null?"":String(e)).replace(/"/g,'""')}"`).join(";"))].join(`
+`),l=new Blob(["\uFEFF"+r],{type:"text/csv;charset=utf-8;"}),d=URL.createObjectURL(l),t=document.createElement("a");t.setAttribute("href",d);const u=o.endsWith(".csv")?o:`${o}.csv`;t.setAttribute("download",u),t.style.visibility="hidden",document.body.appendChild(t),t.click(),document.body.removeChild(t)}export{a as d};
