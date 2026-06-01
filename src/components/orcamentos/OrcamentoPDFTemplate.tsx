@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { Orcamento } from "@/hooks/useOrcamentos";
+import { OdontogramaCompleto, adaptarItemsOrcamento } from "@/components/odontograma/OdontogramaCompleto";
 
 interface OrcamentoPDFTemplateProps {
   orcamento: Orcamento;
@@ -350,8 +351,14 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
             Plano de Tratamento de {orcamento.paciente?.nome ?? "—"}
           </p>
 
-          {/* ── ODONTOGRAMA ── sempre visível no plano de tratamento */}
-          <OdontogramaVisualizacao denteParaProcedimento={denteParaProcedimento} />
+          {/* ── ODONTOGRAMA ── novo modelo FDI completo */}
+          <OdontogramaCompleto
+            dados={adaptarItemsOrcamento(itens)}
+            compact
+            showLegenda={false}
+            title="Odontograma — Dentes do Plano de Tratamento"
+            selectedTeethColor="#fef9c3"
+          />
 
           {/* ── TABELA DE PROCEDIMENTOS ── */}
           <table style={s.table}>
