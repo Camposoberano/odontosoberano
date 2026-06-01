@@ -11,7 +11,27 @@
       "Bash(rtk ls *)",
       "Bash(xargs ls -lh)",
       "Bash(rtk git *)",
-      "mcp__plugin_context-mode_context-mode__ctx_execute_file"
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "Bash(rtk npm *)",
+      "Bash(powershell -Command \"Remove-Item -Force deploy-belem.zip -ErrorAction SilentlyContinue; Compress-Archive -Path dist\\\\* -DestinationPath deploy-belem.zip; \\(Get-Item deploy-belem.zip\\).Length / 1MB\")",
+      "Bash(powershell -Command \"Remove-Item -Force deploy-belem.zip -ErrorAction SilentlyContinue; Compress-Archive -Path dist\\\\* -DestinationPath deploy-belem.zip; '{0:N1} MB' -f \\(\\(Get-Item deploy-belem.zip\\).Length / 1MB\\)\")",
+      "Bash(powershell -Command \"Get-Content package.json | Select-String 'test|playwright|vitest|jest'\")",
+      "Bash(npm install *)",
+      "Bash(rtk playwright *)",
+      "Bash(powershell -Command \"New-Item -ItemType Directory -Force -Path tests/e2e | Out-Null; Write-Output 'ok'\")",
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"& { . 'tests/run-dashboard.ps1' -WhatIf 2>&1 | Select-Object -First 5 }\")",
+      "Bash(powershell -ExecutionPolicy Bypass -Command 'try { $null = [System.Management.Automation.Language.Parser]::ParseFile\\('\\\\''tests/run-dashboard.ps1'\\\\'', [ref]$null, [ref]$null\\); Write-Host '\\\\''OK sem erros de sintaxe'\\\\'' } catch { Write-Host $_.Exception.Message }')",
+      "Bash(powershell -ExecutionPolicy Bypass -Command ' *)",
+      "Bash(powershell -Command \"Get-ChildItem tests\\\\screenshots -ErrorAction SilentlyContinue | Select-Object Name, Length\")",
+      "Bash(powershell -Command ' *)",
+      "Bash(powershell -Command \"\\(Get-Item 'tests\\\\screenshots\\\\iPhone-login.png'\\).Length / 1KB\")",
+      "Bash(powershell -Command \"Select-String -Path dist/index.html -Pattern 'inst.belem' | Select-Object -First 3\")",
+      "Bash(grep -v \":0$\")",
+      "Bash(Get-ChildItem src/hooks/ -ErrorAction SilentlyContinue)",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "mcp__claude_ai_bancode_dados_supabse__execute_sql",
+      "Bash(dir tests *)",
+      "Bash(findstr /v \"screenshots\")"
     ]
   },
   "enabledMcpjsonServers": [

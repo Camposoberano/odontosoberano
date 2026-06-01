@@ -29,3 +29,12 @@ dist-ssr
 *.sw?
 
 nul
+
+# Test outputs
+playwright-report/
+test-results/
+tests/screenshots/
+tests/visual-grid.html
+
+# Local tooling
+.codex/
