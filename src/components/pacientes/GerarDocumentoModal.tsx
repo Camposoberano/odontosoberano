@@ -93,15 +93,19 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
         const { error: upErr } = await supabase.storage
           .from('documentos')
           .upload(path, blob, { contentType: 'application/pdf' });
-        if (!upErr) {
-          const { data: signed } = await supabase.storage
+        if (upErr) {
+          console.error('Storage upload error:', upErr);
+          toast.warning(`PDF não salvo no servidor: ${upErr.message}`);
+        } else {
+          const { data: signed, error: signErr } = await supabase.storage
             .from('documentos')
             .createSignedUrl(path, 365 * 24 * 3600);
+          if (signErr) console.error('createSignedUrl error:', signErr);
           pdf_url = signed?.signedUrl ?? undefined;
         }
       } catch (upEx) {
-        console.warn('PDF upload falhou, salvando sem URL:', upEx);
-        toast.warning('PDF gerado mas não foi salvo no servidor. Verifique a conexão.');
+        console.error('PDF upload exception:', upEx);
+        toast.warning('PDF gerado mas não foi salvo no servidor.');
       }
       await createDocumento({
         paciente_id: paciente.id,
