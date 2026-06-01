@@ -14,7 +14,7 @@
         "-y",
         "@supabase/mcp-server-supabase",
         "--supabase-url",
-        "http://supabasekong-fqy9q0izcz6njphhpeoxgepz.187.127.28.228.sslip.io",
+        "https://bancodedados.institutobelem.com",
         "--service-role-key",
         "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3ODk1Mzc0MCwiZXhwIjo0OTM0NjI3MzQwLCJyb2xlIjoic2VydmljZV9yb2xlIn0.A_qxjhvNBYROjpT8Pwu7lOxGyZtN-ByU18n-WZRxjG4"
       ]
