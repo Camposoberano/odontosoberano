@@ -101,6 +101,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
         }
       } catch (upEx) {
         console.warn('PDF upload falhou, salvando sem URL:', upEx);
+        toast.warning('PDF gerado mas não foi salvo no servidor. Verifique a conexão.');
       }
       await createDocumento({
         paciente_id: paciente.id,
@@ -684,7 +685,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
         </div>
 
         {/* Template oculto para captura */}
-        <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
+        <div id="documento-pdf" style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
           {renderTemplate()}
         </div>
       </DialogContent>

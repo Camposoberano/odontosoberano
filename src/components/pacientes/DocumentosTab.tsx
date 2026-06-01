@@ -261,7 +261,7 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
       </AlertDialog>
 
       {/* Template oculto renderizado antes do export PDF */}
-      <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
+      <div id="documento-pdf" style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
         {renderDownloadTemplate()}
       </div>
     </div>
