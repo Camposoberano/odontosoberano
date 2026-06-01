@@ -165,7 +165,7 @@ export function useOrcamentos() {
     mutationFn: async ({ id, ...input }: NovoOrcamentoInput & { id: string }): Promise<Orcamento> => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .update(input)
+        .update({ ...input, ...(user?.id ? { user_id: user.id } : {}) })
         .eq("id", id)
         .select(`
           *,
@@ -200,7 +200,7 @@ export function useOrcamentos() {
 
       const { data, error } = await supabase
         .from("orcamentos")
-        .update({ status, ...extra })
+        .update({ status, ...extra, ...(user?.id ? { user_id: user.id } : {}) })
         .eq("id", id)
         .select("id, status")
         .single();
