@@ -170,7 +170,7 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
     : false;
 
   // Auto-abre aba responsável quando detecta menor de idade
-  React.useEffect(() => {
+  useEffect(() => {
     if (eMenor) setActiveTab('responsavel');
   }, [eMenor]);
 

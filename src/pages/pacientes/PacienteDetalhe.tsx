@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { usePaciente } from "@/hooks/usePacientes";
+import { usePaciente, usePacientes } from "@/hooks/usePacientes";
+import { PacienteForm } from "@/components/pacientes/PacienteForm";
 import { useOrcamentosByPaciente, type Orcamento } from "@/hooks/useOrcamentos";
 import { useContasReceberByPaciente, type ContaReceber } from "@/hooks/useContasReceber";
 import { FichaClinica } from "@/components/pacientes/FichaClinica";
@@ -37,6 +39,12 @@ import {
   ExternalLink,
   ChevronRight,
   Menu,
+  Edit2,
+  MessageCircle,
+  Hash,
+  Share2,
+  Home,
+  BadgeCheck,
 } from "lucide-react";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -66,7 +74,7 @@ function statusContaBadge(status: string) {
 
 // ─── Tab contents ─────────────────────────────────────────────────────────────
 
-function SobreTab({ pacienteId }: { pacienteId: string }) {
+function SobreTab({ pacienteId, onEdit }: { pacienteId: string; onEdit?: () => void }) {
   const { data: paciente, isLoading } = usePaciente(pacienteId);
   if (isLoading) return <LoadingState />;
   if (!paciente) return <EmptyState msg="Paciente não encontrado." />;
@@ -82,8 +90,8 @@ function SobreTab({ pacienteId }: { pacienteId: string }) {
 
   const row = (icon: React.ReactNode, label: string, value?: string | null) =>
     value ? (
-      <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">{icon}</div>
+      <div className="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">{icon}</div>
         <div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
           <p className="text-sm font-semibold text-slate-800">{value}</p>
@@ -91,38 +99,86 @@ function SobreTab({ pacienteId }: { pacienteId: string }) {
       </div>
     ) : null;
 
-  const enderecoCompleto = [
-    paciente.rua, paciente.numero && `nº ${paciente.numero}`,
-    paciente.complemento, paciente.bairro, paciente.cidade,
-    paciente.estado, paciente.cep,
-  ].filter(Boolean).join(", ") || paciente.endereco;
+  const section = (title: string, children: React.ReactNode) => (
+    <div className="space-y-0.5">
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-4 first:mt-0">{title}</p>
+      {children}
+    </div>
+  );
+
+  const p = paciente as any;
+  const hasEndereco = !!(p.rua || p.bairro || p.cidade || p.cep || p.endereco);
+  const hasResponsavel = !!(p.nome_responsavel);
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <User className="w-5 h-5 text-primary" />
+    <div className="space-y-2">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <User className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-slate-800 tracking-tight">Dados Pessoais</h2>
+            <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Informações cadastrais</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-black text-slate-800 tracking-tight">Dados Pessoais</h2>
-          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Informações cadastrais</p>
-        </div>
+        {onEdit && (
+          <Button variant="outline" size="sm" onClick={onEdit} className="rounded-xl gap-2 font-bold text-xs">
+            <Edit2 className="w-3.5 h-3.5" /> Editar
+          </Button>
+        )}
       </div>
-      {row(<Phone className="w-4 h-4 text-primary" />, "Telefone", paciente.telefone)}
-      {row(<Mail className="w-4 h-4 text-primary" />, "E-mail", paciente.email)}
-      {row(<Calendar className="w-4 h-4 text-primary" />, "Data de nascimento",
-        paciente.data_nascimento
-          ? `${new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} (${calculateAge(paciente.data_nascimento)} anos)`
-          : null)}
-      {row(<CreditCard className="w-4 h-4 text-primary" />, "CPF", paciente.cpf)}
-      {row(<Users className="w-4 h-4 text-primary" />, "Gênero", paciente.genero)}
-      {row(<Briefcase className="w-4 h-4 text-primary" />, "Profissão", paciente.profissao)}
-      {row(<MapPin className="w-4 h-4 text-primary" />, "Endereço", enderecoCompleto)}
-      {row(<Activity className="w-4 h-4 text-primary" />, "Área de tratamento", paciente.area_tratamento)}
-      {row(<FileText className="w-4 h-4 text-primary" />, "Como conheceu", paciente.como_conheceu)}
-      {paciente.nome_responsavel && row(
-        <User className="w-4 h-4 text-primary" />, "Responsável",
-        `${paciente.nome_responsavel}${paciente.telefone_responsavel ? ` — ${paciente.telefone_responsavel}` : ""}`
+
+      {section("Identificação",
+        <>
+          {row(<User className="w-3.5 h-3.5 text-primary" />, "Nome completo", paciente.nome)}
+          {row(<BadgeCheck className="w-3.5 h-3.5 text-primary" />, "Apelido / Como gosta de ser chamado", paciente.apelido)}
+          {row(<CreditCard className="w-3.5 h-3.5 text-primary" />, "CPF", paciente.cpf)}
+          {row(<Users className="w-3.5 h-3.5 text-primary" />, "Gênero", paciente.genero)}
+          {row(<Calendar className="w-3.5 h-3.5 text-primary" />, "Data de nascimento",
+            paciente.data_nascimento
+              ? `${new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} (${calculateAge(paciente.data_nascimento)} anos)`
+              : null)}
+          {row(<Briefcase className="w-3.5 h-3.5 text-primary" />, "Profissão", paciente.profissao)}
+          {row(<Hash className="w-3.5 h-3.5 text-primary" />, "Nº Prontuário", paciente.numero_prontuario)}
+        </>
+      )}
+
+      {section("Contato",
+        <>
+          {row(<Phone className="w-3.5 h-3.5 text-primary" />, "Telefone", paciente.telefone)}
+          {row(<MessageCircle className="w-3.5 h-3.5 text-green-600" />, "WhatsApp", p.whatsapp)}
+          {row(<Mail className="w-3.5 h-3.5 text-primary" />, "E-mail", paciente.email)}
+          {row(<Share2 className="w-3.5 h-3.5 text-primary" />, "Rede Social", paciente.rede_social)}
+        </>
+      )}
+
+      {hasEndereco && section("Endereço",
+        <>
+          {row(<MapPin className="w-3.5 h-3.5 text-primary" />, "CEP", p.cep)}
+          {(p.rua || p.numero) && row(<Home className="w-3.5 h-3.5 text-primary" />, "Logradouro",
+            [p.rua, p.numero && `nº ${p.numero}`, p.complemento].filter(Boolean).join(", "))}
+          {row(<MapPin className="w-3.5 h-3.5 text-primary" />, "Bairro / Cidade / Estado",
+            [p.bairro, p.cidade, p.estado].filter(Boolean).join(", "))}
+          {row(<FileText className="w-3.5 h-3.5 text-slate-400" />, "Obs. de Endereço", p.observacao_endereco)}
+        </>
+      )}
+
+      {section("Clínico",
+        <>
+          {row(<Activity className="w-3.5 h-3.5 text-primary" />, "Área de tratamento", paciente.area_tratamento)}
+          {row(<FileText className="w-3.5 h-3.5 text-primary" />, "Como conheceu", paciente.como_conheceu)}
+        </>
+      )}
+
+      {hasResponsavel && section("Responsável",
+        <>
+          {row(<Users className="w-3.5 h-3.5 text-primary" />, "Parentesco", p.parentesco_responsavel)}
+          {row(<User className="w-3.5 h-3.5 text-primary" />, "Nome", p.nome_responsavel)}
+          {row(<CreditCard className="w-3.5 h-3.5 text-primary" />, "CPF", p.cpf_responsavel)}
+          {row(<Phone className="w-3.5 h-3.5 text-primary" />, "Telefone", p.telefone_responsavel)}
+          {row(<Mail className="w-3.5 h-3.5 text-primary" />, "E-mail", p.email_responsavel)}
+        </>
       )}
     </div>
   );
@@ -328,7 +384,10 @@ export default function PacienteDetalhe() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: paciente, isLoading: loadingPaciente } = usePaciente(id);
+  const { updatePaciente } = usePacientes();
+  const queryClient = useQueryClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const tabParam = searchParams.get("tab") ?? "sobre";
   const [activeTab, setActiveTab] = useState(tabParam);
@@ -488,7 +547,7 @@ export default function PacienteDetalhe() {
               <AnimatePresence mode="wait">
                 {activeTab === "sobre" && (
                   <motion.div key="sobre" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <SobreTab pacienteId={id} />
+                    <SobreTab pacienteId={id} onEdit={() => setEditOpen(true)} />
                   </motion.div>
                 )}
                 {activeTab === "orcamentos" && (
@@ -535,6 +594,22 @@ export default function PacienteDetalhe() {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Modal de edição do paciente */}
+      {paciente && (
+        <PacienteForm
+          isOpen={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSubmit={async (data) => {
+            if (!id) return;
+            await updatePaciente(id, data);
+            queryClient.invalidateQueries({ queryKey: ["paciente", id] });
+            setEditOpen(false);
+          }}
+          paciente={paciente}
+          title="Editar Paciente"
+        />
+      )}
     </DashboardLayout>
   );
 }
