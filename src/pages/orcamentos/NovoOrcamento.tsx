@@ -102,9 +102,9 @@ export default function NovoOrcamento() {
         id: i.id,
         procedimento_id: i.procedimento_id ?? undefined,
         nome_procedimento: i.nome_procedimento,
-        quantidade: i.quantidade,
-        preco_unitario: i.preco_unitario,
-        preco_total: i.preco_total,
+        quantidade: parseFloat(String(i.quantidade)) || 1,
+        preco_unitario: parseFloat(String(i.preco_unitario)) || 0,
+        preco_total: parseFloat(String(i.preco_total)) || 0,
         observacao: i.observacao ?? undefined,
         dente_numero: (i as any).dente_numero ?? null,
       }))
@@ -114,14 +114,15 @@ export default function NovoOrcamento() {
   const { total_bruto, total_liquido } = calcularTotais(itens, descontoTipo, descontoValor);
 
   const adicionarProcedimento = useCallback((proc: ProcedimentoCatalogo) => {
+    const preco = parseFloat(String(proc.preco_sugerido)) || 0;
     setItens((prev) => [
       ...prev,
       {
         procedimento_id: proc.id,
         nome_procedimento: proc.nome,
         quantidade: 1,
-        preco_unitario: proc.preco_sugerido,
-        preco_total: proc.preco_sugerido,
+        preco_unitario: preco,
+        preco_total: preco,
         dentes_selecionados: [],
       },
     ]);

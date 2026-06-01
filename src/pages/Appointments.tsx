@@ -19,7 +19,7 @@ import { useDentistas } from "@/hooks/useDentistas";
 import { AgendamentoForm } from "@/components/agenda/AgendamentoForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format, isSameDay, startOfMonth, endOfMonth, addDays, subDays, addWeeks, subWeeks } from "date-fns";
+import { format, isSameDay, isSameMonth, startOfMonth, endOfMonth, addDays, subDays, addWeeks, subWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, Variants, AnimatePresence } from "framer-motion";
@@ -39,6 +39,7 @@ export default function Appointments() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<string>("day");
   const [dayViewMode, setDayViewMode] = useState<"todos" | "por_dentista">("todos");
+  const [dentistaSoloId, setDentistaSoloId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedAgendamento, setSelectedAgendamento] = useState<any>(null);
@@ -78,6 +79,12 @@ export default function Appointments() {
     ),
     [dentistas]
   );
+
+  useEffect(() => {
+    if (!isSameMonth(selectedDate, currentMonth)) {
+      setCurrentMonth(selectedDate);
+    }
+  }, [selectedDate]);
 
   useEffect(() => {
     const start = startOfMonth(currentMonth);
@@ -362,17 +369,48 @@ export default function Appointments() {
                       onGoToToday={handleGoToToday}
                     />
                   ) : (
-                    /* Visão por dentista — colunas lado a lado */
+                    /* Visão por dentista — seletor + agenda do dentista escolhido */
                     <div className="space-y-4">
-                      {dentistas.filter(d => d.status === 'Ativo').map(dentista => {
+                      {/* Tabs de seleção de dentista */}
+                      <div className="flex flex-wrap gap-2">
+                        {dentistas.filter(d => d.status === 'Ativo').map(dentista => {
+                          const ativo = dentistaSoloId === dentista.id;
+                          return (
+                            <button
+                              key={dentista.id}
+                              onClick={() => setDentistaSoloId(ativo ? null : dentista.id)}
+                              className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border-2",
+                                ativo
+                                  ? "text-white shadow-md border-transparent"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                              )}
+                              style={ativo ? { backgroundColor: dentistaColors[dentista.id], borderColor: dentistaColors[dentista.id] } : {}}
+                            >
+                              <div className="w-2.5 h-2.5 rounded-full border border-white/40" style={{ backgroundColor: ativo ? 'rgba(255,255,255,0.6)' : dentistaColors[dentista.id] }} />
+                              {dentista.nome.split(' ')[0]}
+                              <span className={cn("text-[10px]", ativo ? "opacity-80" : "text-slate-400")}>
+                                {selectedDayAppointments.filter(a => a.dentista_id === dentista.id).length}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* Agenda do dentista selecionado (ou todos se nenhum selecionado) */}
+                      {(dentistaSoloId
+                        ? dentistas.filter(d => d.id === dentistaSoloId)
+                        : dentistas.filter(d => d.status === 'Ativo')
+                      ).map(dentista => {
                         const aptsDosDentista = selectedDayAppointments.filter(a => a.dentista_id === dentista.id);
                         return (
                           <div key={dentista.id}>
-                            <div className="flex items-center gap-2 mb-2 px-1">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: dentistaColors[dentista.id] }} />
-                              <span className="text-sm font-black uppercase tracking-wider text-slate-700">{dentista.nome}</span>
-                              <span className="text-[11px] font-bold text-slate-400">{aptsDosDentista.length} agendamento{aptsDosDentista.length !== 1 ? 's' : ''}</span>
-                            </div>
+                            {!dentistaSoloId && (
+                              <div className="flex items-center gap-2 mb-2 px-1">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: dentistaColors[dentista.id] }} />
+                                <span className="text-sm font-black uppercase tracking-wider text-slate-700">{dentista.nome}</span>
+                                <span className="text-[11px] font-bold text-slate-400">{aptsDosDentista.length} agendamento{aptsDosDentista.length !== 1 ? 's' : ''}</span>
+                              </div>
+                            )}
                             <AgendaDayView
                               selectedDate={selectedDate}
                               appointments={aptsDosDentista}
