@@ -71,13 +71,17 @@ export function Odontograma({ pacienteId }: OdontogramaProps) {
 
       {/* Novo odontograma FDI */}
       <Card>
-        <CardContent className="pt-4 overflow-x-auto">
-          <OdontogramaCompleto
-            dados={dados}
-            onChange={setDados}
-            interactive
-            showLegenda
-          />
+        <CardContent className="pt-4 p-2 sm:p-6">
+          <div style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ minWidth: 560 }}>
+              <OdontogramaCompleto
+                dados={dados}
+                onChange={setDados}
+                interactive
+                showLegenda
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 

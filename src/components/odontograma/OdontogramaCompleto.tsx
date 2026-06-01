@@ -508,7 +508,7 @@ export const OdontogramaCompleto = forwardRef<HTMLDivElement, OdontogramaComplet
     const gap = compact ? 2 : 4;
 
     const renderArco = (dentes: readonly number[], inferior: boolean) => (
-      <div style={{ display:'flex', gap, justifyContent:'center', alignItems: inferior ? 'flex-start' : 'flex-end' }}>
+      <div style={{ display:'flex', gap, justifyContent:'flex-start', alignItems: inferior ? 'flex-start' : 'flex-end' }}>
         {dentes.map((fdi, i) => (
           <div key={fdi} style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
             {/* Separador de linha média */}
@@ -539,6 +539,8 @@ export const OdontogramaCompleto = forwardRef<HTMLDivElement, OdontogramaComplet
         padding: compact ? '8px' : '16px',
         borderRadius: 8,
         border:'1.5px solid #e5e7eb',
+        width: 'fit-content',
+        minWidth: compact ? 480 : 560,
       }}>
         {title && (
           <p style={{
