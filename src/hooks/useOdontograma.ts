@@ -93,7 +93,7 @@ export function useOdontograma(pacienteId?: string) {
     odontogramaData: Partial<CreateOdontogramaData>
   ) => {
     try {
-      const updateData: any = {};
+      const updateData: any = { user_id: user?.id };
       if (odontogramaData.dados_dentes !== undefined) {
         updateData.dados_dentes = odontogramaData.dados_dentes;
       }
