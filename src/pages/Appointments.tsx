@@ -19,7 +19,7 @@ import { useDentistas } from "@/hooks/useDentistas";
 import { AgendamentoForm } from "@/components/agenda/AgendamentoForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format, isSameDay, startOfMonth, endOfMonth } from "date-fns";
+import { format, isSameDay, startOfMonth, endOfMonth, addDays, subDays, addWeeks, subWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, Variants, AnimatePresence } from "framer-motion";
@@ -37,6 +37,8 @@ const statusOptions = ["Todos", "Agendado", "Confirmado", "Realizado", "Cancelad
 export default function Appointments() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<string>("day");
+  const [dayViewMode, setDayViewMode] = useState<"todos" | "por_dentista">("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedAgendamento, setSelectedAgendamento] = useState<any>(null);
@@ -121,6 +123,12 @@ export default function Appointments() {
     setPacienteFilter("Todos");
     setProcedimentoFilter("");
   };
+
+  const handlePrevDay = () => setSelectedDate(prev => subDays(prev, 1));
+  const handleNextDay = () => setSelectedDate(prev => addDays(prev, 1));
+  const handlePrevWeek = () => setSelectedDate(prev => subWeeks(prev, 1));
+  const handleNextWeek = () => setSelectedDate(prev => addWeeks(prev, 1));
+  const handleGoToToday = () => { setSelectedDate(new Date()); setCurrentMonth(new Date()); };
 
   const handleSubmit = async (data: any) => {
     if (editingAgendamento && (editingAgendamento as any).id) {
@@ -305,51 +313,98 @@ export default function Appointments() {
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 w-full lg:w-3/4 space-y-6">
-            <Tabs defaultValue="day" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                <TabsList className="bg-slate-100/50 p-1 rounded-xl">
-                  <TabsTrigger value="day" className="font-bold">Dia</TabsTrigger>
-                  <TabsTrigger value="week" className="font-bold">Semana</TabsTrigger>
-                  <TabsTrigger value="month" className="font-bold">Mês</TabsTrigger>
-                </TabsList>
-                {/* Legenda de cores por dentista */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <TabsList className="bg-slate-100/50 p-1 rounded-xl">
+                    <TabsTrigger value="day" className="font-bold">Dia</TabsTrigger>
+                    <TabsTrigger value="week" className="font-bold">Semana</TabsTrigger>
+                    <TabsTrigger value="month" className="font-bold">Mês</TabsTrigger>
+                  </TabsList>
+                  {/* Toggle multi-dentista — só na aba Dia */}
+                  {activeTab === "day" && dentistas.filter(d => d.status === 'Ativo').length > 1 && (
+                    <div className="flex gap-1 bg-slate-100/50 p-1 rounded-xl">
+                      <button
+                        onClick={() => setDayViewMode("todos")}
+                        className={cn("px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all", dayViewMode === "todos" ? "bg-white shadow text-primary" : "text-slate-500 hover:text-slate-700")}
+                      >Todos</button>
+                      <button
+                        onClick={() => setDayViewMode("por_dentista")}
+                        className={cn("px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all", dayViewMode === "por_dentista" ? "bg-white shadow text-primary" : "text-slate-500 hover:text-slate-700")}
+                      >Por Dentista</button>
+                    </div>
+                  )}
+                </div>
+                {/* Legenda cores dentistas */}
                 <div className="flex items-center gap-3 flex-wrap">
                   {dentistas.filter(d => d.status === 'Ativo').map(d => (
                     <div key={d.id} className="flex items-center gap-1.5">
-                      <div
-                        className="w-3 h-3 rounded-full border border-white shadow-sm"
-                        style={{ backgroundColor: d.cor ?? '#6366f1' }}
-                      />
+                      <div className="w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: d.cor ?? '#6366f1' }} />
                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        {d.nome.split(' ')[0]} {d.nome.split(' ')[1] ?? ''}
+                        {d.nome.split(' ')[0]}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
-              
+
               <TabsContent value="day" className="mt-0">
-                 <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants}>
+                  {dayViewMode === "todos" ? (
                     <AgendaDayView
                       selectedDate={selectedDate}
                       appointments={selectedDayAppointments}
                       onAppointmentClick={handleShowDetail}
                       onAddClick={handleAddClick}
                       dentistaColors={dentistaColors}
+                      onPrevDay={handlePrevDay}
+                      onNextDay={handleNextDay}
+                      onGoToToday={handleGoToToday}
                     />
-                 </motion.div>
+                  ) : (
+                    /* Visão por dentista — colunas lado a lado */
+                    <div className="space-y-4">
+                      {dentistas.filter(d => d.status === 'Ativo').map(dentista => {
+                        const aptsDosDentista = selectedDayAppointments.filter(a => a.dentista_id === dentista.id);
+                        return (
+                          <div key={dentista.id}>
+                            <div className="flex items-center gap-2 mb-2 px-1">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: dentistaColors[dentista.id] }} />
+                              <span className="text-sm font-black uppercase tracking-wider text-slate-700">{dentista.nome}</span>
+                              <span className="text-[11px] font-bold text-slate-400">{aptsDosDentista.length} agendamento{aptsDosDentista.length !== 1 ? 's' : ''}</span>
+                            </div>
+                            <AgendaDayView
+                              selectedDate={selectedDate}
+                              appointments={aptsDosDentista}
+                              onAppointmentClick={handleShowDetail}
+                              onAddClick={handleAddClick}
+                              dentistaColors={dentistaColors}
+                              onPrevDay={handlePrevDay}
+                              onNextDay={handleNextDay}
+                              onGoToToday={handleGoToToday}
+                              dentistaLabel={dentista.nome}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="week" className="mt-0">
-                 <motion.div variants={itemVariants}>
-                    <AgendaWeekGridView
-                      selectedDate={selectedDate}
-                      appointments={filteredAgendamentos}
-                      onAppointmentClick={handleShowDetail}
-                      onAddClick={(date, time) => handleAddClick(date, time)}
-                      dentistaColors={dentistaColors}
-                    />
-                 </motion.div>
+                <motion.div variants={itemVariants}>
+                  <AgendaWeekGridView
+                    selectedDate={selectedDate}
+                    appointments={filteredAgendamentos}
+                    onAppointmentClick={handleShowDetail}
+                    onAddClick={(date, time) => handleAddClick(date, time)}
+                    dentistaColors={dentistaColors}
+                    onPrevWeek={handlePrevWeek}
+                    onNextWeek={handleNextWeek}
+                    onGoToToday={handleGoToToday}
+                  />
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="month" className="mt-0">
@@ -363,6 +418,7 @@ export default function Appointments() {
                     onSelectDate={(date) => {
                       setSelectedDate(date);
                       setCurrentMonth(date);
+                      setActiveTab("day"); // Fix 3: clique no mês → abre aba dia
                     }}
                     onMonthChange={setCurrentMonth}
                     onAddClick={(date) => handleAddClick(date)}

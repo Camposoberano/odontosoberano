@@ -1,17 +1,22 @@
-import { format, isSameDay, startOfDay } from "date-fns";
+import { format, isSameDay, startOfDay, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock, User, Plus } from "lucide-react";
+import { Clock, User, Plus, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 
 import { Agendamento } from "@/hooks/useAgendamentos";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface AgendaDayViewProps {
   selectedDate: Date;
   appointments: Agendamento[];
   onAppointmentClick: (appointment: Agendamento) => void;
   onAddClick: (time: string) => void;
-  dentistaColors?: Record<string, string>; // dentista_id → hex color
+  dentistaColors?: Record<string, string>;
+  onPrevDay?: () => void;
+  onNextDay?: () => void;
+  onGoToToday?: () => void;
+  dentistaLabel?: string; // se undefined = visão geral
 }
 
 
@@ -25,7 +30,10 @@ const statusColors: Record<string, string> = {
   "7-Faltou": "bg-slate-200 border-slate-300 text-slate-800",
 };
 
-export function AgendaDayView({ selectedDate, appointments, onAppointmentClick, onAddClick, dentistaColors = {} }: AgendaDayViewProps) {
+export function AgendaDayView({ selectedDate, appointments, onAppointmentClick, onAddClick, dentistaColors = {}, onPrevDay, onNextDay, onGoToToday, dentistaLabel }: AgendaDayViewProps) {
+  const hoje = isToday(selectedDate);
+  const diaNome = format(selectedDate, "EEEE", { locale: ptBR });
+  const diaData = format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   // Gerar slots de 30 minutos das 08:00 às 19:00
   const timeSlots = [];
@@ -43,6 +51,34 @@ export function AgendaDayView({ selectedDate, appointments, onAppointmentClick, 
 
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm">
+      {/* Header de navegação */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+        <Button variant="ghost" size="icon" onClick={onPrevDay} className="rounded-xl hover:bg-primary/10 hover:text-primary" disabled={!onPrevDay}>
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="text-center flex-1">
+          <div className="flex items-center justify-center gap-2">
+            <p className={cn("text-base font-black capitalize tracking-tight", hoje && "text-primary")}>
+              {hoje ? "Hoje — " : ""}{diaNome}, {diaData}
+            </p>
+            {hoje && <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider">hoje</span>}
+          </div>
+          {dentistaLabel && (
+            <p className="text-[11px] font-bold text-slate-500 mt-0.5">{dentistaLabel}</p>
+          )}
+          <p className="text-[11px] font-bold text-slate-400 mt-0.5">{appointments.length} agendamento{appointments.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex gap-1">
+          {!hoje && onGoToToday && (
+            <Button variant="ghost" size="sm" onClick={onGoToToday} className="text-[10px] font-black uppercase tracking-wider text-primary hover:bg-primary/10 h-8 px-2 rounded-lg">
+              <CalendarDays className="w-3.5 h-3.5 mr-1" />Hoje
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={onNextDay} className="rounded-xl hover:bg-primary/10 hover:text-primary" disabled={!onNextDay}>
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
       <div className="divide-y divide-slate-100">
         {timeSlots.map((time) => {
           const slotAppointments = appointmentsByTime[time] || [];

@@ -77,6 +77,32 @@ export interface NovoItemInput {
 
 const QUERY_KEY = "orcamentos";
 
+const STATUS_LABELS: Record<string, string> = {
+  rascunho: "Rascunho criado",
+  enviado: "Enviado ao paciente",
+  aprovado: "Aprovado pelo paciente",
+  recusado: "Recusado pelo paciente",
+  contrato_assinado: "Contrato assinado",
+  em_andamento: "Em andamento",
+  finalizado: "Finalizado",
+  entregue: "Entregue",
+};
+
+async function registrarNoProntuario(
+  pacienteId: string,
+  userId: string,
+  texto: string,
+  dentistaId?: string | null,
+) {
+  await supabase.from("evolucoes").insert({
+    paciente_id: pacienteId,
+    user_id: userId,
+    profissional_id: dentistaId ?? null,
+    data: new Date().toISOString().split("T")[0],
+    texto,
+  });
+}
+
 export function useOrcamentos() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -117,9 +143,18 @@ export function useOrcamentos() {
       if (error) throw error;
       return data as unknown as Orcamento;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast({ title: "Orçamento criado com sucesso" });
+      if (data?.paciente_id && user?.id) {
+        const fmtValor = (data.total_liquido ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        registrarNoProntuario(
+          data.paciente_id,
+          user.id,
+          `📋 Orçamento #${data.numero_orcamento} criado — Status: ${STATUS_LABELS[data.status] ?? data.status} — Valor total: ${fmtValor}`,
+          data.dentista_id,
+        );
+      }
     },
     onError: (err: Error) => {
       toast({ title: "Erro ao criar orçamento", description: err.message, variant: "destructive" });
@@ -174,10 +209,23 @@ export function useOrcamentos() {
       return data;
     },
     onSuccess: (_data, variables) => {
-      // Invalida lista + detalhe específico
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, variables.id] });
       toast({ title: "Status atualizado" });
+      // Registrar no prontuário — busca orcamento no cache para pegar paciente_id
+      if (user?.id) {
+        const cached = queryClient.getQueryData<Orcamento[]>([QUERY_KEY, user.id]);
+        const orc = cached?.find(o => o.id === variables.id);
+        if (orc?.paciente_id) {
+          const label = STATUS_LABELS[variables.status] ?? variables.status;
+          registrarNoProntuario(
+            orc.paciente_id,
+            user.id,
+            `📋 Orçamento #${orc.numero_orcamento} — Status alterado para: ${label}`,
+            orc.dentista_id,
+          );
+        }
+      }
     },
     onError: (err: Error) => {
       toast({ title: "Erro ao mudar status", description: err.message, variant: "destructive" });

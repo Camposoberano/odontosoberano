@@ -1,7 +1,9 @@
-import { addDays, format, startOfWeek } from "date-fns";
+import { addDays, format, startOfWeek, isToday, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { Agendamento } from "@/hooks/useAgendamentos";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface AgendaWeekGridViewProps {
   selectedDate: Date;
@@ -9,11 +11,15 @@ interface AgendaWeekGridViewProps {
   onAppointmentClick: (appointment: Agendamento) => void;
   onAddClick: (date: Date, time: string) => void;
   dentistaColors?: Record<string, string>;
+  onPrevWeek?: () => void;
+  onNextWeek?: () => void;
+  onGoToToday?: () => void;
 }
 
-export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentClick, onAddClick, dentistaColors = {} }: AgendaWeekGridViewProps) {
+export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentClick, onAddClick, dentistaColors = {}, onPrevWeek, onNextWeek, onGoToToday }: AgendaWeekGridViewProps) {
   const startOfSelectedWeek = startOfWeek(selectedDate, { locale: ptBR });
-  const days = Array.from({ length: 6 }).map((_, i) => addDays(startOfSelectedWeek, i)); // Segunda a Sábado
+  const days = Array.from({ length: 6 }).map((_, i) => addDays(startOfSelectedWeek, i));
+  const semanaLabel = `${format(days[0], "dd/MM")} – ${format(days[5], "dd/MM/yyyy")}`;
 
   const timeSlots = [];
   for (let hour = 8; hour <= 19; hour++) {
@@ -28,16 +34,40 @@ export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentCl
     });
   };
 
+  const hojeNaSemana = days.some(d => isToday(d));
+
   return (
-    <div className="bg-white rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm overflow-x-auto">
+    <div className="bg-white rounded-2xl border-2 border-slate-100 overflow-hidden shadow-sm">
+      {/* Header de navegação da semana */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+        <Button variant="ghost" size="icon" onClick={onPrevWeek} className="rounded-xl hover:bg-primary/10 hover:text-primary" disabled={!onPrevWeek}>
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="text-center">
+          <p className="text-base font-black text-slate-800 tracking-tight">Semana de {semanaLabel}</p>
+          <p className="text-[11px] font-bold text-slate-400">{appointments.length} agendamento{appointments.length !== 1 ? 's' : ''} na semana</p>
+        </div>
+        <div className="flex gap-1">
+          {!hojeNaSemana && onGoToToday && (
+            <Button variant="ghost" size="sm" onClick={onGoToToday} className="text-[10px] font-black uppercase tracking-wider text-primary hover:bg-primary/10 h-8 px-2 rounded-lg">
+              <CalendarDays className="w-3.5 h-3.5 mr-1" />Hoje
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={onNextWeek} className="rounded-xl hover:bg-primary/10 hover:text-primary" disabled={!onNextWeek}>
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
       <table className="w-full border-collapse min-w-[800px]">
         <thead>
           <tr className="bg-slate-50 border-b">
             <th className="p-3 w-20 border-r text-[10px] font-black text-slate-400 uppercase tracking-widest">Hora</th>
             {days.map(day => (
-              <th key={day.toString()} className="p-3 border-r min-w-[120px]">
+              <th key={day.toString()} className={cn("p-3 border-r min-w-[120px]", isToday(day) && "bg-primary/5")}>
                 <p className="text-[10px] font-black text-slate-400 uppercase">{format(day, "EEEE", { locale: ptBR })}</p>
-                <p className="text-sm font-black text-slate-800">{format(day, "dd/MM")}</p>
+                <p className={cn("text-sm font-black", isToday(day) ? "text-primary" : "text-slate-800")}>{format(day, "dd/MM")}</p>
+                {isToday(day) && <span className="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded-full font-black">HOJE</span>}
               </th>
             ))}
           </tr>
@@ -86,6 +116,7 @@ export function AgendaWeekGridView({ selectedDate, appointments, onAppointmentCl
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
