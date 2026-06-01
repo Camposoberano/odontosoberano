@@ -113,11 +113,10 @@ export function buildVars(
   };
 }
 
-export async function exportarDocumentoPDF(elementId: string, filename: string): Promise<void> {
+async function _renderPDF(elementId: string): Promise<any> {
   const el = document.getElementById(elementId);
   if (!el) throw new Error(`Elemento não encontrado: ${elementId}`);
 
-  // Clonar e mover para body — evita problemas de position:fixed/zIndex do container pai
   const clone = el.cloneNode(true) as HTMLElement;
   clone.style.cssText = [
     'position:absolute',
@@ -129,7 +128,6 @@ export async function exportarDocumentoPDF(elementId: string, filename: string):
   ].join(';');
   document.body.appendChild(clone);
 
-  // Aguardar imagens carregarem no clone
   await Promise.all(
     Array.from(clone.querySelectorAll('img')).map(img =>
       img.complete ? Promise.resolve() : new Promise<void>(r => { img.onload = r; img.onerror = r; })
@@ -170,7 +168,17 @@ export async function exportarDocumentoPDF(elementId: string, filename: string):
     }
   }
 
+  return pdf;
+}
+
+export async function exportarDocumentoPDF(elementId: string, filename: string): Promise<void> {
+  const pdf = await _renderPDF(elementId);
   pdf.save(filename);
+}
+
+export async function gerarPDFBlob(elementId: string): Promise<Blob> {
+  const pdf = await _renderPDF(elementId);
+  return pdf.output('blob');
 }
 
 // Tipos de documento para UI

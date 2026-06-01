@@ -9,7 +9,9 @@ import { Loader2, Download, Save, FileText } from 'lucide-react';
 import { Paciente } from '@/hooks/usePacientes';
 import { Dentista } from '@/hooks/useDentistas';
 import { useDocumentos } from '@/hooks/useDocumentos';
-import { buildVars, exportarDocumentoPDF, TIPOS_DOCUMENTO, TipoDocumento } from '@/utils/documentoUtils';
+import { buildVars, exportarDocumentoPDF, gerarPDFBlob, TIPOS_DOCUMENTO, TipoDocumento } from '@/utils/documentoUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { InformacoesClinica } from '@/hooks/useInformacoesClinica';
 import { ContratoTemplate } from '@/components/documentos/ContratoTemplate';
 import { TCLETemplate } from '@/components/documentos/TCLETemplate';
@@ -42,6 +44,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
   const [salvando, setSalvando] = useState(false);
   const templateRef = useRef<HTMLDivElement>(null);
 
+  const { user } = useAuth();
   const { createDocumento } = useDocumentos(paciente.id);
   const { data: anamneseData } = useAnamnese(paciente.id);
 
@@ -79,15 +82,32 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
   }, [tipo, tipoLabel, paciente.nome, vars.DATA_HOJE]);
 
   const handleSalvar = useCallback(async () => {
-    if (!tipo) return;
+    if (!tipo || !user) return;
     setSalvando(true);
     try {
+      let pdf_url: string | undefined;
+      try {
+        const blob = await gerarPDFBlob('documento-pdf');
+        const path = `${user.id}/${paciente.id}/${Date.now()}.pdf`;
+        const { error: upErr } = await supabase.storage
+          .from('documentos')
+          .upload(path, blob, { contentType: 'application/pdf' });
+        if (!upErr) {
+          const { data: signed } = await supabase.storage
+            .from('documentos')
+            .createSignedUrl(path, 365 * 24 * 3600);
+          pdf_url = signed?.signedUrl ?? undefined;
+        }
+      } catch {
+        // upload falhou — salva registro sem URL
+      }
       await createDocumento({
         paciente_id: paciente.id,
         dentista_id: dentistaSelecionado?.id,
         tipo,
         titulo: `${tipoLabel} — ${vars.DATA_HOJE}`,
         conteudo_json: { vars, extras, dentistaId },
+        pdf_url,
       });
       onClose();
     } catch {
@@ -95,7 +115,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
     } finally {
       setSalvando(false);
     }
-  }, [tipo, tipoLabel, paciente.id, dentistaSelecionado?.id, vars, extras, dentistaId, createDocumento, onClose]);
+  }, [tipo, tipoLabel, paciente.id, dentistaSelecionado?.id, vars, extras, dentistaId, createDocumento, onClose, user]);
 
   const setExtra = (k: string, v: string) => setExtras(prev => ({ ...prev, [k]: v }));
 

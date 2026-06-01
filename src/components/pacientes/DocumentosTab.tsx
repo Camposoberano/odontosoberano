@@ -79,6 +79,10 @@ export function DocumentosTab({ pacienteId, paciente }: Props) {
   }, [downloadDoc]);
 
   const handleDownload = (doc: Documento) => {
+    if (doc.pdf_url) {
+      window.open(doc.pdf_url, '_blank');
+      return;
+    }
     setDownloadingId(doc.id);
     setDownloadDoc(doc);
   };
