@@ -29,7 +29,9 @@ export interface Paciente {
   genero?: string | null;
   profissao?: string | null;
   como_conheceu?: string | null;
+  whatsapp?: string | null;
   nome_responsavel?: string | null;
+  parentesco_responsavel?: string | null;
   cpf_responsavel?: string | null;
   telefone_responsavel?: string | null;
   // campos extras (migração 116)

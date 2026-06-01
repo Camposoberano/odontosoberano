@@ -64,6 +64,7 @@ const baseSchema = z.object({
   apelido: z.string().max(50).nullable().optional(),
   email: z.string().email('Email inválido').max(100).toLowerCase().trim().optional().or(z.literal('')),
   telefone: z.string().min(10, 'Mínimo 10 dígitos').max(15).regex(/^[\d\s()+-]+$/),
+  whatsapp: z.string().max(20).nullable().optional(),
   cpf: z.string().nullable().optional().refine(v => !v || v.length === 0 || isValidCPF(v), 'CPF inválido'),
   data_nascimento: z.string().nullable().optional(),
   genero: z.string().nullable().optional(),
@@ -83,6 +84,7 @@ const baseSchema = z.object({
   observacao_endereco: z.string().max(200).nullable().optional(),
   endereco: z.string().max(200).nullable().optional(),
   // responsável
+  parentesco_responsavel: z.string().max(50).nullable().optional(),
   nome_responsavel: z.string().max(100).nullable().optional(),
   cpf_responsavel: z.string().nullable().optional().refine(v => !v || v.length === 0 || isValidCPF(v), 'CPF inválido'),
   telefone_responsavel: z.string().nullable().optional(),
@@ -102,6 +104,7 @@ export interface CreatePacienteData {
   apelido?: string | null;
   email: string;
   telefone: string;
+  whatsapp?: string | null;
   cpf?: string | null;
   data_nascimento?: string | null;
   genero?: string | null;
@@ -119,6 +122,7 @@ export interface CreatePacienteData {
   estado?: string | null;
   observacao_endereco?: string | null;
   endereco?: string | null;
+  parentesco_responsavel?: string | null;
   nome_responsavel?: string | null;
   cpf_responsavel?: string | null;
   telefone_responsavel?: string | null;
@@ -141,13 +145,13 @@ interface PacienteFormProps {
 }
 
 const emptyForm = (): CreatePacienteData => ({
-  nome: '', apelido: '', email: '', telefone: '', cpf: '',
+  nome: '', apelido: '', email: '', telefone: '', whatsapp: '', cpf: '',
   data_nascimento: '', genero: '', area_tratamento: '', profissao: '',
   como_conheceu: '', status: 'Ativo', paciente_estrangeiro: false,
   cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '',
   estado: '', observacao_endereco: '', endereco: '',
-  nome_responsavel: '', cpf_responsavel: '', telefone_responsavel: '',
-  data_nasc_responsavel: '', email_responsavel: '',
+  parentesco_responsavel: '', nome_responsavel: '', cpf_responsavel: '',
+  telefone_responsavel: '', data_nasc_responsavel: '', email_responsavel: '',
   etiquetas: [], numero_prontuario: '', rede_social: '',
   plano_id: null, numero_carteirinha: '', titular_plano: '',
 });
@@ -157,12 +161,18 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [novaEtiqueta, setNovaEtiqueta] = useState('');
+  const [activeTab, setActiveTab] = useState('dados');
   const { toast } = useToast();
   const { convenios } = useConvenios();
 
   const eMenor = formData.data_nascimento
     ? calcularIdade(formData.data_nascimento) < 18
     : false;
+
+  // Auto-abre aba responsável quando detecta menor de idade
+  React.useEffect(() => {
+    if (eMenor) setActiveTab('responsavel');
+  }, [eMenor]);
 
   const idade = formData.data_nascimento
     ? calcularIdade(formData.data_nascimento)
@@ -175,6 +185,7 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
         apelido: paciente.apelido || '',
         email: paciente.email || '',
         telefone: paciente.telefone || '',
+        whatsapp: (paciente as any).whatsapp || '',
         cpf: paciente.cpf || '',
         data_nascimento: paciente.data_nascimento || '',
         genero: paciente.genero || '',
@@ -192,6 +203,7 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
         estado: paciente.estado || '',
         observacao_endereco: paciente.observacao_endereco || '',
         endereco: paciente.endereco || '',
+        parentesco_responsavel: (paciente as any).parentesco_responsavel || '',
         nome_responsavel: paciente.nome_responsavel || '',
         cpf_responsavel: paciente.cpf_responsavel || '',
         telefone_responsavel: paciente.telefone_responsavel || '',
@@ -350,7 +362,7 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <Tabs defaultValue="dados" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="dados">Dados</TabsTrigger>
               <TabsTrigger value="responsavel">Responsável</TabsTrigger>
@@ -438,6 +450,11 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
                       className={errors.telefone ? 'border-red-500' : ''} />
                     {err('telefone')}
                   </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="whatsapp">WhatsApp <span className="text-xs text-muted-foreground">(se diferente do telefone)</span></Label>
+                  <TelefoneInput id="whatsapp" value={formData.whatsapp || ''}
+                    onChange={v => set('whatsapp', v)} />
                 </div>
               </section>
 
@@ -593,6 +610,28 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
                 </div>
               )}
               <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="parentesco_responsavel">Parentesco / Vínculo {eMenor && <span className="text-red-500">*</span>}</Label>
+                  <select
+                    id="parentesco_responsavel"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={formData.parentesco_responsavel || ''}
+                    onChange={e => set('parentesco_responsavel', e.target.value)}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Pai">Pai</option>
+                    <option value="Mãe">Mãe</option>
+                    <option value="Avô">Avô</option>
+                    <option value="Avó">Avó</option>
+                    <option value="Tio">Tio</option>
+                    <option value="Tia">Tia</option>
+                    <option value="Irmão">Irmão</option>
+                    <option value="Irmã">Irmã</option>
+                    <option value="Cônjuge">Cônjuge</option>
+                    <option value="Tutor Legal">Tutor Legal</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
                 <div className="space-y-1">
                   <Label htmlFor="nome_responsavel">
                     Nome do Responsável {eMenor && <span className="text-red-500">*</span>}
