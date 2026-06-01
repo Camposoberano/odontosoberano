@@ -200,8 +200,20 @@ function DebitosTab({ pacienteId }: { pacienteId: string }) {
   const { data: contas = [], isLoading } = useContasReceberByPaciente(pacienteId);
   if (isLoading) return <LoadingState />;
   if (contas.length === 0) return <EmptyState msg="Nenhuma conta a receber para este paciente." />;
-  const total = contas.reduce((a, c) => a + c.valor, 0);
-  const pendente = contas.filter(c => c.status === "Pendente" || c.status === "Vencida").reduce((a, c) => a + c.valor, 0);
+
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const total   = contas.reduce((a, c) => a + c.valor, 0);
+  const pago    = contas.filter(c => c.status === "Recebida").reduce((a, c) => a + c.valor, 0);
+  const pendente= contas.filter(c => c.status === "Pendente").reduce((a, c) => a + c.valor, 0);
+  const vencido = contas.filter(c => c.status === "Vencida").reduce((a, c) => a + c.valor, 0);
+
+  const groups = [
+    { label: "Vencidas",  status: "Vencida",   items: contas.filter(c => c.status === "Vencida"),   border: "border-red-200",    bg: "bg-red-50/50",    dot: "bg-red-500" },
+    { label: "Pendentes", status: "Pendente",  items: contas.filter(c => c.status === "Pendente"),  border: "border-yellow-200", bg: "bg-yellow-50/50", dot: "bg-yellow-500" },
+    { label: "Pagas",     status: "Recebida",  items: contas.filter(c => c.status === "Recebida"),  border: "border-green-200",  bg: "bg-green-50/50",  dot: "bg-green-500" },
+    { label: "Canceladas",status: "Cancelada", items: contas.filter(c => c.status === "Cancelada"), border: "border-slate-200",  bg: "bg-slate-50/50",  dot: "bg-slate-400" },
+  ].filter(g => g.items.length > 0);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-2">
@@ -215,53 +227,71 @@ function DebitosTab({ pacienteId }: { pacienteId: string }) {
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-2">
+
+      {/* Resumo financeiro */}
+      <div className="grid grid-cols-2 gap-3">
         <Card className="rounded-2xl border-2">
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total gerado</p>
-            <p className="text-xl font-black text-slate-800">{total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+            <p className="text-lg font-black text-slate-800">{fmt(total)}</p>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-2 border-red-100 bg-red-50/50">
-          <CardContent className="p-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">Pendente/Vencido</p>
-            <p className="text-xl font-black text-red-600">{pendente.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+        <Card className="rounded-2xl border-2 border-green-100 bg-green-50/50">
+          <CardContent className="p-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-green-500 mb-1">Pago</p>
+            <p className="text-lg font-black text-green-700">{fmt(pago)}</p>
           </CardContent>
         </Card>
+        {pendente > 0 && (
+          <Card className="rounded-2xl border-2 border-yellow-100 bg-yellow-50/50">
+            <CardContent className="p-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-yellow-600 mb-1">Pendente</p>
+              <p className="text-lg font-black text-yellow-700">{fmt(pendente)}</p>
+            </CardContent>
+          </Card>
+        )}
+        {vencido > 0 && (
+          <Card className="rounded-2xl border-2 border-red-100 bg-red-50/50">
+            <CardContent className="p-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">Vencido</p>
+              <p className="text-lg font-black text-red-600">{fmt(vencido)}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
-      <div className="overflow-x-auto rounded-2xl border-2">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-widest text-slate-500">Descrição</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-widest text-slate-500">Orçamento</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-widest text-slate-500">Vencimento</th>
-              <th className="text-right px-4 py-3 font-black text-xs uppercase tracking-widest text-slate-500">Valor</th>
-              <th className="text-left px-4 py-3 font-black text-xs uppercase tracking-widest text-slate-500">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contas.map((c: ContaReceber) => (
-              <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-slate-800">{c.descricao}</td>
-                <td className="px-4 py-3">
-                  {c.orcamento ? (
-                    <Button variant="outline" size="sm" className="h-6 rounded-lg text-xs px-2 gap-1"
+
+      {/* Grupos por status */}
+      {groups.map(group => (
+        <div key={group.status}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${group.bg} border ${group.border} mb-2`}>
+            <div className={`w-2 h-2 rounded-full ${group.dot}`} />
+            <span className="text-xs font-black uppercase tracking-widest text-slate-600">{group.label}</span>
+            <span className="ml-auto text-xs font-bold text-slate-500">{group.items.length} parcela{group.items.length !== 1 ? "s" : ""}</span>
+          </div>
+          <div className="space-y-2">
+            {group.items.map((c: ContaReceber) => (
+              <div key={c.id} className={`rounded-2xl border-2 ${group.border} p-3 flex items-center gap-3`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{c.descricao}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Vence: {new Date(c.data_vencimento).toLocaleDateString("pt-BR")}
+                    {c.forma_pagamento && ` · ${c.forma_pagamento}`}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm font-black text-slate-800">{fmt(c.valor)}</p>
+                  {c.orcamento && (
+                    <Button variant="ghost" size="sm" className="h-5 px-1 text-[10px] text-primary mt-0.5"
                       onClick={() => navigate(`/orcamentos/${c.orcamento!.id}`)}>
-                      Orç. #{c.orcamento.numero_orcamento} <ExternalLink className="w-3 h-3" />
+                      Orç.#{c.orcamento.numero_orcamento} <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
                     </Button>
-                  ) : <span className="text-slate-400">—</span>}
-                </td>
-                <td className="px-4 py-3 text-slate-600">{new Date(c.data_vencimento).toLocaleDateString("pt-BR")}</td>
-                <td className="px-4 py-3 text-right font-bold text-slate-800">
-                  {c.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </td>
-                <td className="px-4 py-3">{statusContaBadge(c.status)}</td>
-              </tr>
+                  )}
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

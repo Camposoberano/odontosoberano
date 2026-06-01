@@ -88,6 +88,54 @@ const STATUS_LABELS: Record<string, string> = {
   entregue: "Entregue",
 };
 
+async function sincronizarOdontograma(
+  orcamentoId: string,
+  status: string,
+  userId: string,
+) {
+  const { data: orc } = await supabase
+    .from("orcamentos")
+    .select("paciente_id, orcamento_itens(*)")
+    .eq("id", orcamentoId)
+    .single();
+  if (!orc?.paciente_id) return;
+  const itensComDente = (orc.orcamento_itens as any[])?.filter(i => i.dente_numero) ?? [];
+  if (!itensComDente.length) return;
+
+  const { data: existente } = await supabase
+    .from("odontograma")
+    .select("id, dados_dentes")
+    .eq("paciente_id", orc.paciente_id)
+    .maybeSingle();
+
+  const statusLabel = { aprovado: "Aprovado", em_andamento: "Em andamento", finalizado: "Finalizado", entregue: "Entregue" }[status] ?? status;
+  const novosDados: Record<string, any> = { ...(existente?.dados_dentes ?? {}) };
+
+  for (const item of itensComDente) {
+    const key = String(item.dente_numero);
+    const atual = novosDados[key] ?? { numero: Number(item.dente_numero), procedimentos: [] };
+    const label = `${item.nome_procedimento} [${statusLabel}]`;
+    if (!Array.isArray(atual.procedimentos)) atual.procedimentos = [];
+    if (!atual.procedimentos.some((p: string) => p.startsWith(item.nome_procedimento))) {
+      atual.procedimentos = [...atual.procedimentos, label];
+    } else {
+      atual.procedimentos = atual.procedimentos.map((p: string) =>
+        p.startsWith(item.nome_procedimento) ? label : p
+      );
+    }
+    novosDados[key] = atual;
+  }
+
+  if (existente) {
+    await supabase.from("odontograma")
+      .update({ dados_dentes: novosDados, user_id: userId })
+      .eq("id", existente.id);
+  } else {
+    await supabase.from("odontograma")
+      .insert({ paciente_id: orc.paciente_id, user_id: userId, dados_dentes: novosDados });
+  }
+}
+
 async function registrarNoProntuario(
   pacienteId: string,
   userId: string,
@@ -212,7 +260,6 @@ export function useOrcamentos() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, variables.id] });
       toast({ title: "Status atualizado" });
-      // Registrar no prontuário — busca orcamento no cache para pegar paciente_id
       if (user?.id) {
         const cached = queryClient.getQueryData<Orcamento[]>([QUERY_KEY, user.id]);
         const orc = cached?.find(o => o.id === variables.id);
@@ -224,6 +271,10 @@ export function useOrcamentos() {
             `📋 Orçamento #${orc.numero_orcamento} — Status alterado para: ${label}`,
             orc.dentista_id,
           );
+        }
+        // Sync dentes trabalhados no odontograma
+        if (["aprovado", "em_andamento", "finalizado", "entregue"].includes(variables.status)) {
+          sincronizarOdontograma(variables.id, variables.status, user.id);
         }
       }
     },
