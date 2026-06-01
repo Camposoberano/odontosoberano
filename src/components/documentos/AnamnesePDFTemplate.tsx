@@ -99,12 +99,12 @@ function BlocoAssinaturaAnamnese({ vars }: { vars: DocumentoVars }) {
   return (
     <div style={{ display: 'flex', gap: 32, marginTop: 28 }}>
       <div style={{ flex: 1, textAlign: 'center' }}>
-        <div style={{ borderBottom: '1.5px solid #9ca3af', height: 32, marginBottom: 6 }} />
+        <div style={{ borderBottom: '1.5px solid #9ca3af', height: 36, marginBottom: 8 }} />
         <p style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>{vars.PACIENTE_NOME || '___________________________________'}</p>
         <p style={{ fontSize: 9.5, color: BRAND.cinza, margin: '2px 0 0' }}>Paciente ou Responsável — CPF: {vars.PACIENTE_CPF || '___.___.___-__'}</p>
       </div>
       <div style={{ flex: 1, textAlign: 'center' }}>
-        <div style={{ borderBottom: '1.5px solid #9ca3af', height: 32, marginBottom: 6 }} />
+        <div style={{ borderBottom: '1.5px solid #9ca3af', height: 36, marginBottom: 8 }} />
         <p style={{ fontSize: 10.5, fontWeight: 700, margin: 0 }}>{vars.DENTISTA_NOME || vars.CLINICA_DENTISTA_NOME || '___________________________________'}</p>
         <p style={{ fontSize: 9.5, color: BRAND.cinza, margin: '2px 0 0' }}>Cirurgião(ã)-Dentista — CRO: {vars.DENTISTA_CRO || vars.CLINICA_CRO_RESPONSAVEL || '___________'}</p>
       </div>

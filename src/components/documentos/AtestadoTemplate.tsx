@@ -49,8 +49,8 @@ export const AtestadoTemplate = forwardRef<HTMLDivElement, Props>(
           </div>
 
           <p style={{ fontSize: 11, lineHeight: 1.8, marginBottom: 8 }}>
-            esteve sob meus cuidados profissionais no dia <strong>{vars.DATA_HOJE}</strong>,
-            no horário das <strong>{vars.HORA_ATUAL}</strong>, sendo submetido(a) ao seguinte
+            esteve sob meus cuidados profissionais no dia <strong>{vars.DATA_HOJE || '___/___/______'}</strong>,
+            no horário das <strong>{vars.HORA_ATUAL || '___:___'}</strong>, sendo submetido(a) ao seguinte
             procedimento odontológico:
           </p>
 

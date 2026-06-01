@@ -442,7 +442,7 @@ export const OrcamentoPDFTemplate = forwardRef<HTMLDivElement, OrcamentoPDFTempl
           <div style={s.signaturas}>
             <div style={s.signaturaBox}>
               <div style={{ ...s.signaturaLinha, height: 40 }} />
-              <p style={s.signaturaNome}>{orcamento.paciente?.nome ?? "Paciente"}</p>
+              <p style={s.signaturaNome}>{orcamento.paciente?.nome || '________________________________'}</p>
               <p style={s.signaturaDetalhe}>Paciente ou Responsável</p>
             </div>
             <div style={s.signaturaBox}>
