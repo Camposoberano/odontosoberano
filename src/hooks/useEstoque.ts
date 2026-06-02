@@ -42,7 +42,6 @@ export function useEstoque() {
       const { data, error } = await supabase
         .from("estoque")
         .select("*")
-        .eq("user_id", user.id)
         .order("item", { ascending: true });
 
       if (error) throw error;

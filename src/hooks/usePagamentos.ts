@@ -37,8 +37,7 @@ export const usePagamentos = () => {
       // Buscar fornecedores primeiro
       const { data: fornecedores, error: fornecedoresError } = await supabase
         .from('fornecedores')
-        .select('id, nome')
-        .eq('user_id', user.id);
+        .select('id, nome');
 
       if (fornecedoresError) throw fornecedoresError;
 
@@ -46,7 +45,6 @@ export const usePagamentos = () => {
       const { data: contas, error: contasError } = await supabase
         .from('contas_pagar')
         .select('*')
-        .eq('user_id', user.id)
         .in('status', ['Pendente', 'Vencida'])
         .order('data_vencimento', { ascending: true });
 

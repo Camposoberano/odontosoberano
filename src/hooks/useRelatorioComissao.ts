@@ -47,8 +47,7 @@ export const useRelatorioComissao = (dataInicio?: Date, dataFim?: Date) => {
       // Buscar dentistas primeiro
       const { data: dentistas, error: dentistasError } = await supabase
         .from('dentistas')
-        .select('id, nome')
-        .eq('user_id', user.id);
+        .select('id, nome');
 
       if (dentistasError) throw dentistasError;
 
@@ -56,7 +55,6 @@ export const useRelatorioComissao = (dataInicio?: Date, dataFim?: Date) => {
       let comissoesQuery = supabase
         .from('comissoes')
         .select('*')
-        .eq('user_id', user.id)
         .order('data_inicio', { ascending: false });
 
       if (dataInicio) {

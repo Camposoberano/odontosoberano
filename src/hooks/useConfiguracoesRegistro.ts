@@ -24,7 +24,6 @@ export const useConfiguracoesRegistro = () => {
       const { data, error } = await supabase
         .from("configuracoes_sistema")
         .select("*")
-        .eq("user_id", user.id)
         .maybeSingle();
 
       if (error) {

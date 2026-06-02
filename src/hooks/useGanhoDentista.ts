@@ -37,7 +37,6 @@ export const useGanhoDentista = (dataInicio?: Date, dataFim?: Date) => {
       const { data: dentistas, error: dentistasError } = await supabase
         .from('dentistas')
         .select('id, nome')
-        .eq('user_id', user.id)
         .eq('status', 'Ativo');
 
       if (dentistasError) throw dentistasError;
@@ -46,7 +45,6 @@ export const useGanhoDentista = (dataInicio?: Date, dataFim?: Date) => {
       let agendamentosQuery = supabase
         .from('agendamentos')
         .select('dentista_id, valor, procedimento, status')
-        .eq('user_id', user.id)
         .in('status', ['Concluído', 'Realizado']);
 
       if (dataInicio) {
@@ -63,7 +61,6 @@ export const useGanhoDentista = (dataInicio?: Date, dataFim?: Date) => {
       let comissoesQuery = supabase
         .from('comissoes')
         .select('dentista_id, valor_comissao')
-        .eq('user_id', user.id)
         .eq('status', 'Paga');
 
       if (dataInicio) {

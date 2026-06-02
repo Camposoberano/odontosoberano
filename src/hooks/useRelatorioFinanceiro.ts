@@ -40,7 +40,6 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       let contasReceberQuery = supabase
         .from('contas_receber')
         .select('valor, categoria, data_recebimento')
-        .eq('user_id', user.id)
         .eq('status', 'Recebida')
         .not('data_recebimento', 'is', null);
 
@@ -58,7 +57,6 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       let agendamentosQuery = supabase
         .from('agendamentos')
         .select('valor, procedimento, data_agendamento')
-        .eq('user_id', user.id)
         .in('status', ['Concluído', 'Realizado'])
         .not('valor', 'is', null);
 
@@ -76,7 +74,6 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       let contasPagarQuery = supabase
         .from('contas_pagar')
         .select('valor, categoria, data_pagamento')
-        .eq('user_id', user.id)
         .eq('status', 'Paga')
         .not('data_pagamento', 'is', null);
 
@@ -94,7 +91,6 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       let comissoesQuery = supabase
         .from('comissoes')
         .select('valor_comissao, data_pagamento')
-        .eq('user_id', user.id)
         .eq('status', 'Paga')
         .not('data_pagamento', 'is', null);
 
@@ -112,20 +108,17 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       const { data: contasReceberPendentes } = await supabase
         .from('contas_receber')
         .select('valor')
-        .eq('user_id', user.id)
         .eq('status', 'Pendente');
 
       const { data: contasPagarPendentes } = await supabase
         .from('contas_pagar')
         .select('valor')
-        .eq('user_id', user.id)
         .eq('status', 'Pendente');
 
       // Buscar cheques a compensar
       const { data: chequesCompensar } = await supabase
         .from('cheques')
         .select('valor')
-        .eq('user_id', user.id)
         .eq('status', 'A Compensar');
 
       // Calcular totais de receitas

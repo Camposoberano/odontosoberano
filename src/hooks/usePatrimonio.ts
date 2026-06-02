@@ -40,7 +40,6 @@ export function usePatrimonio() {
       const { data, error } = await supabase
         .from("patrimonio")
         .select("*")
-        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
