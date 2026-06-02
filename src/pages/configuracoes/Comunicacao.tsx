@@ -75,7 +75,11 @@ export default function Comunicacao() {
               </div>
               <Switch
                 checked={form.confirmacao_ativa}
-                onCheckedChange={(v) => setForm((f) => ({ ...f, confirmacao_ativa: v }))}
+                onCheckedChange={(v) => {
+                  const next = { ...form, confirmacao_ativa: v };
+                  setForm(next);
+                  saveConfig(next);
+                }}
               />
             </div>
             {form.confirmacao_ativa && (
@@ -133,7 +137,11 @@ export default function Comunicacao() {
               </div>
               <Switch
                 checked={form.lembrete_ativo}
-                onCheckedChange={(v) => setForm((f) => ({ ...f, lembrete_ativo: v }))}
+                onCheckedChange={(v) => {
+                  const next = { ...form, lembrete_ativo: v };
+                  setForm(next);
+                  saveConfig(next);
+                }}
               />
             </div>
             {form.lembrete_ativo && (
@@ -191,7 +199,11 @@ export default function Comunicacao() {
               </div>
               <Switch
                 checked={form.alerta_saldo_ativo}
-                onCheckedChange={(v) => setForm((f) => ({ ...f, alerta_saldo_ativo: v }))}
+                onCheckedChange={(v) => {
+                  const next = { ...form, alerta_saldo_ativo: v };
+                  setForm(next);
+                  saveConfig(next);
+                }}
               />
             </div>
           </CardContent>

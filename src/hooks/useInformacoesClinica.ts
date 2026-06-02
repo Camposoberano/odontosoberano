@@ -34,6 +34,7 @@ export const useInformacoesClinica = () => {
       const { data, error } = await supabase
         .from("informacoes_clinica")
         .select("*")
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
@@ -46,11 +47,11 @@ export const useInformacoesClinica = () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Usuário não autenticado");
 
-      // Verifica se já existe um registro
+      // Verifica se já existe algum registro (sem filtrar por user_id — acesso compartilhado)
       const { data: existing } = await supabase
         .from("informacoes_clinica")
         .select("id")
-        .eq("user_id", userData.user.id)
+        .limit(1)
         .maybeSingle();
 
       if (existing) {

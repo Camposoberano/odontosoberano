@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PacienteCombobox } from "@/components/ui/paciente-combobox";
 import {
   Card,
   CardContent,
@@ -289,16 +290,11 @@ export default function NovoOrcamento() {
               <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Paciente *</Label>
-                  <Select value={pacienteId} onValueChange={setPacienteId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar paciente..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pacientes.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <PacienteCombobox
+                    value={pacienteId}
+                    onValueChange={setPacienteId}
+                    pacientes={pacientes}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Dentista Responsável</Label>

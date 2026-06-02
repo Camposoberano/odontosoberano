@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PacienteCombobox } from "@/components/ui/paciente-combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -148,18 +149,11 @@ export function AgendamentoForm({ open, onOpenChange, onSubmit, agendamento }: A
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
               <Label htmlFor="paciente_id">Paciente *</Label>
-              <Select value={formData.paciente_id} onValueChange={(value) => setFormData({ ...formData, paciente_id: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o paciente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pacientes.map((paciente) => (
-                    <SelectItem key={paciente.id} value={paciente.id}>
-                      {paciente.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PacienteCombobox
+                value={formData.paciente_id}
+                onValueChange={(value) => setFormData({ ...formData, paciente_id: value })}
+                pacientes={pacientes}
+              />
             </div>
 
             <div className="space-y-2 col-span-2">
