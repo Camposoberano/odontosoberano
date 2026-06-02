@@ -22,9 +22,10 @@ export function Odontograma({ pacienteId }: OdontogramaProps) {
   useEffect(() => {
     if (odontograma) {
       const raw = odontograma.dados_dentes as Record<string, any>;
-      // Detectar se é formato legado (tem campo 'procedimentos': string[])
+      // Formato legado: objeto tem campo 'numero' (number) + 'procedimentos' (string[])
+      // Novo formato: objeto tem 'status', 'superficies', etc. — sem 'numero'
       const isLegado = raw && Object.values(raw).some(
-        (v: any) => Array.isArray(v?.procedimentos)
+        (v: any) => typeof v?.numero === 'number' && Array.isArray(v?.procedimentos)
       );
       setDados(isLegado ? adaptarDadosLegados(raw) : (raw as OdontogramaDados) ?? {});
       setObservacoes(odontograma.observacoes || "");
