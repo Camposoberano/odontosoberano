@@ -15,7 +15,6 @@ export const useDashboardStats = () => {
       const { count, error } = await supabase
         .from("pacientes")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
         .eq("status", "Ativo");
 
       if (error) throw error;
@@ -37,7 +36,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("agendamentos")
         .select("status")
-        .eq("user_id", user.id)
         .gte("data_agendamento", inicioHoje)
         .lte("data_agendamento", fimHoje);
 
@@ -68,7 +66,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("contas_receber")
         .select("valor")
-        .eq("user_id", user.id)
         .eq("status", "Recebida")
         .gte("data_recebimento", inicioMes)
         .lte("data_recebimento", fimMes);
@@ -89,8 +86,7 @@ export const useDashboardStats = () => {
 
       const { data, error } = await supabase
         .from("estoque")
-        .select("*")
-        .eq("user_id", user.id);
+        .select("*");
 
       if (error) throw error;
 
@@ -117,7 +113,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("contas_receber")
         .select("valor")
-        .eq("user_id", user.id)
         .eq("status", "Pendente")
         .gte("data_vencimento", inicioMes)
         .lte("data_vencimento", fimMes);
@@ -142,7 +137,6 @@ export const useDashboardStats = () => {
       const { data: agendamentos, error } = await supabase
         .from("agendamentos")
         .select("*")
-        .eq("user_id", user.id)
         .gte("data_agendamento", inicioHoje)
         .lte("data_agendamento", fimHoje)
         .order("data_agendamento", { ascending: true })
@@ -192,7 +186,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("estoque")
         .select("*")
-        .eq("user_id", user.id)
         .order("estoque", { ascending: true });
 
       if (error) throw error;
@@ -218,7 +211,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("contas_receber")
         .select("valor")
-        .eq("user_id", user.id)
         .neq("status", "Recebida")
         .lt("data_vencimento", new Date().toISOString());
       if (error) throw error;
@@ -280,7 +272,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("pacientes")
         .select("data_nascimento")
-        .eq("user_id", user.id)
         .not("data_nascimento", "is", null);
       if (error) throw error;
       const hoje = new Date();
@@ -306,7 +297,6 @@ export const useDashboardStats = () => {
       const { count, error } = await supabase
         .from("pacientes")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
         .gte("created_at", startOfMonth(new Date()).toISOString());
       if (error) throw error;
       return count || 0;
@@ -322,7 +312,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("agendamentos")
         .select("paciente_id")
-        .eq("user_id", user.id)
         .not("status", "in", '("7-Faltou","6-Atrasado")')
         .gte("data_agendamento", subMonths(new Date(), 6).toISOString());
       if (error) throw error;
@@ -338,7 +327,7 @@ export const useDashboardStats = () => {
       if (!user?.id) return 0;
       const [{ data: orcData }, { data: agData }] = await Promise.all([
         supabase.from("orcamentos").select("paciente_id").eq("status", "aprovado"),
-        supabase.from("agendamentos").select("paciente_id").eq("user_id", user.id).gte("data_agendamento", new Date().toISOString()).neq("status", "cancelado"),
+        supabase.from("agendamentos").select("paciente_id").gte("data_agendamento", new Date().toISOString()).neq("status", "cancelado"),
       ]);
       const comAgend = new Set((agData || []).map(a => a.paciente_id));
       const pacsSemAgend = new Set((orcData || []).filter(o => o.paciente_id && !comAgend.has(o.paciente_id)).map(o => o.paciente_id));
@@ -355,7 +344,6 @@ export const useDashboardStats = () => {
       const { data, error } = await supabase
         .from("agendamentos")
         .select("id, data_agendamento, procedimento, paciente_id, dentista_id")
-        .eq("user_id", user.id)
         .eq("status", "7-Faltou")
         .gte("data_agendamento", subDays(new Date(), 30).toISOString())
         .order("data_agendamento", { ascending: false })

@@ -33,7 +33,6 @@ export const useHonorarios = () => {
       const { data, error } = await supabase
         .from("honorarios")
         .select("*")
-        .eq("user_id", user.id)
         .order("procedimento", { ascending: true });
 
       if (error) throw error;

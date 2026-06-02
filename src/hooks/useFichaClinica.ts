@@ -56,7 +56,6 @@ export function useFichaClinica(pacienteId?: string) {
       const { data, error } = await supabase
         .from("ficha_clinica")
         .select("*")
-        .eq("user_id", user.id)
         .eq("paciente_id", pacienteId)
         .maybeSingle();
 

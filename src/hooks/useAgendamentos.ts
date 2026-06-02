@@ -62,7 +62,6 @@ export const useAgendamentos = () => {
       let query = supabase
         .from("agendamentos")
         .select("*")
-        .eq("user_id", user.id)
         .order("data_agendamento", { ascending: true });
 
       if (startDate) {

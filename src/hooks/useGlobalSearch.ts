@@ -30,7 +30,6 @@ export const useGlobalSearch = (query: string) => {
         const { data: pacientes } = await supabase
           .from("pacientes")
           .select("*")
-          .eq("user_id", user.id)
           .or(`nome.ilike.${searchTerm},cpf.ilike.${searchTerm},telefone.ilike.${searchTerm}`)
           .limit(5);
 
@@ -38,7 +37,6 @@ export const useGlobalSearch = (query: string) => {
         const { data: agendamentos } = await supabase
           .from("agendamentos")
           .select("*")
-          .eq("user_id", user.id)
           .or(`procedimento.ilike.${searchTerm},observacoes.ilike.${searchTerm}`)
           .limit(5);
 
