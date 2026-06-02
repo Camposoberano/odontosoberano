@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Users, Shield, Edit2, Save, X } from 'lucide-react';
+import { Home, Users, Shield, Edit2, Save, X, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +52,52 @@ export default function GerenciarUsuarios() {
     ativo: boolean;
   }>({ nome: '', role: 'SECRETARIA', ativo: true });
 
+  // Modal de criação
+  const [criarOpen, setCriarOpen] = useState(false);
+  const [criando, setCriando] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
+  const [novoUsuario, setNovoUsuario] = useState({
+    nome: '', email: '', senha: '', role: 'SECRETARIA' as UserRole,
+  });
+
+  const handleCriarUsuario = async () => {
+    if (!novoUsuario.nome || !novoUsuario.email || !novoUsuario.senha) {
+      toast({ title: 'Preencha todos os campos', variant: 'destructive' });
+      return;
+    }
+    if (novoUsuario.senha.length < 6) {
+      toast({ title: 'Senha mínimo 6 caracteres', variant: 'destructive' });
+      return;
+    }
+    setCriando(true);
+    try {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email: novoUsuario.email,
+        password: novoUsuario.senha,
+        email_confirm: true,
+        user_metadata: { nome: novoUsuario.nome },
+      });
+      if (error) throw error;
+
+      // Atualiza o profile criado pelo trigger com nome e role corretos
+      if (data.user) {
+        await supabaseAdmin
+          .from('user_profiles')
+          .update({ nome: novoUsuario.nome, role: novoUsuario.role })
+          .eq('user_id', data.user.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['allUserProfiles'] });
+      toast({ title: 'Usuário criado com sucesso!', description: `${novoUsuario.nome} — ${novoUsuario.email}` });
+      setCriarOpen(false);
+      setNovoUsuario({ nome: '', email: '', senha: '', role: 'SECRETARIA' });
+    } catch (error: any) {
+      toast({ title: 'Erro ao criar usuário', description: error.message, variant: 'destructive' });
+    } finally {
+      setCriando(false);
+    }
+  };
+
   const handleEdit = (profile: UserProfile) => {
     setEditingId(profile.id);
     setEditForm({
@@ -98,16 +146,21 @@ export default function GerenciarUsuarios() {
             </Button>
           </div>
 
-          <div className="p-6 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-xl border-l-4 border-l-primary shadow-sm">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg">
-                <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-              </div>
-              Gerenciar Usuários
-            </h1>
-            <p className="text-muted-foreground mt-2 ml-0 sm:ml-11">
-              Gerencie os perfis e permissões dos usuários do sistema
-            </p>
+          <div className="p-6 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-xl border-l-4 border-l-primary shadow-sm flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
+                <div className="p-2 bg-primary rounded-lg">
+                  <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                </div>
+                Gerenciar Usuários
+              </h1>
+              <p className="text-muted-foreground mt-2 ml-0 sm:ml-11">
+                Gerencie os perfis e permissões dos usuários do sistema
+              </p>
+            </div>
+            <Button onClick={() => setCriarOpen(true)} className="gap-2 shrink-0">
+              <UserPlus className="w-4 h-4" /> Novo Usuário
+            </Button>
           </div>
         </div>
 
@@ -281,6 +334,67 @@ export default function GerenciarUsuarios() {
           </CardContent>
         </Card>
       </div>
+      {/* Modal Criar Usuário */}
+      <Dialog open={criarOpen} onOpenChange={setCriarOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" /> Novo Usuário
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>Nome completo *</Label>
+              <Input placeholder="Ex: Maria Silva"
+                value={novoUsuario.nome}
+                onChange={e => setNovoUsuario(p => ({ ...p, nome: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>E-mail *</Label>
+              <Input type="email" placeholder="email@institutobelem.com"
+                value={novoUsuario.email}
+                onChange={e => setNovoUsuario(p => ({ ...p, email: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>Senha temporária *</Label>
+              <div className="relative">
+                <Input
+                  type={showSenha ? 'text' : 'password'}
+                  placeholder="Mínimo 6 caracteres"
+                  value={novoUsuario.senha}
+                  onChange={e => setNovoUsuario(p => ({ ...p, senha: e.target.value }))} />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  onClick={() => setShowSenha(v => !v)}>
+                  {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Perfil / Função</Label>
+              <Select value={novoUsuario.role}
+                onValueChange={v => setNovoUsuario(p => ({ ...p, role: v as UserRole }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(ROLE_LABELS) as UserRole[]).map(r => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setCriarOpen(false)} disabled={criando}>
+                Cancelar
+              </Button>
+              <Button className="flex-1 gap-2" onClick={handleCriarUsuario} disabled={criando}>
+                {criando ? <span className="animate-spin">⟳</span> : <UserPlus className="w-4 h-4" />}
+                {criando ? 'Criando...' : 'Criar Usuário'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </ProtectedByRole>
   );
 }
