@@ -74,7 +74,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
     if (!tipo) return;
     setGerandoPDF(true);
     try {
-      await exportarDocumentoPDF('documento-pdf', `${tipoLabel} — ${paciente.nome} — ${vars.DATA_HOJE}.pdf`);
+      await exportarDocumentoPDF('documento-pdf-modal', `${tipoLabel} — ${paciente.nome} — ${vars.DATA_HOJE}.pdf`);
     } catch (err) {
       toast.error('Erro ao gerar PDF');
     } finally {
@@ -88,7 +88,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
     try {
       let pdf_url: string | undefined;
       try {
-        const blob = await gerarPDFBlob('documento-pdf');
+        const blob = await gerarPDFBlob('documento-pdf-modal');
         const path = `${user.id}/${paciente.id}/${Date.now()}.pdf`;
         const { error: upErr } = await supabase.storage
           .from('documentos')
@@ -689,7 +689,7 @@ export function GerarDocumentoModal({ open, onClose, paciente, dentistas, clinic
         </div>
 
         {/* Template oculto para captura */}
-        <div id="documento-pdf" style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
+        <div id="documento-pdf-modal" style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1 }}>
           {renderTemplate()}
         </div>
       </DialogContent>
