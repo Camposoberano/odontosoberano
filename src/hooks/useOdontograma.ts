@@ -65,25 +65,27 @@ export function useOdontograma(pacienteId?: string) {
         return;
       }
 
+      // Upsert: se já existe registro para o paciente (criado pelo sync de orçamento),
+      // atualiza em vez de inserir — evita 409 conflict
       const { data, error } = await supabase
         .from("odontograma")
-        .insert([{
+        .upsert({
           paciente_id: odontogramaData.paciente_id,
           dados_dentes: (odontogramaData.dados_dentes || {}) as any,
           observacoes: odontogramaData.observacoes || null,
           user_id: user.id,
-        }])
+        }, { onConflict: 'paciente_id' })
         .select()
         .single();
 
       if (error) throw error;
 
       setOdontograma(data as unknown as Odontograma);
-      toast.success("Odontograma criado com sucesso!");
+      toast.success("Odontograma salvo com sucesso!");
       return data;
     } catch (error: any) {
       console.error("Error creating odontograma:", error);
-      toast.error("Erro ao criar odontograma");
+      toast.error("Erro ao salvar odontograma");
       throw error;
     }
   };
