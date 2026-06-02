@@ -60,28 +60,49 @@ export function useOdontograma(pacienteId?: string) {
 
   const createOdontograma = async (odontogramaData: CreateOdontogramaData) => {
     try {
-      if (!user) {
-        toast.error("Usuário não autenticado");
-        return;
+      if (!user) { toast.error("Usuário não autenticado"); return; }
+
+      // Re-fetch antes de inserir: registro pode ter sido criado em background
+      // pelo sync automático de orçamento → evita 409 conflict
+      const { data: existente } = await supabase
+        .from("odontograma")
+        .select("*")
+        .eq("paciente_id", odontogramaData.paciente_id)
+        .maybeSingle();
+
+      if (existente) {
+        // Já existe — atualizar
+        const { data, error } = await supabase
+          .from("odontograma")
+          .update({
+            dados_dentes: (odontogramaData.dados_dentes || {}) as any,
+            observacoes: odontogramaData.observacoes || null,
+            user_id: user.id,
+          })
+          .eq("id", existente.id)
+          .select()
+          .single();
+        if (error) throw error;
+        setOdontograma(data as unknown as Odontograma);
+        toast.success("Odontograma salvo com sucesso!");
+        return data;
       }
 
-      // Upsert: se já existe registro para o paciente (criado pelo sync de orçamento),
-      // atualiza em vez de inserir — evita 409 conflict
+      // Não existe — inserir
       const { data, error } = await supabase
         .from("odontograma")
-        .upsert({
+        .insert([{
           paciente_id: odontogramaData.paciente_id,
           dados_dentes: (odontogramaData.dados_dentes || {}) as any,
           observacoes: odontogramaData.observacoes || null,
           user_id: user.id,
-        }, { onConflict: 'paciente_id' })
+        }])
         .select()
         .single();
 
       if (error) throw error;
-
       setOdontograma(data as unknown as Odontograma);
-      toast.success("Odontograma salvo com sucesso!");
+      toast.success("Odontograma criado com sucesso!");
       return data;
     } catch (error: any) {
       console.error("Error creating odontograma:", error);
