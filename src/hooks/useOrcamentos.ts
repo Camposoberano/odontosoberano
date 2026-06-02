@@ -46,7 +46,12 @@ export interface Orcamento {
   created_at: string;
   updated_at: string;
   // joins
-  paciente?: { id: string; nome: string; telefone?: string; email?: string } | null;
+  paciente?: {
+    id: string; nome: string; telefone?: string; email?: string;
+    cpf?: string; rg?: string; data_nascimento?: string;
+    rua?: string; numero?: string; bairro?: string; cidade?: string; estado?: string; cep?: string;
+    responsavel?: string; responsavel_cpf?: string; numero_prontuario?: string;
+  } | null;
   dentista?: { id: string; nome: string; cro?: string | null } | null;
   orcamento_itens?: OrcamentoItem[];
 }
@@ -434,7 +439,7 @@ export function useOrcamento(id: string | undefined) {
         .from("orcamentos")
         .select(`
           *,
-          paciente:pacientes(id, nome, telefone, email),
+          paciente:pacientes(id, nome, telefone, email, cpf, rg, data_nascimento, rua, numero, bairro, cidade, estado, cep, responsavel, responsavel_cpf, numero_prontuario),
           dentista:dentistas(id, nome, cro),
           orcamento_itens(*)
         `)
