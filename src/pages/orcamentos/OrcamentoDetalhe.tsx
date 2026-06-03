@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronLeft,
   Edit,
@@ -12,8 +12,12 @@ import {
   ExternalLink,
   Copy,
   Mail,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -79,6 +83,9 @@ export default function OrcamentoDetalhe() {
   const [gerandoPDF, setGerandoPDF] = useState(false);
   const [showDocDialog, setShowDocDialog] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
+  const [contaParaReceber, setContaParaReceber] = useState<{ id: string; descricao: string; valor: number } | null>(null);
+  const [pagamentoForm, setPagamentoForm] = useState({ data_recebimento: new Date().toISOString().split("T")[0], forma_pagamento: "" });
+  const queryClient = useQueryClient();
 
   const { data: contasVinculadas = [] } = useQuery({
     queryKey: ["contas_receber", "by_orcamento", id],
@@ -100,6 +107,51 @@ export default function OrcamentoDetalhe() {
     },
     enabled: !!id,
   });
+
+  const handleConfirmarRecebimento = async () => {
+    if (!contaParaReceber || !user) return;
+    const { id, descricao, valor } = contaParaReceber;
+
+    const { error } = await supabase
+      .from("contas_receber")
+      .update({
+        status: "Recebida",
+        data_recebimento: pagamentoForm.data_recebimento,
+        forma_pagamento: pagamentoForm.forma_pagamento || null,
+      })
+      .eq("id", id);
+
+    if (error) {
+      toast({ title: "Erro ao registrar recebimento", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    const { data: existing } = await supabase
+      .from("fluxo_caixa")
+      .select("id")
+      .eq("conta_receber_id", id)
+      .maybeSingle();
+
+    if (!existing) {
+      await supabase.from("fluxo_caixa").insert([{
+        user_id: user.id,
+        tipo: "Entrada",
+        descricao,
+        categoria: "Tratamento Odontológico",
+        valor,
+        data_movimentacao: pagamentoForm.data_recebimento,
+        forma_pagamento: pagamentoForm.forma_pagamento || null,
+        conta_receber_id: id,
+      }]);
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["contas_receber", "by_orcamento", orcamento?.id] });
+    queryClient.invalidateQueries({ queryKey: ["fluxo_caixa"] });
+    queryClient.invalidateQueries({ queryKey: ["fluxo_caixa_previsoes"] });
+
+    toast({ title: "Recebimento registrado!", description: `${descricao} marcada como recebida.` });
+    setContaParaReceber(null);
+  };
 
   const handleDownloadPDF = async () => {
     if (!orcamento || !pdfRef.current) return;
@@ -635,6 +687,7 @@ export default function OrcamentoDetalhe() {
                     <TableHead className="w-32 text-right">Valor</TableHead>
                     <TableHead className="w-32 text-center">Vencimento</TableHead>
                     <TableHead className="w-28 text-center">Status</TableHead>
+                    <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -657,6 +710,22 @@ export default function OrcamentoDetalhe() {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor}`}>
                             {c.status}
                           </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {(c.status === "Pendente" || c.status === "Vencida") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs gap-1 text-green-700 border-green-300 hover:bg-green-50"
+                              onClick={() => {
+                                setContaParaReceber({ id: c.id, descricao: c.descricao, valor: Number(c.valor) });
+                                setPagamentoForm({ data_recebimento: new Date().toISOString().split("T")[0], forma_pagamento: c.forma_pagamento ?? "" });
+                              }}
+                            >
+                              <DollarSign className="w-3 h-3" />
+                              Receber
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -719,6 +788,62 @@ export default function OrcamentoDetalhe() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal: registrar recebimento de parcela */}
+      <Dialog open={!!contaParaReceber} onOpenChange={(open) => { if (!open) setContaParaReceber(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              Registrar Recebimento
+            </DialogTitle>
+            <DialogDescription>
+              {contaParaReceber?.descricao}<br />
+              <span className="font-bold text-green-700">
+                {contaParaReceber?.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Data do recebimento</Label>
+              <Input
+                type="date"
+                value={pagamentoForm.data_recebimento}
+                onChange={(e) => setPagamentoForm(prev => ({ ...prev, data_recebimento: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Forma de pagamento</Label>
+              <Select
+                value={pagamentoForm.forma_pagamento}
+                onValueChange={(v) => setPagamentoForm(prev => ({ ...prev, forma_pagamento: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Dinheiro", "PIX", "Cartão de Crédito", "Cartão de Débito", "Boleto", "Transferência"].map(f => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setContaParaReceber(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              onClick={handleConfirmarRecebimento}
+              disabled={!pagamentoForm.data_recebimento}
+            >
+              Confirmar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog pós-aprovação: gerar documento */}
       <Dialog open={showDocDialog} onOpenChange={setShowDocDialog}>
