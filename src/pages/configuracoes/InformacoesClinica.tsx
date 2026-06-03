@@ -53,7 +53,8 @@ export function InformacoesClinica() {
 
   const [novoHorario, setNovoHorario] = useState({
     dia_semana: 1,
-    hora: "",
+    hora_inicio: "",
+    hora_fim: "",
     ativo: true,
   });
 
@@ -85,16 +86,24 @@ export function InformacoesClinica() {
   };
 
   const handleAddHorario = () => {
-    if (!novoHorario.hora) {
+    if (!novoHorario.hora_inicio || !novoHorario.hora_fim) {
       toast({
         title: "Campo obrigatório",
-        description: "Informe o horário",
+        description: "Informe o horário de início e fim",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (novoHorario.hora_fim <= novoHorario.hora_inicio) {
+      toast({
+        title: "Horário inválido",
+        description: "Horário de fim deve ser após o início",
         variant: "destructive",
       });
       return;
     }
     createHorario(novoHorario);
-    setNovoHorario({ dia_semana: 1, hora: "", ativo: true });
+    setNovoHorario({ dia_semana: 1, hora_inicio: "", hora_fim: "", ativo: true });
   };
 
   const handleToggleHorario = (id: string, ativo: boolean) => {
@@ -352,16 +361,25 @@ export function InformacoesClinica() {
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <Label htmlFor="hora">Horário</Label>
+                  <Label htmlFor="hora_inicio">Início</Label>
                   <Input
-                    id="hora"
+                    id="hora_inicio"
                     type="time"
-                    value={novoHorario.hora}
-                    onChange={(e) => setNovoHorario({ ...novoHorario, hora: e.target.value })}
+                    value={novoHorario.hora_inicio}
+                    onChange={(e) => setNovoHorario({ ...novoHorario, hora_inicio: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="hora_fim">Fim</Label>
+                  <Input
+                    id="hora_fim"
+                    type="time"
+                    value={novoHorario.hora_fim}
+                    onChange={(e) => setNovoHorario({ ...novoHorario, hora_fim: e.target.value })}
                   />
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={handleAddHorario} className="w-full md:w-auto">
+                  <Button type="button" onClick={handleAddHorario} className="w-full md:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar
                   </Button>
@@ -377,29 +395,35 @@ export function InformacoesClinica() {
                   return (
                     <div key={diaNum} className="space-y-2">
                       <h4 className="font-semibold text-sm">{diaLabel}</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {horariosdia.map((horario) => (
-                          <div
-                            key={horario.id}
-                            className="flex items-center justify-between p-2 border rounded-lg bg-background"
-                          >
-                            <span className="text-sm font-mono">{horario.hora}</span>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={horario.ativo}
-                                onCheckedChange={(checked) => handleToggleHorario(horario.id, checked)}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => deleteHorario(horario.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {horariosdia.map((horario) => {
+                          const inicio = horario.hora_inicio ?? horario.hora ?? "";
+                          const fim = horario.hora_fim ?? "";
+                          const label = fim ? `${inicio} – ${fim}` : inicio;
+                          return (
+                            <div
+                              key={horario.id}
+                              className="flex items-center justify-between p-2 border rounded-lg bg-background"
+                            >
+                              <span className="text-sm font-mono">{label}</span>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={horario.ativo}
+                                  onCheckedChange={(checked) => handleToggleHorario(horario.id, checked)}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  type="button"
+                                  onClick={() => deleteHorario(horario.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   );

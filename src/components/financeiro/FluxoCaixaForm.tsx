@@ -162,8 +162,9 @@ export function FluxoCaixaForm({ open, onOpenChange, onSubmit, movimentacao }: F
                 type="number"
                 step="0.01"
                 min="0.01"
-                value={formData.valor}
+                value={formData.valor === 0 ? "" : formData.valor}
                 onChange={(e) => setFormData({ ...formData, valor: parseFloat(e.target.value) || 0 })}
+                placeholder="0,00"
                 required
               />
             </div>

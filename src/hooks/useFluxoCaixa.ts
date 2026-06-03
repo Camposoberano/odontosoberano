@@ -29,7 +29,7 @@ export type PrevisaoEntrada = {
   status: "Pendente" | "Vencida";
   paciente_id?: string | null;
   orcamento_id?: string | null;
-  orcamento?: { id: string; numero_orcamento: number } | null;
+  orcamento?: { id: string; numero_orcamento: number; status: string } | null;
 };
 
 export function useFluxoCaixa() {
@@ -57,23 +57,32 @@ export function useFluxoCaixa() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contas_receber")
-        .select("*, orcamento:orcamentos(id, numero_orcamento)")
+        .select("*, orcamento:orcamentos(id, numero_orcamento, status)")
         .in("status", ["Pendente", "Vencida"])
         .order("data_vencimento", { ascending: true });
 
       if (error) throw error;
-      return (data ?? []).map((c: any): PrevisaoEntrada => ({
-        id: c.id,
-        tipo: "Previsão",
-        descricao: c.descricao,
-        categoria: c.categoria,
-        valor: c.valor,
-        data_movimentacao: c.data_vencimento,
-        status: c.status,
-        paciente_id: c.paciente_id,
-        orcamento_id: c.orcamento_id,
-        orcamento: c.orcamento,
-      }));
+
+      const STATUSES_OCULTAR = ["finalizado", "entregue", "recusado"];
+
+      return (data ?? [])
+        .filter((c: any) => {
+          if (!c.orcamento_id) return true;
+          if (!c.orcamento) return false;
+          return !STATUSES_OCULTAR.includes(c.orcamento.status);
+        })
+        .map((c: any): PrevisaoEntrada => ({
+          id: c.id,
+          tipo: "Previsão",
+          descricao: c.descricao,
+          categoria: c.categoria,
+          valor: c.valor,
+          data_movimentacao: c.data_vencimento,
+          status: c.status,
+          paciente_id: c.paciente_id,
+          orcamento_id: c.orcamento_id,
+          orcamento: c.orcamento,
+        }));
     },
     enabled: !!user,
   });

@@ -6,7 +6,9 @@ export interface HorarioDisponivel {
   id: string;
   user_id: string;
   dia_semana: number;
-  hora: string;
+  hora: string | null;
+  hora_inicio: string | null;
+  hora_fim: string | null;
   ativo: boolean;
   created_at: string;
   updated_at: string;
@@ -22,7 +24,7 @@ export const useHorariosDisponiveis = () => {
         .from("horarios_disponiveis")
         .select("*")
         .order("dia_semana", { ascending: true })
-        .order("hora", { ascending: true });
+        .order("hora_inicio", { ascending: true });
 
       if (error) throw error;
       return data as HorarioDisponivel[];
@@ -30,7 +32,7 @@ export const useHorariosDisponiveis = () => {
   });
 
   const createHorario = useMutation({
-    mutationFn: async (horario: { dia_semana: number; hora: string; ativo: boolean }) => {
+    mutationFn: async (horario: { dia_semana: number; hora_inicio: string; hora_fim: string; ativo: boolean }) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Usuário não autenticado");
 

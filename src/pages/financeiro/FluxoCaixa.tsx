@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MobileTable } from "@/components/ui/mobile-table";
 import { Plus, Search, Edit, Trash2, ArrowUp, ArrowDown, TrendingUp, Clock, AlertCircle, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useFluxoCaixa, type FluxoCaixa as FluxoCaixaType, type PrevisaoEntrada } from "@/hooks/useFluxoCaixa";
 import { FluxoCaixaForm } from "@/components/financeiro/FluxoCaixaForm";
 import { format } from "date-fns";
@@ -363,13 +364,13 @@ export default function FluxoCaixa() {
                     </td>
                     <td className="px-4 py-3">
                       {p.orcamento && (
-                        <button
-                          onClick={() => navigate(`/orcamentos/${p.orcamento!.id}`)}
+                        <Link
+                          to={`/orcamentos/${p.orcamento.id}`}
                           className="flex items-center gap-1 text-xs text-primary hover:underline"
                         >
                           <FileText className="w-3 h-3" />
                           Orç. #{p.orcamento.numero_orcamento}
-                        </button>
+                        </Link>
                       )}
                     </td>
                   </tr>
