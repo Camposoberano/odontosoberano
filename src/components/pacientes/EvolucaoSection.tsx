@@ -46,7 +46,7 @@ export function EvolucaoSection({ pacienteId, pacienteNome }: EvolucaoSectionPro
     assinatura: '',
     registrar_no_caixa: false,
     valor: '' as number | '',
-    forma_pagamento: '',
+    forma_pagamento: 'Dinheiro',
   });
 
   const resetForm = () => setForm({
@@ -56,7 +56,7 @@ export function EvolucaoSection({ pacienteId, pacienteNome }: EvolucaoSectionPro
     assinatura: '',
     registrar_no_caixa: false,
     valor: '',
-    forma_pagamento: '',
+    forma_pagamento: 'Dinheiro',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
