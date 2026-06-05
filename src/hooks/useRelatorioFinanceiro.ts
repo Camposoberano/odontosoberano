@@ -13,6 +13,8 @@ export interface DadosFinanceiros {
   receitas_por_categoria: { categoria: string; valor: number }[];
   despesas_por_categoria: { categoria: string; valor: number }[];
   fluxo_mensal: { mes: string; receitas: number; despesas: number }[];
+  receitas_por_forma_pagamento: { forma: string; valor: number; count: number }[];
+  receitas_por_dentista: { dentista: string; valor: number; count: number }[];
 }
 
 export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
@@ -27,7 +29,9 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
     cheques_compensar: 0,
     receitas_por_categoria: [],
     despesas_por_categoria: [],
-    fluxo_mensal: []
+    fluxo_mensal: [],
+    receitas_por_forma_pagamento: [],
+    receitas_por_dentista: [],
   });
 
   const fetchRelatorioFinanceiro = async () => {
@@ -39,7 +43,7 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       // Buscar contas a receber (recebidas)
       let contasReceberQuery = supabase
         .from('contas_receber')
-        .select('valor, categoria, data_recebimento')
+        .select('valor, categoria, data_recebimento, forma_pagamento')
         .eq('status', 'Recebida')
         .not('data_recebimento', 'is', null);
 
@@ -56,7 +60,7 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       // Buscar agendamentos realizados
       let agendamentosQuery = supabase
         .from('agendamentos')
-        .select('valor, procedimento, data_agendamento')
+        .select('valor, procedimento, data_agendamento, dentista_id')
         .in('status', ['Concluído', 'Realizado'])
         .not('valor', 'is', null);
 
@@ -120,6 +124,11 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
         .from('cheques')
         .select('valor')
         .eq('status', 'A Compensar');
+
+      // Buscar dentistas para mapear nomes
+      const { data: dentistas } = await supabase
+        .from('dentistas')
+        .select('id, nome');
 
       // Calcular totais de receitas
       const receitasContas = (contasReceber || []).reduce((sum, c) => sum + Number(c.valor || 0), 0);
@@ -235,6 +244,30 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
 
       const fluxoMensal = monthKeys.map(({ key }) => mensalMap[key]);
 
+      // Agrupar receitas por forma de pagamento (contas_receber recebidas)
+      const formaMap = new Map<string, { valor: number; count: number }>();
+      (contasReceber || []).forEach(c => {
+        const forma = c.forma_pagamento || 'Não informado';
+        const atual = formaMap.get(forma) || { valor: 0, count: 0 };
+        formaMap.set(forma, { valor: atual.valor + Number(c.valor || 0), count: atual.count + 1 });
+      });
+      const receitasPorFormaPagamento = Array.from(formaMap.entries())
+        .map(([forma, { valor, count }]) => ({ forma, valor, count }))
+        .sort((a, b) => b.valor - a.valor);
+
+      // Agrupar receitas por dentista (via agendamentos realizados)
+      const dentistaMap = new Map<string, { valor: number; count: number }>();
+      const dentistasById = new Map((dentistas || []).map(d => [d.id, d.nome]));
+      (agendamentos || []).forEach(a => {
+        if (!a.dentista_id) return;
+        const nome = dentistasById.get(a.dentista_id) || 'Não identificado';
+        const atual = dentistaMap.get(nome) || { valor: 0, count: 0 };
+        dentistaMap.set(nome, { valor: atual.valor + Number(a.valor || 0), count: atual.count + 1 });
+      });
+      const receitasPorDentista = Array.from(dentistaMap.entries())
+        .map(([dentista, { valor, count }]) => ({ dentista, valor, count }))
+        .sort((a, b) => b.valor - a.valor);
+
       setDadosFinanceiros({
         receitas_total: receitasTotal,
         despesas_total: despesasTotal,
@@ -244,7 +277,9 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
         cheques_compensar: chequesCompensarTotal,
         receitas_por_categoria: receitasPorCategoriaArray,
         despesas_por_categoria: despesasPorCategoriaArray,
-        fluxo_mensal: fluxoMensal
+        fluxo_mensal: fluxoMensal,
+        receitas_por_forma_pagamento: receitasPorFormaPagamento,
+        receitas_por_dentista: receitasPorDentista,
       });
     } catch (error: any) {
       console.error('Erro ao buscar relatório financeiro:', error);

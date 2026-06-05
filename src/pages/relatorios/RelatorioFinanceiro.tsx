@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MobileTable } from "@/components/ui/mobile-table";
-import { DollarSign, Download, Calendar, TrendingUp, TrendingDown, ArrowUp, AlertCircle, Wallet, Activity } from "lucide-react";
+import { DollarSign, Download, Calendar, TrendingUp, TrendingDown, ArrowUp, AlertCircle, Wallet, Activity, CreditCard, Users } from "lucide-react";
 import { useRelatorioFinanceiro } from "@/hooks/useRelatorioFinanceiro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,18 +12,19 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Tooltip as RechartsTooltip,
 } from 'recharts';
 import { motion } from "framer-motion";
 import { downloadCSV } from "@/utils/exportUtils";
@@ -543,14 +544,12 @@ export default function RelatorioFinanceiro() {
                   ))}
                 </div>
               ) : dadosFinanceiros.receitas_por_categoria.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  Nenhuma receita encontrada no período
-                </p>
+                <p className="text-center text-muted-foreground py-8">Nenhuma receita encontrada no período</p>
               ) : (
                 <div className="space-y-4">
                   {dadosFinanceiros.receitas_por_categoria.map((item, index) => {
-                    const percentual = dadosFinanceiros.receitas_total > 0 
-                      ? (item.valor / dadosFinanceiros.receitas_total) * 100 
+                    const percentual = dadosFinanceiros.receitas_total > 0
+                      ? (item.valor / dadosFinanceiros.receitas_total) * 100
                       : 0;
                     return (
                       <div key={index} className="flex items-center justify-between">
@@ -560,10 +559,7 @@ export default function RelatorioFinanceiro() {
                             <span className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded-full" 
-                              style={{ width: `${Math.min(percentual, 100)}%` }}
-                            />
+                            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min(percentual, 100)}%` }} />
                           </div>
                         </div>
                         <div className="ml-4 text-right">
@@ -592,14 +588,12 @@ export default function RelatorioFinanceiro() {
                   ))}
                 </div>
               ) : dadosFinanceiros.despesas_por_categoria.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  Nenhuma despesa encontrada no período
-                </p>
+                <p className="text-center text-muted-foreground py-8">Nenhuma despesa encontrada no período</p>
               ) : (
                 <div className="space-y-4">
                   {dadosFinanceiros.despesas_por_categoria.map((item, index) => {
-                    const percentual = dadosFinanceiros.despesas_total > 0 
-                      ? (item.valor / dadosFinanceiros.despesas_total) * 100 
+                    const percentual = dadosFinanceiros.despesas_total > 0
+                      ? (item.valor / dadosFinanceiros.despesas_total) * 100
                       : 0;
                     return (
                       <div key={index} className="flex items-center justify-between">
@@ -609,10 +603,7 @@ export default function RelatorioFinanceiro() {
                             <span className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-2">
-                            <div 
-                              className="bg-red-500 h-2 rounded-full" 
-                              style={{ width: `${Math.min(percentual, 100)}%` }}
-                            />
+                            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${Math.min(percentual, 100)}%` }} />
                           </div>
                         </div>
                         <div className="ml-4 text-right">
@@ -623,6 +614,151 @@ export default function RelatorioFinanceiro() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Receitas por Forma de Pagamento + Dentista */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Pizza — Forma de Pagamento */}
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-black">
+                <CreditCard className="w-5 h-5 text-[#c9a84c]" />
+                Receitas por Forma de Pagamento
+              </CardTitle>
+              <CardDescription>Como os pacientes estão pagando no período</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-64 w-full rounded-xl" />
+              ) : dadosFinanceiros.receitas_por_forma_pagamento.length === 0 ? (
+                <p className="text-center text-muted-foreground py-12">Nenhum dado no período</p>
+              ) : (
+                <div className="space-y-4">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={dadosFinanceiros.receitas_por_forma_pagamento}
+                        dataKey="valor"
+                        nameKey="forma"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={85}
+                        innerRadius={40}
+                        paddingAngle={3}
+                        label={({ forma, percent }) => `${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {dadosFinanceiros.receitas_por_forma_pagamento.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}
+                        formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-2">
+                    {dadosFinanceiros.receitas_por_forma_pagamento.map((item, i) => {
+                      const pct = dadosFinanceiros.receitas_total > 0
+                        ? (item.valor / dadosFinanceiros.receitas_total * 100).toFixed(1)
+                        : '0.0';
+                      return (
+                        <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                            <span className="text-sm font-semibold">{item.forma}</span>
+                            <Badge variant="secondary" className="text-[10px]">{item.count}x</Badge>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-black text-slate-800">R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-xs text-slate-400 ml-2">{pct}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Ranking — Receita por Dentista */}
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-black">
+                <Users className="w-5 h-5 text-violet-500" />
+                Receita por Dentista
+              </CardTitle>
+              <CardDescription>Volume faturado por profissional (agendamentos realizados)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-64 w-full rounded-xl" />
+              ) : dadosFinanceiros.receitas_por_dentista.length === 0 ? (
+                <p className="text-center text-muted-foreground py-12">Nenhum agendamento com valor no período</p>
+              ) : (
+                <div className="space-y-4">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={dadosFinanceiros.receitas_por_dentista}
+                      layout="vertical"
+                      margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+                      <XAxis
+                        type="number"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6b7280', fontSize: 11 }}
+                        tickFormatter={(v) => `R$${v / 1000}k`}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="dentista"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#374151', fontSize: 12, fontWeight: 600 }}
+                        width={100}
+                      />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}
+                        formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Receita']}
+                      />
+                      <Bar dataKey="valor" fill="#8b5cf6" radius={[0, 6, 6, 0]} barSize={18}>
+                        {dadosFinanceiros.receitas_por_dentista.map((_, i) => (
+                          <Cell key={i} fill={['#8b5cf6', '#6366f1', '#a78bfa', '#c4b5fd'][i % 4]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-2">
+                    {dadosFinanceiros.receitas_por_dentista.map((item, i) => {
+                      const total = dadosFinanceiros.receitas_por_dentista.reduce((a, d) => a + d.valor, 0);
+                      const pct = total > 0 ? (item.valor / total * 100).toFixed(1) : '0.0';
+                      return (
+                        <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black"
+                              style={{ background: ['#8b5cf6', '#6366f1', '#a78bfa', '#c4b5fd'][i % 4] }}>
+                              {i + 1}
+                            </div>
+                            <span className="text-sm font-semibold">{item.dentista}</span>
+                            <Badge variant="secondary" className="text-[10px]">{item.count} atend.</Badge>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-black text-slate-800">R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-xs text-slate-400 ml-2">{pct}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </CardContent>

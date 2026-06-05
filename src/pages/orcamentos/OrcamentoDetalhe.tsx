@@ -135,6 +135,7 @@ export default function OrcamentoDetalhe() {
 
     if (existing) {
       queryClient.invalidateQueries({ queryKey: ["contas_receber", "by_orcamento", orcamento?.id] });
+      queryClient.invalidateQueries({ queryKey: ["contas_receber", "by_paciente", orcamento?.paciente_id] });
       queryClient.invalidateQueries({ queryKey: ["fluxo_caixa"] });
       queryClient.invalidateQueries({ queryKey: ["fluxo_caixa_previsoes"] });
       toast({ title: "Recebimento registrado!", description: `${descricao} marcada como recebida.` });
@@ -160,6 +161,7 @@ export default function OrcamentoDetalhe() {
     }
 
     queryClient.invalidateQueries({ queryKey: ["contas_receber", "by_orcamento", orcamento?.id] });
+    queryClient.invalidateQueries({ queryKey: ["contas_receber", "by_paciente", orcamento?.paciente_id] });
     queryClient.invalidateQueries({ queryKey: ["fluxo_caixa"] });
     queryClient.invalidateQueries({ queryKey: ["fluxo_caixa_previsoes"] });
 
