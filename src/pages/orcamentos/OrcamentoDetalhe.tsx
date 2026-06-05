@@ -126,7 +126,22 @@ export default function OrcamentoDetalhe() {
       return;
     }
 
-    // Inserir no fluxo_caixa — sem conta_receber_id até migration ser aplicada no banco
+    // Verificar duplicata via conta_receber_id
+    const { data: existing } = await supabase
+      .from("fluxo_caixa")
+      .select("id")
+      .eq("conta_receber_id", id)
+      .maybeSingle();
+
+    if (existing) {
+      queryClient.invalidateQueries({ queryKey: ["contas_receber", "by_orcamento", orcamento?.id] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo_caixa"] });
+      queryClient.invalidateQueries({ queryKey: ["fluxo_caixa_previsoes"] });
+      toast({ title: "Recebimento registrado!", description: `${descricao} marcada como recebida.` });
+      setContaParaReceber(null);
+      return;
+    }
+
     const { error: fluxoError } = await supabase.from("fluxo_caixa").insert([{
       user_id: user.id,
       tipo: "Entrada",
@@ -135,6 +150,7 @@ export default function OrcamentoDetalhe() {
       valor,
       data_movimentacao: pagamentoForm.data_recebimento,
       forma_pagamento: pagamentoForm.forma_pagamento || null,
+      conta_receber_id: id,
     }]);
 
     if (fluxoError) {
