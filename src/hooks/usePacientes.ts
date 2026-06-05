@@ -44,6 +44,9 @@ export interface Paciente {
   plano_id?: string | null;
   numero_carteirinha?: string | null;
   titular_plano?: string | null;
+  // campos migração 129
+  rg?: string | null;
+  simples_dental_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }

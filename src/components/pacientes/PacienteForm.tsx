@@ -93,6 +93,7 @@ const baseSchema = z.object({
   // informações adicionais
   numero_prontuario: z.string().max(50).nullable().optional(),
   rede_social: z.string().max(255).nullable().optional(),
+  rg: z.string().max(20).nullable().optional(),
   // plano
   plano_id: z.string().uuid().nullable().optional(),
   numero_carteirinha: z.string().max(100).nullable().optional(),
@@ -134,6 +135,7 @@ export interface CreatePacienteData {
   plano_id?: string | null;
   numero_carteirinha?: string | null;
   titular_plano?: string | null;
+  rg?: string | null;
 }
 
 interface PacienteFormProps {
@@ -152,7 +154,7 @@ const emptyForm = (): CreatePacienteData => ({
   estado: '', observacao_endereco: '', endereco: '',
   parentesco_responsavel: '', nome_responsavel: '', cpf_responsavel: '',
   telefone_responsavel: '', data_nasc_responsavel: '', email_responsavel: '',
-  etiquetas: [], numero_prontuario: '', rede_social: '',
+  etiquetas: [], numero_prontuario: '', rede_social: '', rg: '',
   plano_id: null, numero_carteirinha: '', titular_plano: '',
 });
 
@@ -212,6 +214,7 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
         etiquetas: paciente.etiquetas || [],
         numero_prontuario: paciente.numero_prontuario || '',
         rede_social: paciente.rede_social || '',
+        rg: (paciente as any).rg || '',
         plano_id: paciente.plano_id || null,
         numero_carteirinha: paciente.numero_carteirinha || '',
         titular_plano: paciente.titular_plano || '',
@@ -289,6 +292,7 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
         etiquetas: formData.etiquetas || [],
         numero_prontuario: formData.numero_prontuario || null,
         rede_social: formData.rede_social || null,
+        rg: formData.rg || null,
         plano_id: formData.plano_id || null,
         numero_carteirinha: formData.numero_carteirinha || null,
         titular_plano: formData.titular_plano || null,
@@ -388,7 +392,7 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
                       value={formData.apelido || ''} onChange={e => set('apelido', e.target.value)} />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="cpf">CPF</Label>
                     <CPFInput id="cpf" value={formData.cpf}
@@ -396,6 +400,15 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
                       className={errors.cpf ? 'border-red-500' : ''} />
                     {err('cpf')}
                   </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="rg">RG</Label>
+                    <Input id="rg" placeholder="0000000-0"
+                      value={formData.rg || ''}
+                      onChange={e => set('rg', e.target.value)}
+                      maxLength={20} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="genero">Gênero</Label>
                     <Select value={formData.genero || '_none'} onValueChange={v => set('genero', v === '_none' ? '' : v)}>
@@ -461,19 +474,22 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
               {/* Nascimento */}
               <section className="space-y-3 pt-2 border-t">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nascimento</h3>
-                <div className="flex items-end gap-3">
-                  <div className="space-y-1 flex-1">
-                    <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                <div className="rounded-xl border-2 border-[#c9a84c] bg-[#fffdf5] p-3 space-y-2">
+                  <Label htmlFor="data_nascimento" className="text-[#8a6a1a] font-bold text-sm">
+                    Data de Nascimento <span className="text-xs font-normal text-[#b08a30]">(importante para aniversariantes e menores)</span>
+                  </Label>
+                  <div className="flex items-center gap-3">
                     <Input id="data_nascimento" type="date"
                       value={formData.data_nascimento || ''}
                       onChange={e => set('data_nascimento', e.target.value)}
-                      max={new Date().toISOString().split('T')[0]} />
+                      max={new Date().toISOString().split('T')[0]}
+                      className="flex-1" />
+                    {idade !== null && (
+                      <Badge variant={eMenor ? 'destructive' : 'secondary'} className="h-8 px-3 shrink-0">
+                        {idade} anos{eMenor ? ' — Menor' : ''}
+                      </Badge>
+                    )}
                   </div>
-                  {idade !== null && (
-                    <Badge variant={eMenor ? 'destructive' : 'secondary'} className="mb-0.5 h-8 px-3">
-                      {idade} anos{eMenor ? ' — Menor' : ''}
-                    </Badge>
-                  )}
                 </div>
               </section>
 
