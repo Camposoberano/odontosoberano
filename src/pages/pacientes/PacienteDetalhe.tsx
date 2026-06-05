@@ -562,7 +562,7 @@ export default function PacienteDetalhe() {
                       <Odontograma pacienteId={id} />
                     </div>
                     <div className="border-t-2 border-slate-100 pt-8 mt-8">
-                      <EvolucaoSection pacienteId={id} />
+                      <EvolucaoSection pacienteId={id} pacienteNome={paciente?.nome} />
                     </div>
                   </motion.div>
                 )}

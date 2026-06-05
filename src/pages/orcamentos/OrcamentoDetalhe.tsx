@@ -784,7 +784,7 @@ export default function OrcamentoDetalhe() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <EvolucaoSection pacienteId={orcamento.paciente_id} />
+            <EvolucaoSection pacienteId={orcamento.paciente_id} pacienteNome={orcamento.paciente?.nome} />
           </CardContent>
         </Card>
       )}

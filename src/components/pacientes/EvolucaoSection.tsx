@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -12,45 +13,90 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useEvolucoes } from '@/hooks/useEvolucoes';
 import { useDentistas } from '@/hooks/useDentistas';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Loader2, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const FORMAS_PAGAMENTO = ['Dinheiro', 'Pix', 'Cartão de Crédito', 'Cartão de Débito', 'Transferência', 'Cheque', 'Outro'];
+
 interface EvolucaoSectionProps {
   pacienteId: string;
+  pacienteNome?: string;
 }
 
-export function EvolucaoSection({ pacienteId }: EvolucaoSectionProps) {
+export function EvolucaoSection({ pacienteId, pacienteNome }: EvolucaoSectionProps) {
   const { evolucoes, isLoading, queryError, createEvolucao, deleteEvolucao, isCreating } = useEvolucoes(pacienteId);
   const { dentistas } = useDentistas();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({
     data: new Date().toISOString().split('T')[0],
     texto: '',
     profissional_id: '' as string | null,
     assinatura: '',
+    registrar_no_caixa: false,
+    valor: '' as number | '',
+    forma_pagamento: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => setForm({
+    data: new Date().toISOString().split('T')[0],
+    texto: '',
+    profissional_id: '',
+    assinatura: '',
+    registrar_no_caixa: false,
+    valor: '',
+    forma_pagamento: '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.texto.trim()) return;
-    createEvolucao({
-      paciente_id: pacienteId,
-      data: form.data,
-      texto: form.texto.trim(),
-      profissional_id: form.profissional_id || null,
-      assinatura: form.assinatura || null,
-    });
-    setForm({
-      data: new Date().toISOString().split('T')[0],
-      texto: '',
-      profissional_id: '',
-      assinatura: '',
-    });
-    setShowForm(false);
+    setIsSaving(true);
+    try {
+      await createEvolucao({
+        paciente_id: pacienteId,
+        data: form.data,
+        texto: form.texto.trim(),
+        profissional_id: form.profissional_id || null,
+        assinatura: form.assinatura || null,
+      });
+
+      if (form.registrar_no_caixa && form.valor && Number(form.valor) > 0 && user) {
+        const descricao = `Atendimento — ${pacienteNome || 'Paciente'}`;
+        const { error } = await supabase.from('fluxo_caixa').insert([{
+          user_id: user.id,
+          tipo: 'Entrada',
+          descricao,
+          categoria: 'Tratamento Odontológico',
+          valor: Number(form.valor),
+          data_movimentacao: form.data,
+          forma_pagamento: form.forma_pagamento || null,
+        }]);
+        if (error) {
+          toast({ title: 'Evolução salva, mas erro no caixa', description: error.message, variant: 'destructive' });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['fluxo_caixa'] });
+          queryClient.invalidateQueries({ queryKey: ['fluxo_caixa_previsoes'] });
+          toast({ title: 'Evolução e entrada no caixa registradas!' });
+        }
+      }
+
+      resetForm();
+      setShowForm(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formatDate = (d: string) => {
@@ -138,12 +184,57 @@ export function EvolucaoSection({ pacienteId }: EvolucaoSectionProps) {
                   onChange={e => setForm(f => ({ ...f, assinatura: e.target.value }))}
                 />
               </div>
+
+              {/* Registrar no caixa */}
+              <div className="rounded-xl border border-violet-200 bg-white p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="registrar_caixa"
+                    checked={form.registrar_no_caixa}
+                    onCheckedChange={v => setForm(f => ({ ...f, registrar_no_caixa: !!v }))}
+                  />
+                  <Label htmlFor="registrar_caixa" className="cursor-pointer font-semibold text-violet-700">
+                    Registrar pagamento no caixa
+                  </Label>
+                </div>
+                {form.registrar_no_caixa && (
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <Label>Valor (R$)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0,00"
+                        value={form.valor}
+                        onChange={e => setForm(f => ({ ...f, valor: e.target.value === '' ? '' : Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Forma de pagamento</Label>
+                      <Select
+                        value={form.forma_pagamento || '_none'}
+                        onValueChange={v => setForm(f => ({ ...f, forma_pagamento: v === '_none' ? '' : v }))}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_none">—</SelectItem>
+                          {FORMAS_PAGAMENTO.map(fp => (
+                            <SelectItem key={fp} value={fp}>{fp}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" size="sm" onClick={() => { resetForm(); setShowForm(false); }}>
                   Cancelar
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreating || !form.texto.trim()}>
-                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                <Button type="submit" size="sm" disabled={isSaving || !form.texto.trim()}>
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Salvar Evolução
                 </Button>
               </div>
