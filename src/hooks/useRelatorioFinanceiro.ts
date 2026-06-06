@@ -67,10 +67,10 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
     try {
       setLoading(true);
 
-      // Buscar contas a receber (recebidas) — inclui paciente e descrição
+      // Buscar contas a receber (recebidas)
       let contasReceberQuery = supabase
         .from('contas_receber')
-        .select('id, valor, categoria, data_recebimento, forma_pagamento, descricao, paciente_id, pacientes(nome)')
+        .select('id, valor, categoria, data_recebimento, forma_pagamento, descricao, paciente_id')
         .eq('status', 'Recebida')
         .not('data_recebimento', 'is', null);
 
@@ -135,10 +135,10 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       const { data: comissoes, error: comissoesError } = await comissoesQuery;
       if (comissoesError) throw comissoesError;
 
-      // Contas a receber pendentes (com detalhe de paciente e vencimento)
+      // Contas a receber pendentes (sem join — FK não existe)
       const { data: contasReceberPendentes } = await supabase
         .from('contas_receber')
-        .select('id, valor, data_vencimento, descricao, paciente_id, pacientes(nome), status')
+        .select('id, valor, data_vencimento, descricao, paciente_id, status')
         .in('status', ['Pendente', 'Vencida'])
         .order('data_vencimento', { ascending: true });
 
@@ -152,6 +152,23 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       const { data: dentistas } = await supabase
         .from('dentistas')
         .select('id, nome');
+
+      // Nomes de pacientes — coleta todos os IDs únicos das duas queries
+      const pacienteIds = [
+        ...new Set([
+          ...(contasReceber || []).map(c => c.paciente_id).filter(Boolean),
+          ...(contasReceberPendentes || []).map(c => c.paciente_id).filter(Boolean),
+        ]),
+      ] as string[];
+
+      let pacientesById = new Map<string, string>();
+      if (pacienteIds.length > 0) {
+        const { data: pacs } = await supabase
+          .from('pacientes')
+          .select('id, nome')
+          .in('id', pacienteIds);
+        if (pacs) pacs.forEach(p => pacientesById.set(p.id, p.nome));
+      }
 
       // ── Totais ───────────────────────────────────────────────────────────────
       const receitasContas = (contasReceber || []).reduce((sum, c) => sum + Number(c.valor || 0), 0);
@@ -283,7 +300,7 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       const receitasDetalhadas: ReceitaDetalhe[] = (contasReceber || [])
         .map(c => ({
           id: c.id,
-          paciente: (c.pacientes as any)?.nome ?? 'Não identificado',
+          paciente: (c.paciente_id ? pacientesById.get(c.paciente_id) : null) ?? 'Não identificado',
           paciente_id: c.paciente_id ?? null,
           data: c.data_recebimento as string,
           forma_pagamento: c.forma_pagamento || 'Não informado',
@@ -301,7 +318,7 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
           const diasAtraso = venc ? Math.max(0, Math.floor((hoje.getTime() - venc.getTime()) / 86400000)) : 0;
           return {
             id: c.id,
-            paciente: (c.pacientes as any)?.nome ?? 'Não identificado',
+            paciente: (c.paciente_id ? pacientesById.get(c.paciente_id) : null) ?? 'Não identificado',
             valor: Number(c.valor || 0),
             data_vencimento: c.data_vencimento || '',
             status: c.status || 'Pendente',
