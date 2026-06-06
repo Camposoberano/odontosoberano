@@ -1,76 +1,83 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, FileText, Eye, Edit, Trash2, Copy, AlertTriangle, Clock, CheckCircle, TrendingUp, DollarSign } from "lucide-react";
+import {
+  Plus, FileText, Eye, Edit, Trash2, Copy, AlertTriangle,
+  Clock, CheckCircle, TrendingUp, DollarSign, Search, XCircle,
+  FileCheck, FilePen, Send,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { calcularExpiracao, EXPIRACAO_CONFIG } from "@/utils/orcamentoUtils";
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useOrcamentos, StatusOrcamento } from "@/hooks/useOrcamentos";
 
-const STATUS_CONFIG: Record<
-  StatusOrcamento,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline"; color: string }
-> = {
-  rascunho:          { label: "Rascunho",           variant: "secondary", color: "text-gray-500" },
-  enviado:           { label: "Enviado",             variant: "default",   color: "text-blue-600" },
-  aprovado:          { label: "Aprovado",            variant: "default",   color: "text-green-600" },
-  recusado:          { label: "Recusado",            variant: "destructive", color: "text-red-600" },
-  contrato_assinado: { label: "Contrato Assinado",   variant: "default",   color: "text-purple-600" },
+const STATUS_CONFIG: Record<StatusOrcamento, {
+  label: string;
+  icon: React.ElementType;
+  border: string;
+  bg: string;
+  badge: string;
+  text: string;
+}> = {
+  rascunho:          { label: "Rascunho",           icon: FilePen,      border: "border-l-gray-400",   bg: "bg-gray-50",    badge: "bg-gray-100 text-gray-700",   text: "text-gray-600" },
+  enviado:           { label: "Enviado",             icon: Send,         border: "border-l-blue-400",   bg: "bg-blue-50/40", badge: "bg-blue-100 text-blue-700",   text: "text-blue-600" },
+  aprovado:          { label: "Aprovado",            icon: CheckCircle,  border: "border-l-emerald-500",bg: "bg-emerald-50/40",badge: "bg-emerald-100 text-emerald-700",text: "text-emerald-600" },
+  recusado:          { label: "Recusado",            icon: XCircle,      border: "border-l-rose-500",   bg: "bg-rose-50/40", badge: "bg-rose-100 text-rose-700",   text: "text-rose-600" },
+  contrato_assinado: { label: "Contrato Assinado",   icon: FileCheck,    border: "border-l-purple-500", bg: "bg-purple-50/40",badge: "bg-purple-100 text-purple-700",text: "text-purple-600" },
 };
+
+const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function ListaOrcamentos() {
   const navigate = useNavigate();
   const { orcamentos, isLoading, deletar, duplicar } = useOrcamentos();
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [search, setSearch] = useState("");
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
 
-  const filtrados = filtroStatus === "todos"
-    ? orcamentos
-    : orcamentos.filter((o) => o.status === filtroStatus);
+  const filtrados = useMemo(() => {
+    return orcamentos.filter(o => {
+      const matchStatus = filtroStatus === "todos" || o.status === filtroStatus;
+      const matchSearch = !search ||
+        (o.paciente?.nome ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (o.dentista?.nome ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        String(o.numero_orcamento).includes(search);
+      return matchStatus && matchSearch;
+    });
+  }, [orcamentos, filtroStatus, search]);
 
-  const expirandoCount = orcamentos.filter((o) => {
+  const kpi = useMemo(() => ({
+    total: orcamentos.length,
+    aprovados: orcamentos.filter(o => o.status === "aprovado" || o.status === "contrato_assinado").length,
+    pendentes: orcamentos.filter(o => o.status === "rascunho" || o.status === "enviado").length,
+    recusados: orcamentos.filter(o => o.status === "recusado").length,
+    valorAprovado: orcamentos
+      .filter(o => o.status === "aprovado" || o.status === "contrato_assinado")
+      .reduce((s, o) => s + o.total_liquido, 0),
+  }), [orcamentos]);
+
+  const expirandoCount = orcamentos.filter(o => {
     const exp = calcularExpiracao(o.created_at, o.validade_dias, o.status);
     return exp && (exp.status === "expirado" || exp.status === "critico" || exp.status === "expirando");
   }).length;
 
-  const kpi = {
-    total: orcamentos.length,
-    aprovados: orcamentos.filter((o) => o.status === "aprovado" || o.status === "contrato_assinado").length,
-    pendentes: orcamentos.filter((o) => o.status === "rascunho" || o.status === "enviado").length,
-    valorAprovado: orcamentos
-      .filter((o) => o.status === "aprovado" || o.status === "contrato_assinado")
-      .reduce((s, o) => s + o.total_liquido, 0),
-  };
+  const tabs = [
+    { key: "todos",            label: "Todos",             count: orcamentos.length },
+    { key: "rascunho",         label: "Rascunho",          count: orcamentos.filter(o => o.status === "rascunho").length },
+    { key: "enviado",          label: "Enviado",           count: orcamentos.filter(o => o.status === "enviado").length },
+    { key: "aprovado",         label: "Aprovado",          count: orcamentos.filter(o => o.status === "aprovado").length },
+    { key: "contrato_assinado",label: "Contrato",          count: orcamentos.filter(o => o.status === "contrato_assinado").length },
+    { key: "recusado",         label: "Recusado",          count: orcamentos.filter(o => o.status === "recusado").length },
+  ].filter(t => t.count > 0 || t.key === "todos");
 
   const handleDelete = async () => {
     if (!deletandoId) return;
@@ -81,62 +88,71 @@ export default function ListaOrcamentos() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+
+        {/* ── Header ──────────────────────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Orçamentos</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Gerencie os orçamentos da clínica
-            </p>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-1 h-8 rounded-full" style={{ background: "#f8cc72" }} />
+              <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Orçamentos</h1>
+            </div>
+            <p className="text-sm text-muted-foreground pl-4">Gerencie os orçamentos da clínica</p>
           </div>
-          <Button onClick={() => navigate("/orcamentos/novo")} className="gap-2">
+          <Button
+            onClick={() => navigate("/orcamentos/novo")}
+            className="gap-2 font-bold shadow-md hover:shadow-lg transition-shadow shrink-0"
+            style={{ background: "#010101", color: "#f8cc72" }}
+          >
             <Plus className="w-4 h-4" />
             Novo Orçamento
           </Button>
         </div>
 
-        {/* KPI Cards */}
+        {/* ── KPIs ────────────────────────────────────────────────────────────── */}
         {!isLoading && orcamentos.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Card className="border-l-4 border-l-slate-400">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <FileText className="w-4 h-4 text-slate-400" />
-                  <span className="text-xs font-bold text-slate-500 uppercase">Total</span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-l-4 border-l-slate-400 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-1.5 bg-slate-100 rounded-lg"><FileText className="w-4 h-4 text-slate-500" /></div>
+                  <Badge className="bg-slate-100 text-slate-600 text-[10px] font-bold">TOTAL</Badge>
                 </div>
-                <div className="text-2xl font-black text-gray-800">{kpi.total}</div>
+                <div className="text-3xl font-black text-gray-800">{kpi.total}</div>
                 <p className="text-xs text-muted-foreground">orçamentos</p>
               </CardContent>
             </Card>
-            <Card className="border-l-4 border-l-emerald-500">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  <span className="text-xs font-bold text-emerald-600 uppercase">Aprovados</span>
+
+            <Card className="border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-1.5 bg-emerald-50 rounded-lg"><CheckCircle className="w-4 h-4 text-emerald-600" /></div>
+                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px] font-bold">APROVADOS</Badge>
                 </div>
-                <div className="text-2xl font-black text-gray-800">{kpi.aprovados}</div>
+                <div className="text-3xl font-black text-emerald-700">{kpi.aprovados}</div>
                 <p className="text-xs text-muted-foreground">convertidos</p>
               </CardContent>
             </Card>
-            <Card className="border-l-4 border-l-blue-400">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <TrendingUp className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs font-bold text-blue-600 uppercase">Pendentes</span>
+
+            <Card className="border-l-4 border-l-blue-400 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-1.5 bg-blue-50 rounded-lg"><Clock className="w-4 h-4 text-blue-500" /></div>
+                  <Badge className="bg-blue-100 text-blue-700 text-[10px] font-bold">PENDENTES</Badge>
                 </div>
-                <div className="text-2xl font-black text-gray-800">{kpi.pendentes}</div>
+                <div className="text-3xl font-black text-blue-700">{kpi.pendentes}</div>
                 <p className="text-xs text-muted-foreground">em aberto</p>
               </CardContent>
             </Card>
-            <Card className="border-l-4 border-l-teal-500">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <DollarSign className="w-4 h-4 text-teal-500" />
-                  <span className="text-xs font-bold text-teal-600 uppercase">Valor</span>
+
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: "#f8cc72" }}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-1.5 rounded-lg" style={{ background: "#fef9ec" }}>
+                    <DollarSign className="w-4 h-4" style={{ color: "#b8860b" }} />
+                  </div>
+                  <Badge className="text-[10px] font-bold" style={{ background: "#fef9ec", color: "#b8860b", borderColor: "#f8cc72" }}>VALOR</Badge>
                 </div>
-                <div className="text-lg font-black text-gray-800">
-                  {kpi.valorAprovado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </div>
+                <div className="text-xl font-black" style={{ color: "#b8860b" }}>{fmt(kpi.valorAprovado)}</div>
                 <p className="text-xs text-muted-foreground">aprovado</p>
               </CardContent>
             </Card>
@@ -145,228 +161,193 @@ export default function ListaOrcamentos() {
 
         {/* Banner de expiração */}
         {!isLoading && expirandoCount > 0 && (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-800">
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-300 bg-amber-50">
             <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-            <p className="text-sm font-medium">
-              <span className="font-bold">{expirandoCount} orçamento{expirandoCount !== 1 ? "s" : ""}</span> com validade vencida ou expirando em breve.
-            </p>
+            <div>
+              <p className="text-sm font-bold text-amber-800">
+                {expirandoCount} orçamento{expirandoCount !== 1 ? "s" : ""} com validade próxima ao vencimento
+              </p>
+              <p className="text-xs text-amber-600">Revise os orçamentos expirados ou expirando em breve</p>
+            </div>
           </div>
         )}
 
-        {/* Filtros */}
-        <div className="flex items-center gap-3">
-          <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os status</SelectItem>
-              {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">
-            {filtrados.length} orçamento{filtrados.length !== 1 ? "s" : ""}
-          </span>
+        {/* ── Filtros ──────────────────────────────────────────────────────────── */}
+        <div className="flex flex-col gap-3">
+          {/* Tabs de status */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {tabs.map(tab => {
+              const cfg = tab.key !== "todos" ? STATUS_CONFIG[tab.key as StatusOrcamento] : null;
+              const isActive = filtroStatus === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setFiltroStatus(tab.key)}
+                  className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-all flex items-center gap-1.5 ${
+                    isActive
+                      ? "text-white border-transparent shadow-sm"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                  }`}
+                  style={isActive ? { background: tab.key === "todos" ? "#010101" : undefined } : {}}
+                >
+                  {cfg && isActive && <cfg.icon className="w-3.5 h-3.5" />}
+                  {tab.label}
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${isActive ? "bg-white/20" : "bg-muted"}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search */}
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar paciente, dentista, nº..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 text-sm"
+            />
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {filtrados.length} de {orcamentos.length} orçamentos
+          </p>
         </div>
 
-        {/* Mobile: lista de cards */}
-        <div className="sm:hidden space-y-3">
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)
-          ) : filtrados.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p>Nenhum orçamento encontrado</p>
-              <Button variant="link" onClick={() => navigate("/orcamentos/novo")}>Criar primeiro orçamento</Button>
-            </div>
-          ) : filtrados.map((o) => {
-            const cfg = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.rascunho;
-            const exp = calcularExpiracao(o.created_at, o.validade_dias, o.status);
-            return (
-              <Card key={o.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => navigate(`/orcamentos/${o.id}`)}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-muted-foreground">#{o.numero_orcamento}</span>
-                        <Badge variant={cfg.variant} className="text-xs capitalize">{cfg.label}</Badge>
-                        {exp && exp.status !== "ok" && (
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${EXPIRACAO_CONFIG[exp.status].badgeClass}`}>
-                            {EXPIRACAO_CONFIG[exp.status].label(exp.diasRestantes)}
-                          </span>
+        {/* ── Cards Grid ──────────────────────────────────────────────────────── */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
+          </div>
+        ) : filtrados.length === 0 ? (
+          <div className="text-center py-20 text-muted-foreground">
+            <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p className="font-semibold text-lg">Nenhum orçamento encontrado</p>
+            <p className="text-sm mt-1">
+              {search || filtroStatus !== "todos" ? "Ajuste os filtros" : "Crie o primeiro orçamento da clínica"}
+            </p>
+            {(search || filtroStatus !== "todos") ? (
+              <Button variant="outline" className="mt-4" onClick={() => { setSearch(""); setFiltroStatus("todos"); }}>
+                Limpar filtros
+              </Button>
+            ) : (
+              <Button className="mt-4 gap-2" style={{ background: "#010101", color: "#f8cc72" }} onClick={() => navigate("/orcamentos/novo")}>
+                <Plus className="w-4 h-4" /> Novo Orçamento
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtrados.map((o) => {
+              const cfg = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.rascunho;
+              const StatusIcon = cfg.icon;
+              const exp = calcularExpiracao(o.created_at, o.validade_dias, o.status);
+              const inicial = (o.paciente?.nome ?? "?").charAt(0).toUpperCase();
+
+              return (
+                <Card
+                  key={o.id}
+                  className={`border-l-4 ${cfg.border} shadow-sm hover:shadow-lg transition-all cursor-pointer group`}
+                  onClick={() => navigate(`/orcamentos/${o.id}`)}
+                >
+                  <CardContent className="p-5">
+                    {/* Top row: nº + status */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-mono text-xs text-muted-foreground font-bold">
+                        #{o.numero_orcamento}
+                      </span>
+                      <Badge className={`${cfg.badge} text-[10px] font-semibold flex items-center gap-1`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {cfg.label}
+                      </Badge>
+                    </div>
+
+                    {/* Paciente */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0"
+                        style={{ background: "#010101" }}
+                      >
+                        {inicial}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-black text-gray-800 truncate leading-tight">
+                          {o.paciente?.nome ?? <span className="text-muted-foreground italic text-sm">Sem paciente</span>}
+                        </p>
+                        {o.dentista?.nome && (
+                          <p className="text-xs text-muted-foreground truncate">{o.dentista.nome}</p>
                         )}
                       </div>
-                      <p className="font-semibold text-sm truncate">{o.paciente?.nome ?? "Sem paciente"}</p>
-                      {o.dentista?.nome && <p className="text-xs text-muted-foreground truncate">{o.dentista.nome}</p>}
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-black text-sm">{o.total_liquido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
-                      <div className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString("pt-BR")}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 mt-3 pt-2 border-t border-border/50">
-                    <Button size="sm" variant="ghost" className="h-8 flex-1 text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/orcamentos/${o.id}`); }}>
-                      <Eye className="w-3.5 h-3.5 mr-1" /> Ver
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-8 flex-1 text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/orcamentos/${o.id}/editar`); }}>
-                      <Edit className="w-3.5 h-3.5 mr-1" /> Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-8 flex-1 text-xs" onClick={async (e) => { e.stopPropagation(); const novo = await duplicar.mutateAsync(o.id); navigate(`/orcamentos/${novo.id}/editar`); }}>
-                      <Copy className="w-3.5 h-3.5 mr-1" /> Copiar
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeletandoId(o.id); }}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
 
-        {/* Desktop: tabela */}
-        <div className="hidden sm:block rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">#</TableHead>
-                <TableHead>Paciente</TableHead>
-                <TableHead>Dentista</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Validade</TableHead>
-                <TableHead className="w-32 text-center">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : filtrados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                    <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                    <p>Nenhum orçamento encontrado</p>
-                    <Button
-                      variant="link"
-                      className="mt-2"
-                      onClick={() => navigate("/orcamentos/novo")}
-                    >
-                      Criar primeiro orçamento
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtrados.map((o) => {
-                  const cfg = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.rascunho;
-                  return (
-                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell
-                        className="font-mono text-sm"
-                        onClick={() => navigate(`/orcamentos/${o.id}`)}
+                    {/* Valor */}
+                    <div className="mb-3">
+                      <div className="text-2xl font-black" style={{ color: "#010101" }}>
+                        {fmt(o.total_liquido)}
+                      </div>
+                    </div>
+
+                    {/* Data + validade */}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
+                      <span>{new Date(o.created_at).toLocaleDateString("pt-BR")}</span>
+                      {exp && exp.status !== "ok" && (
+                        <span className={`font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 ${EXPIRACAO_CONFIG[exp.status].badgeClass}`}>
+                          <AlertTriangle className="w-3 h-3" />
+                          {EXPIRACAO_CONFIG[exp.status].label(exp.diasRestantes)}
+                        </span>
+                      )}
+                      {exp && exp.status === "ok" && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {format(exp.dataExpiracao, "dd/MM/yy", { locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Ações */}
+                    <div className="flex items-center gap-1 pt-3 border-t border-border/50">
+                      <Button
+                        size="sm" variant="ghost"
+                        className="flex-1 h-8 text-xs gap-1 hover:bg-muted"
+                        onClick={e => { e.stopPropagation(); navigate(`/orcamentos/${o.id}`); }}
                       >
-                        #{o.numero_orcamento}
-                      </TableCell>
-                      <TableCell onClick={() => navigate(`/orcamentos/${o.id}`)}>
-                        {o.paciente?.nome ?? <span className="text-muted-foreground italic">Sem paciente</span>}
-                      </TableCell>
-                      <TableCell onClick={() => navigate(`/orcamentos/${o.id}`)}>
-                        {o.dentista?.nome ?? <span className="text-muted-foreground italic">—</span>}
-                      </TableCell>
-                      <TableCell onClick={() => navigate(`/orcamentos/${o.id}`)}>
-                        <Badge variant={cfg.variant} className="capitalize">
-                          {cfg.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell
-                        className="text-right font-semibold"
-                        onClick={() => navigate(`/orcamentos/${o.id}`)}
+                        <Eye className="w-3.5 h-3.5" /> Ver
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost"
+                        className="flex-1 h-8 text-xs gap-1 hover:bg-muted"
+                        onClick={e => { e.stopPropagation(); navigate(`/orcamentos/${o.id}/editar`); }}
                       >
-                        {o.total_liquido.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
-                      </TableCell>
-                      <TableCell
-                        className="text-sm text-muted-foreground"
-                        onClick={() => navigate(`/orcamentos/${o.id}`)}
+                        <Edit className="w-3.5 h-3.5" /> Editar
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost"
+                        className="flex-1 h-8 text-xs gap-1 hover:bg-muted"
+                        title="Duplicar"
+                        onClick={async e => {
+                          e.stopPropagation();
+                          const novo = await duplicar.mutateAsync(o.id);
+                          navigate(`/orcamentos/${novo.id}/editar`);
+                        }}
                       >
-                        {new Date(o.created_at).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                      <TableCell onClick={() => navigate(`/orcamentos/${o.id}`)}>
-                        {(() => {
-                          const exp = calcularExpiracao(o.created_at, o.validade_dias, o.status);
-                          if (!exp) return null;
-                          if (exp.status === "ok") return (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {format(exp.dataExpiracao, "dd/MM/yy", { locale: ptBR })}
-                            </span>
-                          );
-                          const cfg2 = EXPIRACAO_CONFIG[exp.status];
-                          return (
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 w-fit ${cfg2.badgeClass}`}>
-                              <AlertTriangle className="w-3 h-3" />
-                              {cfg2.label(exp.diasRestantes)}
-                            </span>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => navigate(`/orcamentos/${o.id}`)}
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => navigate(`/orcamentos/${o.id}/editar`)}
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            title="Duplicar"
-                            onClick={async () => {
-                              const novo = await duplicar.mutateAsync(o.id);
-                              navigate(`/orcamentos/${novo.id}/editar`);
-                            }}
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={() => setDeletandoId(o.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                        <Copy className="w-3.5 h-3.5" /> Copiar
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-rose-600 hover:bg-rose-50"
+                        onClick={e => { e.stopPropagation(); setDeletandoId(o.id); }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <AlertDialog open={!!deletandoId} onOpenChange={() => setDeletandoId(null)}>
@@ -379,10 +360,7 @@ export default function ListaOrcamentos() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={handleDelete}
-            >
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDelete}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
