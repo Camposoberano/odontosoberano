@@ -1,245 +1,121 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MobileTable } from "@/components/ui/mobile-table";
-import { DollarSign, Download, Calendar, TrendingUp, TrendingDown, ArrowUp, AlertCircle, Wallet, Activity, CreditCard, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  DollarSign, Download, Calendar, TrendingUp, TrendingDown, ArrowUp,
+  AlertCircle, Wallet, Activity, CreditCard, Users, Search, Clock,
+  ArrowDown, ChevronDown, ChevronUp,
+} from "lucide-react";
 import { useRelatorioFinanceiro } from "@/hooks/useRelatorioFinanceiro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip as RechartsTooltip,
-} from 'recharts';
+  AreaChart, Area,
+  BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
+  ComposedChart, Line,
+} from "recharts";
 import { motion } from "framer-motion";
 import { downloadCSV } from "@/utils/exportUtils";
+
+const fmt = (v: number) =>
+  `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
+const fmtDate = (d: string) => {
+  try { return format(parseISO(d), "dd/MM/yyyy", { locale: ptBR }); } catch { return d; }
+};
+
+const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 
 export default function RelatorioFinanceiro() {
   const [dataInicio, setDataInicio] = useState<Date>(new Date(new Date().setDate(1)));
   const [dataFim, setDataFim] = useState<Date>(new Date());
   const [showCalendarInicio, setShowCalendarInicio] = useState(false);
   const [showCalendarFim, setShowCalendarFim] = useState(false);
-  
-  const { dadosFinanceiros, loading } = useRelatorioFinanceiro(dataInicio, dataFim);
+  const [buscaEntradas, setBuscaEntradas] = useState("");
+  const [sortEntradas, setSortEntradas] = useState<"data" | "valor">("data");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [showAllEntradas, setShowAllEntradas] = useState(false);
+  const [showAllPendentes, setShowAllPendentes] = useState(false);
 
-  const handleExportPDF = () => {
-    try {
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        toast.error('Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.');
-        return;
+  const { dadosFinanceiros: d, loading } = useRelatorioFinanceiro(dataInicio, dataFim);
+
+  const margemLucro = d.receitas_total > 0
+    ? ((d.saldo / d.receitas_total) * 100).toFixed(1)
+    : "0.0";
+
+  // Filtrar e ordenar entradas
+  const entradasFiltradas = useMemo(() => {
+    let arr = d.receitas_detalhadas.filter(r =>
+      !buscaEntradas ||
+      r.paciente.toLowerCase().includes(buscaEntradas.toLowerCase()) ||
+      r.forma_pagamento.toLowerCase().includes(buscaEntradas.toLowerCase()) ||
+      r.descricao.toLowerCase().includes(buscaEntradas.toLowerCase())
+    );
+    arr = [...arr].sort((a, b) => {
+      if (sortEntradas === "data") {
+        return sortDir === "desc"
+          ? new Date(b.data).getTime() - new Date(a.data).getTime()
+          : new Date(a.data).getTime() - new Date(b.data).getTime();
       }
+      return sortDir === "desc" ? b.valor - a.valor : a.valor - b.valor;
+    });
+    return arr;
+  }, [d.receitas_detalhadas, buscaEntradas, sortEntradas, sortDir]);
 
-      const margemLucro = dadosFinanceiros.receitas_total > 0 
-        ? ((dadosFinanceiros.saldo / dadosFinanceiros.receitas_total) * 100).toFixed(1) 
-        : '0.0';
+  const entradasVisiveis = showAllEntradas ? entradasFiltradas : entradasFiltradas.slice(0, 10);
+  const pendentesVisiveis = showAllPendentes ? d.contas_receber_a_entrar : d.contas_receber_a_entrar.slice(0, 8);
 
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Relatório Financeiro</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { color: #333; border-bottom: 2px solid #666; padding-bottom: 10px; }
-            .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; }
-            .summary-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
-            .summary-card h3 { margin: 0 0 10px 0; font-size: 14px; color: #666; }
-            .summary-card .value { font-size: 24px; font-weight: bold; }
-            .positive { color: #16a34a; }
-            .negative { color: #dc2626; }
-            .neutral { color: #2563eb; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background-color: #f5f5f5; font-weight: bold; }
-            .section-title { margin-top: 30px; font-size: 18px; font-weight: bold; }
-            .category-list { margin: 20px 0; }
-            .category-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-            @media print {
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Relatório Financeiro</h1>
-          <p>Período: ${format(dataInicio, "dd/MM/yyyy", { locale: ptBR })} - ${format(dataFim, "dd/MM/yyyy", { locale: ptBR })}</p>
-          
-          <div class="summary">
-            <div class="summary-card">
-              <h3>Receitas Totais</h3>
-              <div class="value positive">R$ ${dadosFinanceiros.receitas_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="summary-card">
-              <h3>Despesas Totais</h3>
-              <div class="value negative">R$ ${dadosFinanceiros.despesas_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="summary-card">
-              <h3>Saldo</h3>
-              <div class="value neutral">R$ ${dadosFinanceiros.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="summary-card">
-              <h3>Margem</h3>
-              <div class="value">${margemLucro}%</div>
-            </div>
-          </div>
-
-          <h2 class="section-title">Pendências Financeiras</h2>
-          <div class="summary">
-            <div class="summary-card">
-              <h3>Contas a Receber</h3>
-              <div class="value">R$ ${dadosFinanceiros.contas_receber_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="summary-card">
-              <h3>Contas a Pagar</h3>
-              <div class="value">R$ ${dadosFinanceiros.contas_pagar_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="summary-card">
-              <h3>Cheques a Compensar</h3>
-              <div class="value">R$ ${dadosFinanceiros.cheques_compensar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-          </div>
-
-          <h2 class="section-title">Receitas por Categoria</h2>
-          <div class="category-list">
-            ${dadosFinanceiros.receitas_por_categoria.map(r => `
-              <div class="category-item">
-                <span>${r.categoria}</span>
-                <span class="positive">R$ ${r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-            `).join('')}
-          </div>
-
-          <h2 class="section-title">Despesas por Categoria</h2>
-          <div class="category-list">
-            ${dadosFinanceiros.despesas_por_categoria.map(d => `
-              <div class="category-item">
-                <span>${d.categoria}</span>
-                <span class="negative">R$ ${d.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-            `).join('')}
-          </div>
-
-          <div class="no-print" style="margin-top: 30px;">
-            <button onclick="window.print()" style="padding: 10px 20px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer;">
-              Imprimir / Salvar como PDF
-            </button>
-            <button onclick="window.close()" style="margin-left: 10px; padding: 10px 20px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">
-              Fechar
-            </button>
-          </div>
-        </body>
-        </html>
-      `;
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      
-      toast.success('Documento preparado para impressão/exportação!');
-    } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
-      toast.error('Erro ao exportar relatório');
-    }
+  const toggleSort = (col: "data" | "valor") => {
+    if (sortEntradas === col) setSortDir(d => d === "desc" ? "asc" : "desc");
+    else { setSortEntradas(col); setSortDir("desc"); }
   };
-
-  const margemLucro = dadosFinanceiros.receitas_total > 0 
-    ? ((dadosFinanceiros.saldo / dadosFinanceiros.receitas_total) * 100).toFixed(1) 
-    : '0.0';
 
   const handleExportCSV = () => {
     try {
-      // Exportar Resumo por Categoria (Receitas)
-      const csvReceitas = dadosFinanceiros.receitas_por_categoria.map(r => ({
-        Tipo: 'RECEITA',
-        Categoria: r.categoria,
-        Valor: r.valor
-      }));
-
-      // Exportar Resumo por Categoria (Despesas)
-      const csvDespesas = dadosFinanceiros.despesas_por_categoria.map(d => ({
-        Tipo: 'DESPESA',
-        Categoria: d.categoria,
-        Valor: d.valor
-      }));
-
-      // Exportar Fluxo Mensal
-      const csvFluxo = dadosFinanceiros.fluxo_mensal.map(f => ({
-        Tipo: 'FLUXO_MENSAL',
-        Mes: f.mes,
-        Receitas: f.receitas,
-        Despesas: f.despesas,
-        Saldo: f.receitas - f.despesas
-      }));
-
-      const allData = [...csvReceitas, ...csvDespesas, ...csvFluxo];
-      downloadCSV(allData, 'Relatorio_Financeiro');
-      toast.success('CSV exportado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao exportar CSV');
-    }
+      const rows = [
+        ...d.receitas_por_categoria.map(r => ({ Tipo: "RECEITA", Categoria: r.categoria, Valor: r.valor })),
+        ...d.despesas_por_categoria.map(r => ({ Tipo: "DESPESA", Categoria: r.categoria, Valor: r.valor })),
+        ...d.fluxo_mensal.map(f => ({ Tipo: "FLUXO", Mes: f.mes, Receitas: f.receitas, Despesas: f.despesas, Saldo: f.saldo })),
+        ...d.receitas_detalhadas.map(r => ({ Tipo: "ENTRADA", Paciente: r.paciente, Data: fmtDate(r.data), Forma: r.forma_pagamento, Valor: r.valor, Descricao: r.descricao })),
+      ];
+      downloadCSV(rows, "Relatorio_Financeiro");
+      toast.success("CSV exportado!");
+    } catch { toast.error("Erro ao exportar CSV"); }
   };
 
-  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-
-  const fluxoColumns = [
-    { key: 'mes', header: 'Mês' },
-    { 
-      key: 'receitas', 
-      header: 'Receitas',
-      render: (item: any) => `R$ ${(item.receitas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
-    },
-    { 
-      key: 'despesas', 
-      header: 'Despesas',
-      render: (item: any) => `R$ ${(item.despesas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
-    },
-  ];
-
-  const renderFluxoMobileCard = (item: any) => (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-lg">{item.mes}</h3>
-      </div>
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Receitas:</span>
-          <span className="font-medium text-green-600">
-            R$ {(item.receitas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Despesas:</span>
-          <span className="font-medium text-red-600">
-            R$ {(item.despesas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-      </div>
-    </div>
+  const SortBtn = ({ col, label }: { col: "data" | "valor"; label: string }) => (
+    <button
+      onClick={() => toggleSort(col)}
+      className="flex items-center gap-1 font-semibold text-xs text-muted-foreground hover:text-foreground transition-colors"
+    >
+      {label}
+      {sortEntradas === col
+        ? sortDir === "desc" ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />
+        : <ChevronDown className="w-3 h-3 opacity-30" />
+      }
+    </button>
   );
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
+
+        {/* ── Cabeçalho ──────────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Relatório Financeiro</h1>
             <p className="text-muted-foreground">Análise completa da situação financeira da clínica</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
             <Popover open={showCalendarInicio} onOpenChange={setShowCalendarInicio}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="gap-2 w-full sm:w-auto">
@@ -248,18 +124,9 @@ export default function RelatorioFinanceiro() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={dataInicio}
-                  onSelect={(date) => {
-                    if (date) {
-                      setDataInicio(date);
-                      setShowCalendarInicio(false);
-                    }
-                  }}
-                  locale={ptBR}
-                  initialFocus
-                />
+                <CalendarComponent mode="single" selected={dataInicio}
+                  onSelect={(date) => { if (date) { setDataInicio(date); setShowCalendarInicio(false); } }}
+                  locale={ptBR} initialFocus />
               </PopoverContent>
             </Popover>
 
@@ -271,356 +138,227 @@ export default function RelatorioFinanceiro() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={dataFim}
-                  onSelect={(date) => {
-                    if (date) {
-                      setDataFim(date);
-                      setShowCalendarFim(false);
-                    }
-                  }}
-                  locale={ptBR}
-                  initialFocus
-                />
+                <CalendarComponent mode="single" selected={dataFim}
+                  onSelect={(date) => { if (date) { setDataFim(date); setShowCalendarFim(false); } }}
+                  locale={ptBR} initialFocus />
               </PopoverContent>
             </Popover>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button 
-                variant="outline" 
-                className="flex-1 sm:flex-none border-2 hover:bg-emerald-50 hover:border-emerald-200 gap-2 transition-all"
-                onClick={handleExportCSV}
-              >
-                <Download className="w-4 h-4 text-emerald-600" />
-                Exportar CSV
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1 sm:flex-none border-2 hover:bg-primary/5 gap-2 transition-all"
-                onClick={handleExportPDF}
-              >
-                <Download className="w-4 h-4" />
-                Exportar PDF
-              </Button>
-            </div>
+            <Button variant="outline" className="gap-2 border-2 hover:bg-emerald-50 hover:border-emerald-200 transition-all" onClick={handleExportCSV}>
+              <Download className="w-4 h-4 text-emerald-600" />
+              Exportar CSV
+            </Button>
           </div>
         </div>
 
-        {/* Resumo do Período - Cards Premium */}
+        {/* ── KPIs resumo ────────────────────────────────────────────────────── */}
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="medical-card">
-                <CardHeader className="space-y-0 pb-2">
-                  <Skeleton className="h-4 w-32" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-16 mb-2" />
-                  <Skeleton className="h-3 w-32" />
-                </CardContent>
-              </Card>
-            ))}
+            {[1, 2, 3, 4].map(i => <Card key={i} className="medical-card"><CardContent className="p-6"><Skeleton className="h-20 w-full" /></CardContent></Card>)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="medical-card border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="p-2 bg-emerald-50 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-emerald-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "RECEITAS", value: fmt(d.receitas_total), sub: "Total realizado no período", icon: TrendingUp, color: "emerald", border: "border-l-emerald-500", bg: "bg-emerald-50", icon_color: "text-emerald-600", badge_class: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+              { label: "DESPESAS", value: fmt(d.despesas_total), sub: "Total de saídas pagas", icon: TrendingDown, color: "rose", border: "border-l-rose-500", bg: "bg-rose-50", icon_color: "text-rose-600", badge_class: "bg-rose-50 text-rose-700 border-rose-100" },
+              { label: "SALDO REAL", value: fmt(d.saldo), sub: "Lucro líquido operacional", icon: DollarSign, color: d.saldo >= 0 ? "blue" : "orange", border: d.saldo >= 0 ? "border-l-blue-500" : "border-l-orange-500", bg: d.saldo >= 0 ? "bg-blue-50" : "bg-orange-50", icon_color: d.saldo >= 0 ? "text-blue-600" : "text-orange-600", badge_class: d.saldo >= 0 ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-orange-50 text-orange-700 border-orange-100" },
+              { label: "MARGEM", value: `${margemLucro}%`, sub: "Rentabilidade sobre receita", icon: TrendingUp, color: "purple", border: "border-l-purple-500", bg: "bg-purple-50", icon_color: "text-purple-600", badge_class: "bg-purple-50 text-purple-700 border-purple-100" },
+            ].map((kpi, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+                <Card className={`medical-card border-l-4 ${kpi.border} shadow-sm hover:shadow-md transition-all`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className={`p-2 ${kpi.bg} rounded-lg`}>
+                        <kpi.icon className={`h-5 w-5 ${kpi.icon_color}`} />
+                      </div>
+                      <Badge variant="outline" className={`${kpi.badge_class} font-bold`}>{kpi.label}</Badge>
                     </div>
-                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">RECEITAS</Badge>
-                  </div>
-                  <div className="mt-4">
-                    <div className="text-3xl font-black text-gray-800">
-                      R$ {dadosFinanceiros.receitas_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    <div className="mt-4">
+                      <div className={`text-2xl lg:text-3xl font-black ${i === 2 && d.saldo < 0 ? "text-rose-600" : "text-gray-800"}`}>{kpi.value}</div>
+                      <p className="text-xs font-medium text-muted-foreground mt-1">{kpi.sub}</p>
                     </div>
-                    <p className="text-xs font-medium text-muted-foreground mt-1 flex items-center">
-                      <ArrowUp className="h-3 w-3 mr-1 text-emerald-500" /> Total realizado no período
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="medical-card border-l-4 border-l-rose-500 shadow-sm hover:shadow-md transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="p-2 bg-rose-50 rounded-lg">
-                      <TrendingDown className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-100 font-bold">DESPESAS</Badge>
-                  </div>
-                  <div className="mt-4">
-                    <div className="text-3xl font-black text-gray-800">
-                      R$ {dadosFinanceiros.despesas_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </div>
-                    <p className="text-xs font-medium text-muted-foreground mt-1">Total de saídas pagas</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className={`medical-card border-l-4 shadow-sm hover:shadow-md transition-all ${dadosFinanceiros.saldo >= 0 ? 'border-l-blue-500' : 'border-l-orange-500'}`}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className={`p-2 rounded-lg ${dadosFinanceiros.saldo >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
-                      <DollarSign className={`h-5 w-5 ${dadosFinanceiros.saldo >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
-                    </div>
-                    <Badge variant="outline" className={`${dadosFinanceiros.saldo >= 0 ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-orange-50 text-orange-700 border-orange-100'} font-bold`}>
-                      SALDO REAL
-                    </Badge>
-                  </div>
-                  <div className="mt-4">
-                    <div className={`text-3xl font-black ${dadosFinanceiros.saldo >= 0 ? 'text-gray-800' : 'text-rose-600'}`}>
-                      R$ {dadosFinanceiros.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </div>
-                    <p className="text-xs font-medium text-muted-foreground mt-1">Lucro líquido operacional</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="medical-card border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="p-2 bg-purple-50 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 font-bold">MARGEM</Badge>
-                  </div>
-                  <div className="mt-4">
-                    <div className="text-3xl font-black text-gray-800">{margemLucro}%</div>
-                    <p className="text-xs font-medium text-muted-foreground mt-1">Rentabilidade sobre receita</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         )}
 
-        {/* Gráfico de Fluxo de Caixa */}
+        {/* ── Fluxo de Caixa (Area + Linha de Saldo) ─────────────────────────── */}
         <Card className="medical-card shadow-sm">
           <CardHeader>
             <CardTitle className="text-xl font-black text-gray-800 flex items-center gap-2">
               <Activity className="w-6 h-6 text-primary" />
               Fluxo de Caixa Mensal
             </CardTitle>
-            <CardDescription className="font-medium">
-              Comparativo de receitas e despesas ao longo do tempo
-            </CardDescription>
+            <CardDescription>Receitas, despesas e resultado por mês</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="h-[350px] w-full">
-              {loading ? (
-                <Skeleton className="h-full w-full" />
-              ) : (
+            <div className="h-[340px] w-full">
+              {loading ? <Skeleton className="h-full w-full" /> : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dadosFinanceiros.fluxo_mensal} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <ComposedChart data={d.fluxo_mensal} margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="gradReceitas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="gradDespesas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="mes" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 600 }}
+                    <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12, fontWeight: 600 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                      formatter={(value: any, name: string) => [fmt(Number(value)), name]}
                     />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#6b7280', fontSize: 12 }}
-                      tickFormatter={(value) => `R$ ${value / 1000}k`}
-                    />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                      formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, '']}
-                    />
-                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                    <Bar dataKey="receitas" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                    <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
-                  </BarChart>
+                    <Legend iconType="circle" wrapperStyle={{ paddingTop: "20px" }} />
+                    <Area type="monotone" dataKey="receitas" name="Receitas" stroke="#10b981" strokeWidth={2} fill="url(#gradReceitas)" />
+                    <Area type="monotone" dataKey="despesas" name="Despesas" stroke="#f43f5e" strokeWidth={2} fill="url(#gradDespesas)" />
+                    <Line type="monotone" dataKey="saldo" name="Saldo" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4, fill: "#6366f1" }} strokeDasharray="5 3" />
+                  </ComposedChart>
                 </ResponsiveContainer>
               )}
             </div>
           </CardContent>
         </Card>
 
-
-        {/* Pendências Financeiras */}
+        {/* ── Pendências ─────────────────────────────────────────────────────── */}
         <Card className="medical-card border-2 border-primary/10 shadow-sm">
           <CardHeader className="bg-primary/5 border-b-2 border-primary/10">
             <CardTitle className="flex items-center gap-2 text-xl font-black text-primary">
               <AlertCircle className="w-5 h-5" />
-              Projetado (Não realizado)
+              Projetado — Valores Pendentes
             </CardTitle>
-            <CardDescription className="font-bold text-primary/70">
-              Valores pendentes de recebimento ou pagamento
-            </CardDescription>
+            <CardDescription className="font-bold text-primary/70">Não realizados — a receber e a pagar</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             {loading ? (
-              <div className="grid gap-4 md:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
-                ))}
-              </div>
+              <div className="grid gap-4 md:grid-cols-3"><Skeleton className="h-24 w-full rounded-xl" /><Skeleton className="h-24 w-full rounded-xl" /><Skeleton className="h-24 w-full rounded-xl" /></div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-4 border-2 border-orange-100 rounded-xl bg-orange-50/30 hover:shadow-sm transition-all group">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* A Receber */}
+                <div className="p-4 border-2 border-orange-100 rounded-xl bg-orange-50/40 group">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1.5 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
-                      <Wallet className="w-4 h-4 text-orange-600" />
-                    </div>
-                    <span className="text-sm font-black text-orange-800 uppercase tracking-tight">A Receber</span>
+                    <div className="p-1.5 bg-orange-100 rounded-lg"><Wallet className="w-4 h-4 text-orange-600" /></div>
+                    <span className="text-sm font-black text-orange-800 uppercase">A Receber</span>
+                    <Badge className="ml-auto bg-orange-100 text-orange-700 text-[10px]">{d.contas_receber_pendente_count} contas</Badge>
                   </div>
-                  <div className="text-3xl font-black text-orange-600">
-                    R$ {dadosFinanceiros.contas_receber_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="text-[10px] font-bold text-orange-600/70 mt-1 uppercase">Entradas pendentes</p>
+                  <div className="text-2xl font-black text-orange-600">{fmt(d.contas_receber_pendente)}</div>
+                  <p className="text-[10px] font-bold text-orange-600/70 mt-1 uppercase">Entradas pendentes / vencidas</p>
                 </div>
 
-                <div className="p-4 border-2 border-rose-100 rounded-xl bg-rose-50/30 hover:shadow-sm transition-all group">
+                {/* A Pagar */}
+                <div className="p-4 border-2 border-rose-100 rounded-xl bg-rose-50/40 group">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1.5 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors">
-                      <AlertCircle className="w-4 h-4 text-rose-600" />
-                    </div>
-                    <span className="text-sm font-black text-rose-800 uppercase tracking-tight">A Pagar</span>
+                    <div className="p-1.5 bg-rose-100 rounded-lg"><AlertCircle className="w-4 h-4 text-rose-600" /></div>
+                    <span className="text-sm font-black text-rose-800 uppercase">A Pagar</span>
+                    <Badge className="ml-auto bg-rose-100 text-rose-700 text-[10px]">{d.contas_pagar_pendente_count} contas</Badge>
                   </div>
-                  <div className="text-3xl font-black text-rose-600">
-                    R$ {dadosFinanceiros.contas_pagar_pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="text-[10px] font-bold text-rose-600/70 mt-1 uppercase">Saídas pendentes</p>
+                  <div className="text-2xl font-black text-rose-600">{fmt(d.contas_pagar_pendente)}</div>
+                  <p className="text-[10px] font-bold text-rose-600/70 mt-1 uppercase">Saídas pendentes / vencidas</p>
                 </div>
 
-                <div className="p-4 border-2 border-blue-100 rounded-xl bg-blue-50/30 hover:shadow-sm transition-all group">
+                {/* Saldo Projetado */}
+                <div className={`p-4 border-2 rounded-xl group ${(d.contas_receber_pendente - d.contas_pagar_pendente) >= 0 ? "border-blue-100 bg-blue-50/40" : "border-rose-100 bg-rose-50/40"}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1.5 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                      <DollarSign className="w-4 h-4 text-blue-600" />
+                    <div className={`p-1.5 rounded-lg ${(d.contas_receber_pendente - d.contas_pagar_pendente) >= 0 ? "bg-blue-100" : "bg-rose-100"}`}>
+                      <DollarSign className={`w-4 h-4 ${(d.contas_receber_pendente - d.contas_pagar_pendente) >= 0 ? "text-blue-600" : "text-rose-600"}`} />
                     </div>
-                    <span className="text-sm font-black text-blue-800 uppercase tracking-tight">Em Carteira</span>
+                    <span className={`text-sm font-black uppercase ${(d.contas_receber_pendente - d.contas_pagar_pendente) >= 0 ? "text-blue-800" : "text-rose-800"}`}>Saldo Projetado</span>
                   </div>
-                  <div className="text-3xl font-black text-blue-600">
-                    R$ {dadosFinanceiros.cheques_compensar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  <div className={`text-2xl font-black ${(d.contas_receber_pendente - d.contas_pagar_pendente) >= 0 ? "text-blue-600" : "text-rose-600"}`}>
+                    {fmt(d.contas_receber_pendente - d.contas_pagar_pendente)}
                   </div>
-                  <p className="text-[10px] font-bold text-blue-600/70 mt-1 uppercase">Cheques a compensar</p>
+                  <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase">A receber − a pagar</p>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* ── Controle de Entradas ────────────────────────────────────────────── */}
+        <Card className="medical-card shadow-sm">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-xl font-black">
+                  <ArrowDown className="w-5 h-5 text-emerald-600" />
+                  Controle de Entradas
+                  <Badge className="bg-emerald-100 text-emerald-700 text-xs">{d.receitas_detalhadas.length} registros</Badge>
+                </CardTitle>
+                <CardDescription>Quem pagou, quando, quanto e como — período selecionado</CardDescription>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar paciente, forma, desc..."
+                  value={buscaEntradas}
+                  onChange={e => setBuscaEntradas(e.target.value)}
+                  className="pl-9 text-sm"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-3">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : entradasFiltradas.length === 0 ? (
+              <p className="text-center text-muted-foreground py-10">Nenhuma entrada no período</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left py-3 px-3"><SortBtn col="data" label="Data" /></th>
+                      <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground">Paciente</th>
+                      <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground">Forma</th>
+                      <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground">Categoria</th>
+                      <th className="text-right py-3 px-3"><SortBtn col="valor" label="Valor" /></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entradasVisiveis.map((r, i) => (
+                      <tr key={r.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+                        <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">{fmtDate(r.data)}</td>
+                        <td className="py-2.5 px-3 font-semibold">{r.paciente}</td>
+                        <td className="py-2.5 px-3">
+                          <Badge variant="outline" className="text-[10px] font-semibold">{r.forma_pagamento}</Badge>
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground text-xs">{r.categoria || r.descricao || "—"}</td>
+                        <td className="py-2.5 px-3 text-right font-black text-emerald-700">{fmt(r.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  {entradasFiltradas.length > 0 && (
+                    <tfoot>
+                      <tr className="border-t-2 bg-muted/20">
+                        <td colSpan={4} className="py-2.5 px-3 font-black text-sm">
+                          {showAllEntradas ? "Total" : `Top ${Math.min(10, entradasFiltradas.length)} de ${entradasFiltradas.length}`}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-black text-emerald-700">
+                          {fmt(entradasVisiveis.reduce((s, r) => s + r.valor, 0))}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+                {entradasFiltradas.length > 10 && (
+                  <div className="flex justify-center pt-3">
+                    <Button variant="ghost" size="sm" onClick={() => setShowAllEntradas(v => !v)} className="gap-2 text-xs">
+                      {showAllEntradas ? <><ChevronUp className="w-3 h-3" /> Mostrar menos</> : <><ChevronDown className="w-3 h-3" /> Ver todos ({entradasFiltradas.length})</>}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Receitas por Categoria */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-green-600">Receitas por Categoria</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : dadosFinanceiros.receitas_por_categoria.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nenhuma receita encontrada no período</p>
-              ) : (
-                <div className="space-y-4">
-                  {dadosFinanceiros.receitas_por_categoria.map((item, index) => {
-                    const percentual = dadosFinanceiros.receitas_total > 0
-                      ? (item.valor / dadosFinanceiros.receitas_total) * 100
-                      : 0;
-                    return (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">{item.categoria}</span>
-                            <span className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min(percentual, 100)}%` }} />
-                          </div>
-                        </div>
-                        <div className="ml-4 text-right">
-                          <span className="text-sm font-medium text-green-600">
-                            R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Despesas por Categoria */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-red-600">Despesas por Categoria</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : dadosFinanceiros.despesas_por_categoria.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nenhuma despesa encontrada no período</p>
-              ) : (
-                <div className="space-y-4">
-                  {dadosFinanceiros.despesas_por_categoria.map((item, index) => {
-                    const percentual = dadosFinanceiros.despesas_total > 0
-                      ? (item.valor / dadosFinanceiros.despesas_total) * 100
-                      : 0;
-                    return (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">{item.categoria}</span>
-                            <span className="text-sm text-muted-foreground">{percentual.toFixed(1)}%</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${Math.min(percentual, 100)}%` }} />
-                          </div>
-                        </div>
-                        <div className="ml-4 text-right">
-                          <span className="text-sm font-medium text-red-600">
-                            R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Receitas por Forma de Pagamento + Dentista */}
+        {/* ── Forma de pagamento + Dentista ───────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Pizza — Forma de Pagamento */}
@@ -633,58 +371,43 @@ export default function RelatorioFinanceiro() {
               <CardDescription>Como os pacientes estão pagando no período</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <Skeleton className="h-64 w-full rounded-xl" />
-              ) : dadosFinanceiros.receitas_por_forma_pagamento.length === 0 ? (
-                <p className="text-center text-muted-foreground py-12">Nenhum dado no período</p>
-              ) : (
-                <div className="space-y-4">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        data={dadosFinanceiros.receitas_por_forma_pagamento}
-                        dataKey="valor"
-                        nameKey="forma"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={85}
-                        innerRadius={40}
-                        paddingAngle={3}
-                        label={({ forma, percent }) => `${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
-                      >
-                        {dadosFinanceiros.receitas_por_forma_pagamento.map((_, i) => (
-                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}
-                        formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="space-y-2">
-                    {dadosFinanceiros.receitas_por_forma_pagamento.map((item, i) => {
-                      const pct = dadosFinanceiros.receitas_total > 0
-                        ? (item.valor / dadosFinanceiros.receitas_total * 100).toFixed(1)
-                        : '0.0';
-                      return (
-                        <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                            <span className="text-sm font-semibold">{item.forma}</span>
-                            <Badge variant="secondary" className="text-[10px]">{item.count}x</Badge>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm font-black text-slate-800">R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                            <span className="text-xs text-slate-400 ml-2">{pct}%</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {loading ? <Skeleton className="h-64 w-full rounded-xl" />
+                : d.receitas_por_forma_pagamento.length === 0
+                  ? <p className="text-center text-muted-foreground py-12">Nenhum dado no período</p>
+                  : (
+                    <div className="space-y-4">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie data={d.receitas_por_forma_pagamento} dataKey="valor" nameKey="forma"
+                            cx="50%" cy="50%" outerRadius={80} innerRadius={38} paddingAngle={3}
+                            label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                            {d.receitas_por_forma_pagamento.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                          </Pie>
+                          <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+                            formatter={(value: any) => [fmt(Number(value)), ""]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="space-y-1.5">
+                        {d.receitas_por_forma_pagamento.map((item, i) => {
+                          const pct = d.receitas_total > 0 ? (item.valor / d.receitas_total * 100).toFixed(1) : "0.0";
+                          return (
+                            <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                                <span className="text-sm font-semibold">{item.forma}</span>
+                                <Badge variant="secondary" className="text-[10px]">{item.count}x</Badge>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm font-black text-slate-800">{fmt(item.valor)}</span>
+                                <span className="text-xs text-slate-400 ml-2">{pct}%</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+              }
             </CardContent>
           </Card>
 
@@ -698,72 +421,210 @@ export default function RelatorioFinanceiro() {
               <CardDescription>Volume faturado por profissional (agendamentos realizados)</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <Skeleton className="h-64 w-full rounded-xl" />
-              ) : dadosFinanceiros.receitas_por_dentista.length === 0 ? (
-                <p className="text-center text-muted-foreground py-12">Nenhum agendamento com valor no período</p>
-              ) : (
-                <div className="space-y-4">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart
-                      data={dadosFinanceiros.receitas_por_dentista}
-                      layout="vertical"
-                      margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-                      <XAxis
-                        type="number"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        tickFormatter={(v) => `R$${v / 1000}k`}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="dentista"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#374151', fontSize: 12, fontWeight: 600 }}
-                        width={100}
-                      />
-                      <Tooltip
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}
-                        formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Receita']}
-                      />
-                      <Bar dataKey="valor" fill="#8b5cf6" radius={[0, 6, 6, 0]} barSize={18}>
-                        {dadosFinanceiros.receitas_por_dentista.map((_, i) => (
-                          <Cell key={i} fill={['#8b5cf6', '#6366f1', '#a78bfa', '#c4b5fd'][i % 4]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <div className="space-y-2">
-                    {dadosFinanceiros.receitas_por_dentista.map((item, i) => {
-                      const total = dadosFinanceiros.receitas_por_dentista.reduce((a, d) => a + d.valor, 0);
-                      const pct = total > 0 ? (item.valor / total * 100).toFixed(1) : '0.0';
-                      return (
-                        <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black"
-                              style={{ background: ['#8b5cf6', '#6366f1', '#a78bfa', '#c4b5fd'][i % 4] }}>
-                              {i + 1}
+              {loading ? <Skeleton className="h-64 w-full rounded-xl" />
+                : d.receitas_por_dentista.length === 0
+                  ? <p className="text-center text-muted-foreground py-12">Nenhum agendamento com valor no período</p>
+                  : (
+                    <div className="space-y-4">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={d.receitas_por_dentista} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+                          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
+                          <YAxis type="category" dataKey="dentista" axisLine={false} tickLine={false} tick={{ fill: "#374151", fontSize: 12, fontWeight: 600 }} width={110} />
+                          <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
+                            formatter={(value: any) => [fmt(Number(value)), "Receita"]} />
+                          <Bar dataKey="valor" radius={[0, 6, 6, 0]} barSize={18}>
+                            {d.receitas_por_dentista.map((_, i) => <Cell key={i} fill={["#8b5cf6", "#6366f1", "#a78bfa", "#c4b5fd"][i % 4]} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                      <div className="space-y-1.5">
+                        {d.receitas_por_dentista.map((item, i) => {
+                          const total = d.receitas_por_dentista.reduce((a, x) => a + x.valor, 0);
+                          const pct = total > 0 ? (item.valor / total * 100).toFixed(1) : "0.0";
+                          return (
+                            <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black"
+                                  style={{ background: ["#8b5cf6", "#6366f1", "#a78bfa"][i % 3] }}>{i + 1}</div>
+                                <span className="text-sm font-semibold">{item.dentista}</span>
+                                <Badge variant="secondary" className="text-[10px]">{item.count} atend.</Badge>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm font-black text-slate-800">{fmt(item.valor)}</span>
+                                <span className="text-xs text-slate-400 ml-2">{pct}%</span>
+                              </div>
                             </div>
-                            <span className="text-sm font-semibold">{item.dentista}</span>
-                            <Badge variant="secondary" className="text-[10px]">{item.count} atend.</Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+              }
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Receitas por Categoria + Despesas por Categoria ─────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Receitas por Categoria — barras horizontais */}
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-black text-emerald-700 flex items-center gap-2">
+                <ArrowUp className="w-5 h-5" />
+                Receitas por Categoria
+              </CardTitle>
+              <CardDescription>Distribuição das entradas no período</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+                : d.receitas_por_categoria.length === 0
+                  ? <p className="text-center text-muted-foreground py-8">Nenhuma receita no período</p>
+                  : (
+                    <div className="space-y-3">
+                      {d.receitas_por_categoria.map((item, i) => {
+                        const pct = d.receitas_total > 0 ? (item.valor / d.receitas_total) * 100 : 0;
+                        return (
+                          <div key={i}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-semibold truncate max-w-[180px]">{item.categoria}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">{pct.toFixed(1)}%</span>
+                                <span className="text-sm font-black text-emerald-700">{fmt(item.valor)}</span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className="text-sm font-black text-slate-800">R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                            <span className="text-xs text-slate-400 ml-2">{pct}%</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )
+              }
+            </CardContent>
+          </Card>
+
+          {/* Despesas por Categoria — pizza + barras */}
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-black text-rose-700 flex items-center gap-2">
+                <ArrowDown className="w-5 h-5" />
+                Despesas por Categoria
+              </CardTitle>
+              <CardDescription>Para onde estão indo as saídas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+                : d.despesas_por_categoria.length === 0
+                  ? <p className="text-center text-muted-foreground py-8">Nenhuma despesa no período</p>
+                  : (
+                    <div className="space-y-4">
+                      <ResponsiveContainer width="100%" height={150}>
+                        <PieChart>
+                          <Pie data={d.despesas_por_categoria} dataKey="valor" nameKey="categoria"
+                            cx="50%" cy="50%" outerRadius={65} innerRadius={28} paddingAngle={3}
+                            label={({ percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ""} labelLine={false}>
+                            {d.despesas_por_categoria.map((_, i) => <Cell key={i} fill={["#ef4444","#f97316","#eab308","#ec4899","#8b5cf6","#06b6d4"][i % 6]} />)}
+                          </Pie>
+                          <Tooltip contentStyle={{ borderRadius: "12px", border: "none" }}
+                            formatter={(value: any) => [fmt(Number(value)), ""]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="space-y-2">
+                        {d.despesas_por_categoria.map((item, i) => {
+                          const pct = d.despesas_total > 0 ? (item.valor / d.despesas_total) * 100 : 0;
+                          const cor = ["#ef4444","#f97316","#eab308","#ec4899","#8b5cf6","#06b6d4"][i % 6];
+                          return (
+                            <div key={i} className="flex items-center justify-between py-1 border-b last:border-0">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cor }} />
+                                <span className="text-sm font-semibold">{item.categoria}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">{pct.toFixed(1)}%</span>
+                                <span className="text-sm font-black text-rose-700">{fmt(item.valor)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+              }
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Contas a Receber (Pendentes / Vencidas) ─────────────────────────── */}
+        {(loading || d.contas_receber_a_entrar.length > 0) && (
+          <Card className="medical-card shadow-sm border-l-4 border-l-orange-400">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl font-black text-orange-700">
+                <Clock className="w-5 h-5" />
+                Contas a Receber — Pendentes / Vencidas
+                <Badge className="bg-orange-100 text-orange-700">{d.contas_receber_a_entrar.length}</Badge>
+              </CardTitle>
+              <CardDescription>Lista de recebimentos em aberto (fora do período — visão geral)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-3">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/30">
+                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground">Paciente</th>
+                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground">Descrição</th>
+                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground">Vencimento</th>
+                        <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground">Status</th>
+                        <th className="text-right py-3 px-3 font-semibold text-xs text-muted-foreground">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendentesVisiveis.map((c, i) => (
+                        <tr key={c.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+                          <td className="py-2.5 px-3 font-semibold">{c.paciente}</td>
+                          <td className="py-2.5 px-3 text-muted-foreground text-xs">{c.descricao || "—"}</td>
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                            <span className={c.dias_atraso > 0 ? "text-rose-600 font-semibold" : "text-muted-foreground"}>
+                              {c.data_vencimento ? fmtDate(c.data_vencimento) : "—"}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            {c.status === "Vencida" || c.dias_atraso > 0
+                              ? <Badge className="bg-rose-100 text-rose-700 text-[10px]">Vencida {c.dias_atraso > 0 ? `(${c.dias_atraso}d)` : ""}</Badge>
+                              : <Badge className="bg-orange-100 text-orange-700 text-[10px]">Pendente</Badge>
+                            }
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-orange-700">{fmt(c.valor)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 bg-muted/20">
+                        <td colSpan={4} className="py-2.5 px-3 font-black text-sm">Total</td>
+                        <td className="py-2.5 px-3 text-right font-black text-orange-700">
+                          {fmt(d.contas_receber_a_entrar.reduce((s, c) => s + c.valor, 0))}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                  {d.contas_receber_a_entrar.length > 8 && (
+                    <div className="flex justify-center pt-3">
+                      <Button variant="ghost" size="sm" onClick={() => setShowAllPendentes(v => !v)} className="gap-2 text-xs">
+                        {showAllPendentes ? <><ChevronUp className="w-3 h-3" /> Mostrar menos</> : <><ChevronDown className="w-3 h-3" /> Ver todos ({d.contas_receber_a_entrar.length})</>}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
+        )}
+
       </div>
     </DashboardLayout>
   );

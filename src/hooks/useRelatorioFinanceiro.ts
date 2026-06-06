@@ -3,18 +3,42 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+export interface ReceitaDetalhe {
+  id: string;
+  paciente: string;
+  paciente_id: string | null;
+  data: string;
+  forma_pagamento: string;
+  valor: number;
+  categoria: string;
+  descricao: string;
+}
+
+export interface ContaReceberItem {
+  id: string;
+  paciente: string;
+  valor: number;
+  data_vencimento: string;
+  status: string;
+  descricao: string;
+  dias_atraso: number;
+}
+
 export interface DadosFinanceiros {
   receitas_total: number;
   despesas_total: number;
   saldo: number;
   contas_receber_pendente: number;
+  contas_receber_pendente_count: number;
   contas_pagar_pendente: number;
-  cheques_compensar: number;
+  contas_pagar_pendente_count: number;
   receitas_por_categoria: { categoria: string; valor: number }[];
   despesas_por_categoria: { categoria: string; valor: number }[];
-  fluxo_mensal: { mes: string; receitas: number; despesas: number }[];
+  fluxo_mensal: { mes: string; receitas: number; despesas: number; saldo: number }[];
   receitas_por_forma_pagamento: { forma: string; valor: number; count: number }[];
   receitas_por_dentista: { dentista: string; valor: number; count: number }[];
+  receitas_detalhadas: ReceitaDetalhe[];
+  contas_receber_a_entrar: ContaReceberItem[];
 }
 
 export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
@@ -25,13 +49,16 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
     despesas_total: 0,
     saldo: 0,
     contas_receber_pendente: 0,
+    contas_receber_pendente_count: 0,
     contas_pagar_pendente: 0,
-    cheques_compensar: 0,
+    contas_pagar_pendente_count: 0,
     receitas_por_categoria: [],
     despesas_por_categoria: [],
     fluxo_mensal: [],
     receitas_por_forma_pagamento: [],
     receitas_por_dentista: [],
+    receitas_detalhadas: [],
+    contas_receber_a_entrar: [],
   });
 
   const fetchRelatorioFinanceiro = async () => {
@@ -40,10 +67,10 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
     try {
       setLoading(true);
 
-      // Buscar contas a receber (recebidas)
+      // Buscar contas a receber (recebidas) — inclui paciente e descrição
       let contasReceberQuery = supabase
         .from('contas_receber')
-        .select('valor, categoria, data_recebimento, forma_pagamento')
+        .select('id, valor, categoria, data_recebimento, forma_pagamento, descricao, paciente_id, pacientes(nome)')
         .eq('status', 'Recebida')
         .not('data_recebimento', 'is', null);
 
@@ -108,67 +135,62 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       const { data: comissoes, error: comissoesError } = await comissoesQuery;
       if (comissoesError) throw comissoesError;
 
-      // Buscar contas pendentes (independente do período)
+      // Contas a receber pendentes (com detalhe de paciente e vencimento)
       const { data: contasReceberPendentes } = await supabase
         .from('contas_receber')
-        .select('valor')
-        .eq('status', 'Pendente');
+        .select('id, valor, data_vencimento, descricao, paciente_id, pacientes(nome), status')
+        .in('status', ['Pendente', 'Vencida'])
+        .order('data_vencimento', { ascending: true });
 
+      // Contas a pagar pendentes
       const { data: contasPagarPendentes } = await supabase
         .from('contas_pagar')
-        .select('valor')
-        .eq('status', 'Pendente');
+        .select('valor, status')
+        .in('status', ['Pendente', 'Vencida']);
 
-      // Buscar cheques a compensar
-      const { data: chequesCompensar } = await supabase
-        .from('cheques')
-        .select('valor')
-        .eq('status', 'A Compensar');
-
-      // Buscar dentistas para mapear nomes
+      // Dentistas para mapear nomes
       const { data: dentistas } = await supabase
         .from('dentistas')
         .select('id, nome');
 
-      // Calcular totais de receitas
+      // ── Totais ───────────────────────────────────────────────────────────────
       const receitasContas = (contasReceber || []).reduce((sum, c) => sum + Number(c.valor || 0), 0);
       const receitasAgendamentos = (agendamentos || []).reduce((sum, a) => sum + Number(a.valor || 0), 0);
       const receitasTotal = receitasContas + receitasAgendamentos;
 
-      // Calcular totais de despesas
       const despesasContas = (contasPagar || []).reduce((sum, c) => sum + Number(c.valor || 0), 0);
       const despesasComissoes = (comissoes || []).reduce((sum, c) => sum + Number(c.valor_comissao || 0), 0);
       const despesasTotal = despesasContas + despesasComissoes;
 
-      // Calcular saldo
       const saldo = receitasTotal - despesasTotal;
 
-      // Calcular pendências
+      // Pendências
       const contasReceberPendente = (contasReceberPendentes || []).reduce((sum, c) => sum + Number(c.valor || 0), 0);
+      const contasReceberPendenteCount = (contasReceberPendentes || []).length;
       const contasPagarPendente = (contasPagarPendentes || []).reduce((sum, c) => sum + Number(c.valor || 0), 0);
-      const chequesCompensarTotal = (chequesCompensar || []).reduce((sum, c) => sum + Number(c.valor || 0), 0);
+      const contasPagarPendenteCount = (contasPagarPendentes || []).length;
 
-      // Agrupar receitas por categoria
+      // ── Receitas por categoria ────────────────────────────────────────────────
       const receitasPorCategoria = new Map<string, number>();
       (contasReceber || []).forEach(c => {
-        const atual = receitasPorCategoria.get(c.categoria) || 0;
-        receitasPorCategoria.set(c.categoria, atual + Number(c.valor || 0));
+        const cat = c.categoria || 'Outros';
+        receitasPorCategoria.set(cat, (receitasPorCategoria.get(cat) || 0) + Number(c.valor || 0));
       });
       (agendamentos || []).forEach(a => {
-        const categoria = a.procedimento || 'Outros';
-        const atual = receitasPorCategoria.get(categoria) || 0;
-        receitasPorCategoria.set(categoria, atual + Number(a.valor || 0));
+        const cat = a.procedimento || 'Outros';
+        receitasPorCategoria.set(cat, (receitasPorCategoria.get(cat) || 0) + Number(a.valor || 0));
       });
 
-      // Agrupar despesas por categoria
+      // ── Despesas por categoria ────────────────────────────────────────────────
       const despesasPorCategoria = new Map<string, number>();
       (contasPagar || []).forEach(c => {
-        const atual = despesasPorCategoria.get(c.categoria) || 0;
-        despesasPorCategoria.set(c.categoria, atual + Number(c.valor || 0));
+        const cat = c.categoria || 'Outros';
+        despesasPorCategoria.set(cat, (despesasPorCategoria.get(cat) || 0) + Number(c.valor || 0));
       });
-      despesasPorCategoria.set('Comissões', despesasComissoes);
+      if (despesasComissoes > 0) {
+        despesasPorCategoria.set('Comissões', despesasComissoes);
+      }
 
-      // Converter para array
       const receitasPorCategoriaArray = Array.from(receitasPorCategoria.entries())
         .map(([categoria, valor]) => ({ categoria, valor }))
         .sort((a, b) => b.valor - a.valor);
@@ -177,7 +199,7 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
         .map(([categoria, valor]) => ({ categoria, valor }))
         .sort((a, b) => b.valor - a.valor);
 
-      // Calcular fluxo mensal (agregação real por mês dentro do período)
+      // ── Fluxo mensal com saldo ────────────────────────────────────────────────
       const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
       const inicioPeriodo = dataInicio
@@ -186,100 +208,123 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
       inicioPeriodo.setDate(1);
       const fimPeriodo = dataFim ? new Date(dataFim) : new Date();
 
-      // Gera chaves mensais entre início e fim inclusive
-      const monthKeys: { key: string; label: string; year: number; month: number }[] = [];
+      const monthKeys: { key: string; label: string }[] = [];
       const cursor = new Date(inicioPeriodo);
       cursor.setHours(0, 0, 0, 0);
       while (cursor <= fimPeriodo) {
         const y = cursor.getFullYear();
         const m = cursor.getMonth();
         const key = `${y}-${String(m + 1).padStart(2, '0')}`;
-        const label = `${mesesNomes[m]}`; // mantém só o nome curto do mês para compatibilidade com UI
-        monthKeys.push({ key, label, year: y, month: m });
+        monthKeys.push({ key, label: mesesNomes[m] });
         cursor.setMonth(cursor.getMonth() + 1);
         cursor.setDate(1);
       }
 
-      const mensalMap: Record<string, { mes: string; receitas: number; despesas: number }> = {};
+      const mensalMap: Record<string, { mes: string; receitas: number; despesas: number; saldo: number }> = {};
       monthKeys.forEach(({ key, label }) => {
-        mensalMap[key] = { mes: label, receitas: 0, despesas: 0 };
+        mensalMap[key] = { mes: label, receitas: 0, despesas: 0, saldo: 0 };
       });
 
       const getMonthKey = (dtStr?: string | null) => {
         if (!dtStr) return null;
         const d = new Date(dtStr);
         if (isNaN(d.getTime())) return null;
-        const y = d.getFullYear();
-        const m = d.getMonth();
-        return `${y}-${String(m + 1).padStart(2, '0')}`;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       };
 
-      // Soma receitas por mês (contas recebidas + agendamentos realizados)
       (contasReceber || []).forEach(c => {
         const key = getMonthKey(c.data_recebimento as any);
-        if (key && mensalMap[key]) {
-          mensalMap[key].receitas += Number(c.valor || 0);
-        }
+        if (key && mensalMap[key]) mensalMap[key].receitas += Number(c.valor || 0);
       });
       (agendamentos || []).forEach(a => {
         const key = getMonthKey(a.data_agendamento as any);
-        if (key && mensalMap[key]) {
-          mensalMap[key].receitas += Number(a.valor || 0);
-        }
+        if (key && mensalMap[key]) mensalMap[key].receitas += Number(a.valor || 0);
       });
-
-      // Soma despesas por mês (contas pagas + comissões pagas)
       (contasPagar || []).forEach(c => {
         const key = getMonthKey(c.data_pagamento as any);
-        if (key && mensalMap[key]) {
-          mensalMap[key].despesas += Number(c.valor || 0);
-        }
+        if (key && mensalMap[key]) mensalMap[key].despesas += Number(c.valor || 0);
       });
       (comissoes || []).forEach(c => {
         const key = getMonthKey(c.data_pagamento as any);
-        if (key && mensalMap[key]) {
-          mensalMap[key].despesas += Number(c.valor_comissao || 0);
-        }
+        if (key && mensalMap[key]) mensalMap[key].despesas += Number(c.valor_comissao || 0);
       });
 
-      const fluxoMensal = monthKeys.map(({ key }) => mensalMap[key]);
+      // Calcular saldo acumulado por mês
+      const fluxoMensal = monthKeys.map(({ key }) => {
+        const m = mensalMap[key];
+        return { ...m, saldo: m.receitas - m.despesas };
+      });
 
-      // Agrupar receitas por forma de pagamento (contas_receber recebidas)
+      // ── Receitas por forma de pagamento ───────────────────────────────────────
       const formaMap = new Map<string, { valor: number; count: number }>();
       (contasReceber || []).forEach(c => {
         const forma = c.forma_pagamento || 'Não informado';
-        const atual = formaMap.get(forma) || { valor: 0, count: 0 };
-        formaMap.set(forma, { valor: atual.valor + Number(c.valor || 0), count: atual.count + 1 });
+        const cur = formaMap.get(forma) || { valor: 0, count: 0 };
+        formaMap.set(forma, { valor: cur.valor + Number(c.valor || 0), count: cur.count + 1 });
       });
       const receitasPorFormaPagamento = Array.from(formaMap.entries())
         .map(([forma, { valor, count }]) => ({ forma, valor, count }))
         .sort((a, b) => b.valor - a.valor);
 
-      // Agrupar receitas por dentista (via agendamentos realizados)
+      // ── Receitas por dentista ─────────────────────────────────────────────────
       const dentistaMap = new Map<string, { valor: number; count: number }>();
       const dentistasById = new Map((dentistas || []).map(d => [d.id, d.nome]));
       (agendamentos || []).forEach(a => {
         if (!a.dentista_id) return;
         const nome = dentistasById.get(a.dentista_id) || 'Não identificado';
-        const atual = dentistaMap.get(nome) || { valor: 0, count: 0 };
-        dentistaMap.set(nome, { valor: atual.valor + Number(a.valor || 0), count: atual.count + 1 });
+        const cur = dentistaMap.get(nome) || { valor: 0, count: 0 };
+        dentistaMap.set(nome, { valor: cur.valor + Number(a.valor || 0), count: cur.count + 1 });
       });
       const receitasPorDentista = Array.from(dentistaMap.entries())
         .map(([dentista, { valor, count }]) => ({ dentista, valor, count }))
         .sort((a, b) => b.valor - a.valor);
+
+      // ── Receitas detalhadas (quem pagou, quando, como) ────────────────────────
+      const receitasDetalhadas: ReceitaDetalhe[] = (contasReceber || [])
+        .map(c => ({
+          id: c.id,
+          paciente: (c.pacientes as any)?.nome ?? 'Não identificado',
+          paciente_id: c.paciente_id ?? null,
+          data: c.data_recebimento as string,
+          forma_pagamento: c.forma_pagamento || 'Não informado',
+          valor: Number(c.valor || 0),
+          categoria: c.categoria || 'Outros',
+          descricao: c.descricao || '',
+        }))
+        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+
+      // ── Contas a receber pendentes (detalhe) ──────────────────────────────────
+      const hoje = new Date();
+      const contasReceberAEntrar: ContaReceberItem[] = (contasReceberPendentes || [])
+        .map(c => {
+          const venc = c.data_vencimento ? new Date(c.data_vencimento) : null;
+          const diasAtraso = venc ? Math.max(0, Math.floor((hoje.getTime() - venc.getTime()) / 86400000)) : 0;
+          return {
+            id: c.id,
+            paciente: (c.pacientes as any)?.nome ?? 'Não identificado',
+            valor: Number(c.valor || 0),
+            data_vencimento: c.data_vencimento || '',
+            status: c.status || 'Pendente',
+            descricao: c.descricao || '',
+            dias_atraso: diasAtraso,
+          };
+        });
 
       setDadosFinanceiros({
         receitas_total: receitasTotal,
         despesas_total: despesasTotal,
         saldo,
         contas_receber_pendente: contasReceberPendente,
+        contas_receber_pendente_count: contasReceberPendenteCount,
         contas_pagar_pendente: contasPagarPendente,
-        cheques_compensar: chequesCompensarTotal,
+        contas_pagar_pendente_count: contasPagarPendenteCount,
         receitas_por_categoria: receitasPorCategoriaArray,
         despesas_por_categoria: despesasPorCategoriaArray,
         fluxo_mensal: fluxoMensal,
         receitas_por_forma_pagamento: receitasPorFormaPagamento,
         receitas_por_dentista: receitasPorDentista,
+        receitas_detalhadas: receitasDetalhadas,
+        contas_receber_a_entrar: contasReceberAEntrar,
       });
     } catch (error: any) {
       console.error('Erro ao buscar relatório financeiro:', error);
@@ -296,6 +341,6 @@ export const useRelatorioFinanceiro = (dataInicio?: Date, dataFim?: Date) => {
   return {
     dadosFinanceiros,
     loading,
-    refetch: fetchRelatorioFinanceiro
+    refetch: fetchRelatorioFinanceiro,
   };
 };
