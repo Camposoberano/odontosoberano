@@ -23,7 +23,6 @@ import {
   TrendingUp,
   TrendingDown,
   Banknote,
-  CheckSquare,
   CreditCard as CreditCardIcon,
   BookOpen,
   Phone,
@@ -88,7 +87,6 @@ const financeiroItems = [
   { title: "Contas a Pagar", url: "/financeiro/contas-pagar", icon: Receipt },
   { title: "Contas a Receber", url: "/financeiro/contas-receber", icon: TrendingUp },
   { title: "Fluxo de Caixa", url: "/financeiro/fluxo-caixa", icon: Banknote },
-  { title: "Controle de Cheques", url: "/financeiro/cheques", icon: CheckSquare },
   { title: "Relatório", url: "/relatorios/financeiro", icon: BarChart3 },
 ];
 

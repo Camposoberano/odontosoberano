@@ -45,6 +45,8 @@ export default function RelatorioFinanceiro() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showAllEntradas, setShowAllEntradas] = useState(false);
   const [showAllPendentes, setShowAllPendentes] = useState(false);
+  const [filtroForma, setFiltroForma] = useState<string>("Todos");
+  const [filtroPendente, setFiltroPendente] = useState<string>("Todos");
 
   const { dadosFinanceiros: d, loading } = useRelatorioFinanceiro(dataInicio, dataFim);
 
@@ -52,14 +54,22 @@ export default function RelatorioFinanceiro() {
     ? ((d.saldo / d.receitas_total) * 100).toFixed(1)
     : "0.0";
 
+  // Formas de pagamento únicas para filtro
+  const formasUnicas = useMemo(() => {
+    const s = new Set(d.receitas_detalhadas.map(r => r.forma_pagamento));
+    return ["Todos", ...Array.from(s).sort()];
+  }, [d.receitas_detalhadas]);
+
   // Filtrar e ordenar entradas
   const entradasFiltradas = useMemo(() => {
-    let arr = d.receitas_detalhadas.filter(r =>
-      !buscaEntradas ||
-      r.paciente.toLowerCase().includes(buscaEntradas.toLowerCase()) ||
-      r.forma_pagamento.toLowerCase().includes(buscaEntradas.toLowerCase()) ||
-      r.descricao.toLowerCase().includes(buscaEntradas.toLowerCase())
-    );
+    let arr = d.receitas_detalhadas.filter(r => {
+      const matchBusca = !buscaEntradas ||
+        r.paciente.toLowerCase().includes(buscaEntradas.toLowerCase()) ||
+        r.forma_pagamento.toLowerCase().includes(buscaEntradas.toLowerCase()) ||
+        r.descricao.toLowerCase().includes(buscaEntradas.toLowerCase());
+      const matchForma = filtroForma === "Todos" || r.forma_pagamento === filtroForma;
+      return matchBusca && matchForma;
+    });
     arr = [...arr].sort((a, b) => {
       if (sortEntradas === "data") {
         return sortDir === "desc"
@@ -69,10 +79,16 @@ export default function RelatorioFinanceiro() {
       return sortDir === "desc" ? b.valor - a.valor : a.valor - b.valor;
     });
     return arr;
-  }, [d.receitas_detalhadas, buscaEntradas, sortEntradas, sortDir]);
+  }, [d.receitas_detalhadas, buscaEntradas, sortEntradas, sortDir, filtroForma]);
+
+  // Filtro de pendentes por status
+  const pendentesFiltrados = useMemo(() => {
+    if (filtroPendente === "Todos") return d.contas_receber_a_entrar;
+    return d.contas_receber_a_entrar.filter(c => c.status === filtroPendente);
+  }, [d.contas_receber_a_entrar, filtroPendente]);
 
   const entradasVisiveis = showAllEntradas ? entradasFiltradas : entradasFiltradas.slice(0, 10);
-  const pendentesVisiveis = showAllPendentes ? d.contas_receber_a_entrar : d.contas_receber_a_entrar.slice(0, 8);
+  const pendentesVisiveis = showAllPendentes ? pendentesFiltrados : pendentesFiltrados.slice(0, 8);
 
   const toggleSort = (col: "data" | "valor") => {
     if (sortEntradas === col) setSortDir(d => d === "desc" ? "asc" : "desc");
@@ -283,24 +299,49 @@ export default function RelatorioFinanceiro() {
         {/* ── Controle de Entradas ────────────────────────────────────────────── */}
         <Card className="medical-card shadow-sm">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-xl font-black">
-                  <ArrowDown className="w-5 h-5 text-emerald-600" />
-                  Controle de Entradas
-                  <Badge className="bg-emerald-100 text-emerald-700 text-xs">{d.receitas_detalhadas.length} registros</Badge>
-                </CardTitle>
-                <CardDescription>Quem pagou, quando, quanto e como — período selecionado</CardDescription>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl font-black">
+                    <ArrowDown className="w-5 h-5 text-emerald-600" />
+                    Controle de Entradas
+                    <Badge className="bg-emerald-100 text-emerald-700 text-xs">{entradasFiltradas.length} registros</Badge>
+                  </CardTitle>
+                  <CardDescription>Quem pagou, quando, quanto e como — período selecionado</CardDescription>
+                </div>
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar paciente, forma, desc..."
+                    value={buscaEntradas}
+                    onChange={e => setBuscaEntradas(e.target.value)}
+                    className="pl-9 text-sm"
+                  />
+                </div>
               </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar paciente, forma, desc..."
-                  value={buscaEntradas}
-                  onChange={e => setBuscaEntradas(e.target.value)}
-                  className="pl-9 text-sm"
-                />
-              </div>
+              {/* Filtro por forma de pagamento */}
+              {formasUnicas.length > 2 && (
+                <div className="flex flex-wrap gap-2">
+                  {formasUnicas.map(forma => {
+                    const count = forma === "Todos"
+                      ? d.receitas_detalhadas.length
+                      : d.receitas_detalhadas.filter(r => r.forma_pagamento === forma).length;
+                    return (
+                      <button
+                        key={forma}
+                        onClick={() => { setFiltroForma(forma); setShowAllEntradas(false); }}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                          filtroForma === forma
+                            ? "bg-emerald-600 text-white border-emerald-600"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-emerald-400 hover:text-emerald-600"
+                        }`}
+                      >
+                        {forma} <span className="opacity-70">({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -416,50 +457,60 @@ export default function RelatorioFinanceiro() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-black">
                 <Users className="w-5 h-5 text-violet-500" />
-                Receita por Dentista
+                Vendas por Profissional
               </CardTitle>
-              <CardDescription>Volume faturado por profissional (agendamentos realizados)</CardDescription>
+              <CardDescription>Ranking de faturamento por dentista no período</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? <Skeleton className="h-64 w-full rounded-xl" />
                 : d.receitas_por_dentista.length === 0
                   ? <p className="text-center text-muted-foreground py-12">Nenhum agendamento com valor no período</p>
-                  : (
-                    <div className="space-y-4">
-                      <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={d.receitas_por_dentista} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-                          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
-                          <YAxis type="category" dataKey="dentista" axisLine={false} tickLine={false} tick={{ fill: "#374151", fontSize: 12, fontWeight: 600 }} width={110} />
-                          <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}
-                            formatter={(value: any) => [fmt(Number(value)), "Receita"]} />
-                          <Bar dataKey="valor" radius={[0, 6, 6, 0]} barSize={18}>
-                            {d.receitas_por_dentista.map((_, i) => <Cell key={i} fill={["#8b5cf6", "#6366f1", "#a78bfa", "#c4b5fd"][i % 4]} />)}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                      <div className="space-y-1.5">
+                  : (() => {
+                    const totalDentistas = d.receitas_por_dentista.reduce((a, x) => a + x.valor, 0);
+                    const medalColors = ["#f8cc72", "#9ca3af", "#cd7f32"];
+                    const medalBg = ["bg-amber-50 border-amber-200", "bg-gray-50 border-gray-200", "bg-orange-50 border-orange-200"];
+                    const barColors = ["#8b5cf6", "#6366f1", "#a78bfa", "#c4b5fd", "#ddd6fe"];
+                    return (
+                      <div className="space-y-3">
                         {d.receitas_por_dentista.map((item, i) => {
-                          const total = d.receitas_por_dentista.reduce((a, x) => a + x.valor, 0);
-                          const pct = total > 0 ? (item.valor / total * 100).toFixed(1) : "0.0";
+                          const pct = totalDentistas > 0 ? (item.valor / totalDentistas) * 100 : 0;
+                          const isTop3 = i < 3;
                           return (
-                            <div key={i} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black"
-                                  style={{ background: ["#8b5cf6", "#6366f1", "#a78bfa"][i % 3] }}>{i + 1}</div>
-                                <span className="text-sm font-semibold">{item.dentista}</span>
-                                <Badge variant="secondary" className="text-[10px]">{item.count} atend.</Badge>
+                            <div key={i} className={`p-3 rounded-xl border ${isTop3 ? medalBg[i] : "bg-muted/20 border-muted"}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shadow-sm border-2"
+                                    style={{
+                                      background: isTop3 ? medalColors[i] : "#e5e7eb",
+                                      borderColor: isTop3 ? medalColors[i] : "#d1d5db",
+                                      color: i === 0 ? "#78350f" : i === 1 ? "#374151" : "#7c2d12"
+                                    }}>
+                                    {i + 1}
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-black leading-tight">{item.dentista}</div>
+                                    <div className="text-[10px] text-muted-foreground">{item.count} atendimentos</div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-base font-black" style={{ color: barColors[i % barColors.length] }}>{fmt(item.valor)}</div>
+                                  <div className="text-[10px] text-muted-foreground">{pct.toFixed(1)}% do total</div>
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <span className="text-sm font-black text-slate-800">{fmt(item.valor)}</span>
-                                <span className="text-xs text-slate-400 ml-2">{pct}%</span>
+                              <div className="w-full bg-white/60 rounded-full h-1.5">
+                                <div className="h-1.5 rounded-full transition-all"
+                                  style={{ width: `${Math.min(pct, 100)}%`, background: barColors[i % barColors.length] }} />
                               </div>
                             </div>
                           );
                         })}
+                        <div className="pt-2 border-t flex justify-between text-xs text-muted-foreground font-semibold">
+                          <span>{d.receitas_por_dentista.length} profissionais</span>
+                          <span>Total: {fmt(totalDentistas)}</span>
+                        </div>
                       </div>
-                    </div>
-                  )
+                    );
+                  })()
               }
             </CardContent>
           </Card>
@@ -561,12 +612,44 @@ export default function RelatorioFinanceiro() {
         {(loading || d.contas_receber_a_entrar.length > 0) && (
           <Card className="medical-card shadow-sm border-l-4 border-l-orange-400">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl font-black text-orange-700">
-                <Clock className="w-5 h-5" />
-                Contas a Receber — Pendentes / Vencidas
-                <Badge className="bg-orange-100 text-orange-700">{d.contas_receber_a_entrar.length}</Badge>
-              </CardTitle>
-              <CardDescription>Lista de recebimentos em aberto (fora do período — visão geral)</CardDescription>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl font-black text-orange-700">
+                      <Clock className="w-5 h-5" />
+                      Contas a Receber
+                      <Badge className="bg-orange-100 text-orange-700">{pendentesFiltrados.length}</Badge>
+                    </CardTitle>
+                    <CardDescription>Recebimentos em aberto — visão geral da clínica</CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-orange-700">
+                      {fmt(pendentesFiltrados.reduce((s, c) => s + c.valor, 0))}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">{filtroPendente === "Todos" ? "total em aberto" : filtroPendente.toLowerCase()}</div>
+                  </div>
+                </div>
+                {/* Filtro de status */}
+                <div className="flex gap-2">
+                  {[
+                    { key: "Todos", label: "Todos", count: d.contas_receber_a_entrar.length },
+                    { key: "Pendente", label: "Pendentes", count: d.contas_receber_a_entrar.filter(c => c.status === "Pendente").length },
+                    { key: "Vencida", label: "Vencidas", count: d.contas_receber_a_entrar.filter(c => c.status === "Vencida" || c.dias_atraso > 0).length },
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => { setFiltroPendente(tab.key); setShowAllPendentes(false); }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                        filtroPendente === tab.key
+                          ? tab.key === "Vencida" ? "bg-rose-600 text-white border-rose-600" : "bg-orange-500 text-white border-orange-500"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"
+                      }`}
+                    >
+                      {tab.label} ({tab.count})
+                    </button>
+                  ))}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -605,17 +688,19 @@ export default function RelatorioFinanceiro() {
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 bg-muted/20">
-                        <td colSpan={4} className="py-2.5 px-3 font-black text-sm">Total</td>
+                        <td colSpan={4} className="py-2.5 px-3 font-black text-sm">
+                          {showAllPendentes ? "Total" : `Top ${Math.min(8, pendentesFiltrados.length)} de ${pendentesFiltrados.length}`}
+                        </td>
                         <td className="py-2.5 px-3 text-right font-black text-orange-700">
-                          {fmt(d.contas_receber_a_entrar.reduce((s, c) => s + c.valor, 0))}
+                          {fmt(pendentesVisiveis.reduce((s, c) => s + c.valor, 0))}
                         </td>
                       </tr>
                     </tfoot>
                   </table>
-                  {d.contas_receber_a_entrar.length > 8 && (
+                  {pendentesFiltrados.length > 8 && (
                     <div className="flex justify-center pt-3">
                       <Button variant="ghost" size="sm" onClick={() => setShowAllPendentes(v => !v)} className="gap-2 text-xs">
-                        {showAllPendentes ? <><ChevronUp className="w-3 h-3" /> Mostrar menos</> : <><ChevronDown className="w-3 h-3" /> Ver todos ({d.contas_receber_a_entrar.length})</>}
+                        {showAllPendentes ? <><ChevronUp className="w-3 h-3" /> Mostrar menos</> : <><ChevronDown className="w-3 h-3" /> Ver todos ({pendentesFiltrados.length})</>}
                       </Button>
                     </div>
                   )}
