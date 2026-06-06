@@ -173,8 +173,8 @@ export default function RelatorioOrcamentos() {
                     <Badge variant="outline" className={`${dados.taxa_aprovacao >= 50 ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"} font-bold`}>APROVAÇÃO</Badge>
                   </div>
                   <div className="mt-4">
-                    <div className="text-3xl font-black text-gray-800">{dados.taxa_aprovacao.toFixed(1)}%</div>
-                    <p className="text-xs font-medium text-muted-foreground mt-1">Aprovados vs recusados</p>
+                    <div className="text-3xl font-black text-gray-800">{(dados.taxa_aprovacao || 0).toFixed(1)}%</div>
+                    <p className="text-xs font-medium text-muted-foreground mt-1">Aprovados do total do período</p>
                   </div>
                 </CardContent>
               </Card>
@@ -188,7 +188,7 @@ export default function RelatorioOrcamentos() {
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 font-bold">TICKET MÉDIO</Badge>
                   </div>
                   <div className="mt-4">
-                    <div className="text-3xl font-black text-gray-800">{fmtBRL(dados.ticket_medio)}</div>
+                    <div className="text-3xl font-black text-gray-800">{fmtBRL(dados.ticket_medio || 0)}</div>
                     <p className="text-xs font-medium text-muted-foreground mt-1">Média dos aprovados</p>
                   </div>
                 </CardContent>

@@ -13,7 +13,7 @@ import { useConvenios } from '@/hooks/useConvenios';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { CPFInput, TelefoneInput } from '@/components/ui/masked-input';
-import { AlertCircle, X, Plus } from 'lucide-react';
+import { AlertCircle, X, Plus, Minus } from 'lucide-react';
 
 // ── Validação CPF ──────────────────────────────────────────────────────────
 const isValidCPF = (cpf: string): boolean => {
@@ -468,6 +468,34 @@ export function PacienteForm({ isOpen, onClose, onSubmit, paciente, title }: Pac
                   <Label htmlFor="whatsapp">WhatsApp <span className="text-xs text-muted-foreground">(se diferente do telefone)</span></Label>
                   <TelefoneInput id="whatsapp" value={formData.whatsapp || ''}
                     onChange={v => set('whatsapp', v)} />
+                  {(() => {
+                    const d = (formData.whatsapp || '').replace(/\D/g, '');
+                    if (d.length === 10) {
+                      const nd = d.slice(0, 2) + '9' + d.slice(2);
+                      const preview = `(${nd.slice(0, 2)}) ${nd.slice(2, 7)}-${nd.slice(7)}`;
+                      return (
+                        <button type="button"
+                          onClick={() => set('whatsapp', preview)}
+                          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors mt-0.5">
+                          <Plus className="w-3 h-3" />
+                          Adicionar 9 → <span className="font-mono font-semibold">{preview}</span>
+                        </button>
+                      );
+                    }
+                    if (d.length === 11) {
+                      const nd = d.slice(0, 2) + d.slice(3);
+                      const preview = `(${nd.slice(0, 2)}) ${nd.slice(2, 6)}-${nd.slice(6)}`;
+                      return (
+                        <button type="button"
+                          onClick={() => set('whatsapp', preview)}
+                          className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 transition-colors mt-0.5">
+                          <Minus className="w-3 h-3" />
+                          Remover 9 → <span className="font-mono font-semibold">{preview}</span>
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </section>
 

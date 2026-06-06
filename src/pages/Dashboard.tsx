@@ -68,8 +68,8 @@ function KpiCard({
           <Icon className={`w-6 h-6 ${color}`} />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-          <p className="text-2xl font-black text-slate-800">{value}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground leading-tight">{label}</p>
+          <p className="text-xl sm:text-2xl font-black text-slate-800 leading-tight tabular-nums">{value}</p>
           {sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}
         </div>
         {onClick && <ChevronRight className="w-4 h-4 text-slate-300 ml-auto flex-shrink-0" />}
@@ -254,11 +254,11 @@ export default function Dashboard() {
               Gestão clínica em tempo real
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={() => navigate("/patients?action=new")} className="btn-orange-premium h-11 gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => navigate("/patients?action=new")} className="btn-orange-premium h-10 gap-2 text-sm">
               <Users className="w-4 h-4" /> Novo Paciente
             </Button>
-            <Button onClick={() => navigate("/appointments?action=new")} variant="outline" className="h-11 gap-2">
+            <Button onClick={() => navigate("/appointments?action=new")} variant="outline" className="h-10 gap-2 text-sm">
               <Calendar className="w-4 h-4" /> Novo Agendamento
             </Button>
           </div>
@@ -268,17 +268,21 @@ export default function Dashboard() {
 
         <Tabs defaultValue="indicadores">
           <TabsList className="grid grid-cols-4 mb-2 h-11 rounded-2xl">
-            <TabsTrigger value="indicadores" className="gap-1 text-xs font-bold rounded-xl">
-              <BarChart2 className="w-3.5 h-3.5" /> Indicadores
+            <TabsTrigger value="indicadores" className="gap-1 text-xs font-bold rounded-xl px-1 sm:px-3">
+              <BarChart2 className="w-4 h-4 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+              <span className="hidden sm:inline">Indicadores</span>
             </TabsTrigger>
-            <TabsTrigger value="relatorios" className="gap-1 text-xs font-bold rounded-xl">
-              <FileText className="w-3.5 h-3.5" /> Relatórios
+            <TabsTrigger value="relatorios" className="gap-1 text-xs font-bold rounded-xl px-1 sm:px-3">
+              <FileText className="w-4 h-4 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+              <span className="hidden sm:inline">Relatórios</span>
             </TabsTrigger>
-            <TabsTrigger value="ortodontia" className="gap-1 text-xs font-bold rounded-xl">
-              <Stethoscope className="w-3.5 h-3.5" /> Ortodontia
+            <TabsTrigger value="ortodontia" className="gap-1 text-xs font-bold rounded-xl px-1 sm:px-3">
+              <Stethoscope className="w-4 h-4 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+              <span className="hidden sm:inline">Ortodontia</span>
             </TabsTrigger>
-            <TabsTrigger value="tarefas" className="gap-1 text-xs font-bold rounded-xl">
-              <ListChecks className="w-3.5 h-3.5" /> Tarefas
+            <TabsTrigger value="tarefas" className="gap-1 text-xs font-bold rounded-xl px-1 sm:px-3">
+              <ListChecks className="w-4 h-4 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+              <span className="hidden sm:inline">Tarefas</span>
             </TabsTrigger>
           </TabsList>
 

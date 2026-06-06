@@ -97,8 +97,8 @@ export function useRelatorioOrcamentos(dataInicio: Date, dataFim: Date) {
       // taxa_aprovacao, ticket_medio, totais
       const aprovados = orcamentos.filter((o) => o.status === "aprovado" || o.status === "contrato_assinado");
       const recusados = orcamentos.filter((o) => o.status === "recusado");
-      const denominador = aprovados.length + recusados.length;
-      const taxa_aprovacao = denominador > 0 ? (aprovados.length / denominador) * 100 : 0;
+      // Taxa de aprovação = aprovados / total (todos os orçamentos do período)
+      const taxa_aprovacao = total > 0 ? (aprovados.length / total) * 100 : 0;
       const total_aprovado = aprovados.reduce((s, o) => s + (o.total_liquido ?? 0), 0);
       const total_perdido = recusados.reduce((s, o) => s + (o.total_liquido ?? 0), 0);
       const ticket_medio = aprovados.length > 0 ? total_aprovado / aprovados.length : 0;
