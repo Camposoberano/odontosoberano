@@ -40,7 +40,7 @@ export default function RelatorioVendasProfissional() {
             dentistas(nome)
           )
         `)
-        .eq("orcamentos.status", "aprovado")
+        .in("orcamentos.status", ["aprovado", "contrato_assinado"])
         .gte("orcamentos.created_at", range.inicio)
         .lte("orcamentos.created_at", range.fim + "T23:59:59");
       if (error) throw error;

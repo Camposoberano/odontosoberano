@@ -34,7 +34,7 @@ export default function RelatorioVendasTratamentos() {
       const { data, error } = await supabase
         .from("orcamento_itens")
         .select(`nome_procedimento, quantidade, preco_total, orcamentos!inner(status, created_at)`)
-        .eq("orcamentos.status", "aprovado")
+        .in("orcamentos.status", ["aprovado", "contrato_assinado"])
         .gte("orcamentos.created_at", range.inicio)
         .lte("orcamentos.created_at", range.fim + "T23:59:59");
       if (error) throw error;

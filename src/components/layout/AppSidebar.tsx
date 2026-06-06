@@ -81,12 +81,15 @@ const relatoriosItems = [
   { title: "Vendas por Plano", url: "/relatorios/vendas-por-planos", icon: CreditCardIcon },
   { title: "Despesas por Categoria", url: "/relatorios/despesas-por-categoria", icon: TrendingDown },
   { title: "Pacientes Indicados", url: "/relatorios/pacientes-indicados", icon: Users },
+  { title: "Comissão Dentistas", url: "/relatorios/comissao", icon: BarChart3 },
+  { title: "Ganho Dentista", url: "/relatorios/ganho-dentista", icon: TrendingUp },
 ];
 
 const financeiroItems = [
   { title: "Contas a Pagar", url: "/financeiro/contas-pagar", icon: Receipt },
   { title: "Contas a Receber", url: "/financeiro/contas-receber", icon: TrendingUp },
   { title: "Fluxo de Caixa", url: "/financeiro/fluxo-caixa", icon: Banknote },
+  { title: "Comissões", url: "/financeiro/comissoes", icon: Calculator },
   { title: "Relatório", url: "/relatorios/financeiro", icon: BarChart3 },
 ];
 
@@ -100,6 +103,7 @@ const utilitariosItems = [
   { title: "Projetos", url: "/utilitarios/projetos", icon: LayoutDashboard },
   { title: "Manuais e Códigos", url: "/utilitarios/manuais-codigos", icon: BookOpen },
   { title: "Contatos Úteis", url: "/utilitarios/contatos-uteis", icon: Phone },
+  { title: "Checklist Materiais", url: "/utilitarios/checklist-materiais", icon: Receipt },
 ];
 
 
