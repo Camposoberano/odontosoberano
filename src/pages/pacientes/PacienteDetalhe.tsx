@@ -253,22 +253,27 @@ function OrcamentosTab({ pacienteId }: { pacienteId: string }) {
 
 function DebitosTab({ pacienteId }: { pacienteId: string }) {
   const navigate = useNavigate();
+  const [filtro, setFiltro] = useState<"todos" | "Vencida" | "Pendente" | "Recebida">("todos");
   const { data: contas = [], isLoading } = useContasReceberByPaciente(pacienteId);
   if (isLoading) return <LoadingState />;
   if (contas.length === 0) return <EmptyState msg="Nenhuma conta a receber para este paciente." />;
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const total   = contas.reduce((a, c) => a + c.valor, 0);
-  const pago    = contas.filter(c => c.status === "Recebida").reduce((a, c) => a + c.valor, 0);
-  const pendente= contas.filter(c => c.status === "Pendente").reduce((a, c) => a + c.valor, 0);
-  const vencido = contas.filter(c => c.status === "Vencida").reduce((a, c) => a + c.valor, 0);
+  const total    = contas.reduce((a, c) => a + c.valor, 0);
+  const pago     = contas.filter(c => c.status === "Recebida").reduce((a, c) => a + c.valor, 0);
+  const pendente = contas.filter(c => c.status === "Pendente").reduce((a, c) => a + c.valor, 0);
+  const vencido  = contas.filter(c => c.status === "Vencida").reduce((a, c) => a + c.valor, 0);
 
-  const groups = [
-    { label: "Vencidas",  status: "Vencida",   items: contas.filter(c => c.status === "Vencida"),   border: "border-red-200",    bg: "bg-red-50/50",    dot: "bg-red-500" },
-    { label: "Pendentes", status: "Pendente",  items: contas.filter(c => c.status === "Pendente"),  border: "border-yellow-200", bg: "bg-yellow-50/50", dot: "bg-yellow-500" },
-    { label: "Pagas",     status: "Recebida",  items: contas.filter(c => c.status === "Recebida"),  border: "border-green-200",  bg: "bg-green-50/50",  dot: "bg-green-500" },
-    { label: "Canceladas",status: "Cancelada", items: contas.filter(c => c.status === "Cancelada"), border: "border-slate-200",  bg: "bg-slate-50/50",  dot: "bg-slate-400" },
+  const allGroups = [
+    { label: "Vencidas",   status: "Vencida",   items: contas.filter(c => c.status === "Vencida"),   border: "border-red-200",    bg: "bg-red-50/50",    dot: "bg-red-500",    active: "bg-red-500 text-white",    inactive: "border-red-200 text-red-600" },
+    { label: "Pendentes",  status: "Pendente",  items: contas.filter(c => c.status === "Pendente"),  border: "border-yellow-200", bg: "bg-yellow-50/50", dot: "bg-yellow-500", active: "bg-yellow-500 text-white",  inactive: "border-yellow-200 text-yellow-600" },
+    { label: "Pagas",      status: "Recebida",  items: contas.filter(c => c.status === "Recebida"),  border: "border-green-200",  bg: "bg-green-50/50",  dot: "bg-green-500",  active: "bg-green-600 text-white",   inactive: "border-green-200 text-green-700" },
+    { label: "Canceladas", status: "Cancelada", items: contas.filter(c => c.status === "Cancelada"), border: "border-slate-200",  bg: "bg-slate-50/50",  dot: "bg-slate-400",  active: "bg-slate-500 text-white",   inactive: "border-slate-200 text-slate-500" },
   ].filter(g => g.items.length > 0);
+
+  const groups = filtro === "todos"
+    ? allGroups
+    : allGroups.filter(g => g.status === filtro);
 
   return (
     <div className="space-y-4">
@@ -316,8 +321,31 @@ function DebitosTab({ pacienteId }: { pacienteId: string }) {
         )}
       </div>
 
+      {/* Filtro tabs */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          { id: "todos",    label: "Todos",     count: contas.length,                                          cls: "bg-slate-800 text-white",    inact: "border border-slate-200 text-slate-600" },
+          { id: "Vencida",  label: "Vencidas",  count: contas.filter(c => c.status === "Vencida").length,   cls: "bg-red-500 text-white",      inact: "border border-red-200 text-red-600" },
+          { id: "Pendente", label: "Pendentes", count: contas.filter(c => c.status === "Pendente").length,  cls: "bg-yellow-500 text-white",   inact: "border border-yellow-200 text-yellow-600" },
+          { id: "Recebida", label: "Pagas",     count: contas.filter(c => c.status === "Recebida").length,  cls: "bg-green-600 text-white",    inact: "border border-green-200 text-green-700" },
+        ] as const).map(tab => tab.count > 0 || tab.id === "todos" ? (
+          <button
+            key={tab.id}
+            onClick={() => setFiltro(tab.id as typeof filtro)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filtro === tab.id ? tab.cls : tab.inact + " hover:opacity-80"}`}
+          >
+            {tab.label}
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black leading-none ${filtro === tab.id ? "bg-white/25" : "bg-slate-100 text-slate-500"}`}>
+              {tab.count}
+            </span>
+          </button>
+        ) : null)}
+      </div>
+
       {/* Grupos por status */}
-      {groups.map(group => (
+      {groups.length === 0 ? (
+        <div className="py-8 text-center text-slate-400 text-sm font-bold">Nenhuma parcela neste filtro.</div>
+      ) : groups.map(group => (
         <div key={group.status}>
           <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${group.bg} border ${group.border} mb-2`}>
             <div className={`w-2 h-2 rounded-full ${group.dot}`} />
