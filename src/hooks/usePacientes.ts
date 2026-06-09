@@ -91,7 +91,8 @@ export function usePacientes() {
         .from('pacientes')
         .select('*')
         .eq('status', 'Ativo')
-        .order('nome');
+        .order('nome')
+        .limit(10000);
 
       if (error) {
         console.error('Supabase error:', error);
